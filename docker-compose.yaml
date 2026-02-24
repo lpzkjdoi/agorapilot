@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: agorapilot-db
+    environment:
+      POSTGRES_DB: agorapilot-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - agorapilot-db-data:/var/lib/postgresql/data
+
+volumes:
+  agorapilot-db-data:
