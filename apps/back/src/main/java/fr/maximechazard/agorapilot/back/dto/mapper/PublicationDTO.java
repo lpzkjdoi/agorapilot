@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public record PublicationDTO(
         Long id,
         String content,
-        PublicationStatus Status,
+        PublicationStatus status,
         LocalDateTime scheduledAt,
         LocalDateTime publishedAt,
         LocalDateTime endAt
