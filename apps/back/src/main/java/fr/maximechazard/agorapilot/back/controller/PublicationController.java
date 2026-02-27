@@ -1,6 +1,6 @@
 package fr.maximechazard.agorapilot.back.controller;
 
-import fr.maximechazard.agorapilot.back.model.Publication;
+import fr.maximechazard.agorapilot.back.dto.mapper.PublicationDTO;
 import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
 import fr.maximechazard.agorapilot.back.service.PublicationService;
 import jakarta.validation.Valid;
@@ -17,13 +17,13 @@ public class PublicationController {
 
     // -------------------------------- GET --------------------------------
     @GetMapping
-    public ResponseEntity<Iterable<Publication>> getAll() {
+    public ResponseEntity<Iterable<PublicationDTO>> getAll() {
         return new ResponseEntity<>(publicationService.getAll(), HttpStatus.OK);
     }
 
     // -------------------------------- POST --------------------------------
     @PostMapping
-    public ResponseEntity<Publication> create(@RequestBody @Valid CreatePublicationRequest request) {
+    public ResponseEntity<PublicationDTO> create(@RequestBody @Valid CreatePublicationRequest request) {
         return new ResponseEntity<>(publicationService.create(request), HttpStatus.CREATED);
     }
 }
