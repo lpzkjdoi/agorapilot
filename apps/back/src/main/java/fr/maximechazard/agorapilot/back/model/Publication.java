@@ -46,4 +46,12 @@ public class Publication {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public Publication(String content, LocalDateTime scheduledAt, LocalDateTime publishedAt, LocalDateTime endAt) {
+        this.content = content;
+        this.scheduledAt = scheduledAt;
+        this.publishedAt = publishedAt;
+        this.endAt = endAt;
+        this.status = PublicationStatus.DRAFT;
+    }
 }
