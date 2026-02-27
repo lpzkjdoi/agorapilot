@@ -1,6 +1,6 @@
 package fr.maximechazard.agorapilot.back.service;
 
-import fr.maximechazard.agorapilot.back.dto.mapper.PublicationDTO;
+import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
 import fr.maximechazard.agorapilot.back.dto.mapper.PublicationMapper;
 import fr.maximechazard.agorapilot.back.model.Publication;
 import fr.maximechazard.agorapilot.back.repository.PublicationRepository;

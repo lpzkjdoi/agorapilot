@@ -1,6 +1,6 @@
 package fr.maximechazard.agorapilot.back.controller;
 
-import fr.maximechazard.agorapilot.back.dto.mapper.PublicationDTO;
+import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
 import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
 import fr.maximechazard.agorapilot.back.service.PublicationService;
 import jakarta.validation.Valid;

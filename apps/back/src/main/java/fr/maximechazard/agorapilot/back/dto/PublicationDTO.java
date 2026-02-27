@@ -1,4 +1,4 @@
-package fr.maximechazard.agorapilot.back.dto.mapper;
+package fr.maximechazard.agorapilot.back.dto;
 
 import fr.maximechazard.agorapilot.back.PublicationStatus;
 

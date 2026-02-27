@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.dto.mapper;
 
+import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
 import fr.maximechazard.agorapilot.back.model.Publication;
 import org.springframework.stereotype.Service;
 
