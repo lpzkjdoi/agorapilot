@@ -17,7 +17,7 @@ public class CampaignMapper {
     public CampaignDTO toDTO(Campaign campaign) {
         List<PublicationDTO> publications = new ArrayList<>();
 
-        if (!campaign.getPublications().isEmpty()) {
+        if (campaign.getPublications() != null && !campaign.getPublications().isEmpty()) {
             publications = campaign.getPublications().stream().map(publicationMapper::toDTO).toList();
         }
 
