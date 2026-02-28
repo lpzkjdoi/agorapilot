@@ -56,4 +56,31 @@ public class Campaign {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public Campaign(String name, String description, LocalDateTime startDate, LocalDateTime endDate) {
+        this.name = name;
+        this.description = description;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.status = determineStatus(startDate);
+    }
+
+    private CampaignStatus determineStatus(LocalDateTime startDate) {
+        if (startDate == null) {
+            return CampaignStatus.DRAFT;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!startDate.isAfter(now)) {
+            return CampaignStatus.ACTIVE;
+        }
+
+        return CampaignStatus.SCHEDULED;
+    }
+
+    public void addPublication(Publication publication) {
+        publications.add(publication);
+        publication.setCampaign(this);
+    }
 }
