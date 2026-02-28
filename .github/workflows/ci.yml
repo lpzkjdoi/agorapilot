@@ -2,15 +2,17 @@ name: Back CI
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
   push:
-    branches:
-      - develop
-      - main
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  checks: write
 
 jobs:
-  build-and-test:
+  back-tests:
+    name: Back CI / back-tests
     runs-on: ubuntu-latest
 
     defaults:
@@ -18,10 +20,10 @@ jobs:
         working-directory: apps/back
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
