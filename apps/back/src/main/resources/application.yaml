@@ -30,4 +30,12 @@ logging:
     org.springframework.security: DEBUG
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+
+facebook:
+  api-base-url: ${FACEBOOK_API_BASE_URL:}
+  api-version: ${FACEBOOK_API_VERSION:}
+  client-secret: ${FACEBOOK_CLIENT_SECRET:}
+  client-id: ${FACEBOOK_CLIENT_ID:}
+  page-id: ${FACEBOOK_PAGE_ID:}
+  access-token: ${FACEBOOK_PAGE_ACCESS_TOKEN:}
