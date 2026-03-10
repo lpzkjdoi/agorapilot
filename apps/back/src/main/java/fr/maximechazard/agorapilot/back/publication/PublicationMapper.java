@@ -9,10 +9,7 @@ public class PublicationMapper {
         return new PublicationDTO(
                 publication.getId(),
                 publication.getContent(),
-                publication.getStatus(),
-                publication.getScheduledAt(),
-                publication.getPublishedAt(),
-                publication.getEndAt()
+                publication.getStatus()
         );
     }
 }
