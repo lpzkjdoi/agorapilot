@@ -1,8 +1,7 @@
-package fr.maximechazard.agorapilot.back.controller;
+package fr.maximechazard.agorapilot.back.publication;
 
-import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
-import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
-import fr.maximechazard.agorapilot.back.service.PublicationService;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

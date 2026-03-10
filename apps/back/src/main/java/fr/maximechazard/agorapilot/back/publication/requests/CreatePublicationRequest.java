@@ -1,4 +1,4 @@
-package fr.maximechazard.agorapilot.back.request;
+package fr.maximechazard.agorapilot.back.publication.requests;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;

@@ -1,6 +1,6 @@
-package fr.maximechazard.agorapilot.back.dto;
+package fr.maximechazard.agorapilot.back.publication.dtos;
 
-import fr.maximechazard.agorapilot.back.PublicationStatus;
+import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
 
 import java.time.LocalDateTime;
 

@@ -1,10 +1,7 @@
-package fr.maximechazard.agorapilot.back.service;
+package fr.maximechazard.agorapilot.back.publication;
 
-import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
-import fr.maximechazard.agorapilot.back.dto.mapper.PublicationMapper;
-import fr.maximechazard.agorapilot.back.model.Publication;
-import fr.maximechazard.agorapilot.back.repository.PublicationRepository;
-import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

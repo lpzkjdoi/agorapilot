@@ -1,6 +1,6 @@
-package fr.maximechazard.agorapilot.back.model;
+package fr.maximechazard.agorapilot.back.publication;
 
-import fr.maximechazard.agorapilot.back.PublicationStatus;
+import fr.maximechazard.agorapilot.back.campaign.Campaign;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,7 +40,6 @@ public class Publication {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_id")
     private Campaign campaign;
-
 
     @Column(nullable = false)
     private Boolean archived = false;

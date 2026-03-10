@@ -1,6 +1,5 @@
-package fr.maximechazard.agorapilot.back.repository;
+package fr.maximechazard.agorapilot.back.publication;
 
-import fr.maximechazard.agorapilot.back.model.Publication;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

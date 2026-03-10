@@ -1,11 +1,8 @@
 package fr.maximechazard.agorapilot.back.service;
 
-import fr.maximechazard.agorapilot.back.PublicationStatus;
-import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
-import fr.maximechazard.agorapilot.back.dto.mapper.PublicationMapper;
-import fr.maximechazard.agorapilot.back.model.Publication;
-import fr.maximechazard.agorapilot.back.repository.PublicationRepository;
-import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
+import fr.maximechazard.agorapilot.back.publication.*;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
