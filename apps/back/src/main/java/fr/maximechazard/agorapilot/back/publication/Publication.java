@@ -33,12 +33,6 @@ public class Publication {
     @Column(nullable = false)
     private PublicationStatus status;
 
-    private LocalDateTime scheduledAt;
-
-    private LocalDateTime publishedAt;
-
-    private LocalDateTime endAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_id")
     private Campaign campaign;
@@ -56,11 +50,8 @@ public class Publication {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public Publication(String content, LocalDateTime scheduledAt, LocalDateTime publishedAt, LocalDateTime endAt) {
+    public Publication(String content) {
         this.content = content;
-        this.scheduledAt = scheduledAt;
-        this.publishedAt = publishedAt;
-        this.endAt = endAt;
         this.status = PublicationStatus.DRAFT;
     }
 }
