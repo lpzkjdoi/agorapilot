@@ -2,6 +2,8 @@ package fr.maximechazard.agorapilot.back.publication;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +18,7 @@ public class PublicationDelivery {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DeliveryChannel deliveryChannel;
+    private DeliveryChannel channel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -29,4 +31,11 @@ public class PublicationDelivery {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "occurrence_id", nullable = false)
     private PublicationOccurrence occurrence;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

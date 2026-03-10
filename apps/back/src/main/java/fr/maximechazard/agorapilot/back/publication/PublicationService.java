@@ -1,6 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication;
 
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
+import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
