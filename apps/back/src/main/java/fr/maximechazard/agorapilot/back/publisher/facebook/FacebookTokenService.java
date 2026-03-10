@@ -1,8 +1,5 @@
-package fr.maximechazard.agorapilot.back.service;
+package fr.maximechazard.agorapilot.back.publisher.facebook;
 
-import fr.maximechazard.agorapilot.back.publishing.channel.facebook.FacebookProperties;
-import fr.maximechazard.agorapilot.back.publishing.channel.facebook.FacebookToken;
-import fr.maximechazard.agorapilot.back.repository.FacebookTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

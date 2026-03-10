@@ -1,6 +1,5 @@
-package fr.maximechazard.agorapilot.back.publishing.channel.facebook;
+package fr.maximechazard.agorapilot.back.publisher.facebook;
 
-import fr.maximechazard.agorapilot.back.service.FacebookTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

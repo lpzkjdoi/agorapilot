@@ -1,6 +1,5 @@
-package fr.maximechazard.agorapilot.back.controller;
+package fr.maximechazard.agorapilot.back.publisher.facebook;
 
-import fr.maximechazard.agorapilot.back.service.FacebookTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

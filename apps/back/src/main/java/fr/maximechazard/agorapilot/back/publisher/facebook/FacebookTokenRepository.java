@@ -1,6 +1,5 @@
-package fr.maximechazard.agorapilot.back.repository;
+package fr.maximechazard.agorapilot.back.publisher.facebook;
 
-import fr.maximechazard.agorapilot.back.publishing.channel.facebook.FacebookToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

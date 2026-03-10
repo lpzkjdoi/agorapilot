@@ -1,4 +1,4 @@
-package fr.maximechazard.agorapilot.back.publishing.channel.facebook;
+package fr.maximechazard.agorapilot.back.publisher.facebook;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
