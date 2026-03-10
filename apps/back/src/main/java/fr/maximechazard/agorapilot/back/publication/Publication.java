@@ -11,6 +11,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "publications")
@@ -40,6 +42,9 @@ public class Publication {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_id")
     private Campaign campaign;
+
+    @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PublicationOccurrence> occurrences = new ArrayList<>();
 
     @Column(nullable = false)
     private Boolean archived = false;
