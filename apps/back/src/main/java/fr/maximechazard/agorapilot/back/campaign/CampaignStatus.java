@@ -1,4 +1,4 @@
-package fr.maximechazard.agorapilot.back;
+package fr.maximechazard.agorapilot.back.campaign;
 
 public enum CampaignStatus {
     DRAFT,

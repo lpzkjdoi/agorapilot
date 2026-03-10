@@ -1,11 +1,12 @@
 package fr.maximechazard.agorapilot.back.service;
 
-import fr.maximechazard.agorapilot.back.dto.CampaignDTO;
-import fr.maximechazard.agorapilot.back.dto.mapper.CampaignMapper;
-import fr.maximechazard.agorapilot.back.model.Campaign;
+import fr.maximechazard.agorapilot.back.campaign.Campaign;
+import fr.maximechazard.agorapilot.back.campaign.CampaignMapper;
+import fr.maximechazard.agorapilot.back.campaign.CampaignRepository;
+import fr.maximechazard.agorapilot.back.campaign.CampaignService;
+import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.model.Publication;
-import fr.maximechazard.agorapilot.back.repository.CampaignRepository;
-import fr.maximechazard.agorapilot.back.request.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

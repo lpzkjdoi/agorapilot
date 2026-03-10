@@ -1,6 +1,7 @@
-package fr.maximechazard.agorapilot.back.dto;
+package fr.maximechazard.agorapilot.back.campaign.dtos;
 
-import fr.maximechazard.agorapilot.back.CampaignStatus;
+import fr.maximechazard.agorapilot.back.campaign.CampaignStatus;
+import fr.maximechazard.agorapilot.back.dto.PublicationDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;

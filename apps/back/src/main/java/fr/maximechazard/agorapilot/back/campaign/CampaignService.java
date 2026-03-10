@@ -1,11 +1,8 @@
-package fr.maximechazard.agorapilot.back.service;
+package fr.maximechazard.agorapilot.back.campaign;
 
-import fr.maximechazard.agorapilot.back.dto.CampaignDTO;
-import fr.maximechazard.agorapilot.back.dto.mapper.CampaignMapper;
-import fr.maximechazard.agorapilot.back.model.Campaign;
+import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.model.Publication;
-import fr.maximechazard.agorapilot.back.repository.CampaignRepository;
-import fr.maximechazard.agorapilot.back.request.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.request.CreatePublicationRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
-package fr.maximechazard.agorapilot.back.model;
+package fr.maximechazard.agorapilot.back.campaign;
 
-import fr.maximechazard.agorapilot.back.CampaignStatus;
+import fr.maximechazard.agorapilot.back.model.Publication;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;

@@ -1,9 +1,7 @@
-package fr.maximechazard.agorapilot.back.controller;
+package fr.maximechazard.agorapilot.back.campaign;
 
-import fr.maximechazard.agorapilot.back.dto.CampaignDTO;
-import fr.maximechazard.agorapilot.back.model.Campaign;
-import fr.maximechazard.agorapilot.back.request.CreateCampaignRequest;
-import fr.maximechazard.agorapilot.back.service.CampaignService;
+import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
