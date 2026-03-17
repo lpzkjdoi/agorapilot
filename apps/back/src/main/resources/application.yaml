@@ -39,3 +39,6 @@ facebook:
   client-id: ${FACEBOOK_CLIENT_ID:}
   page-id: ${FACEBOOK_PAGE_ID:}
   access-token: ${FACEBOOK_PAGE_ACCESS_TOKEN:}
+
+frontend:
+  url: ${FRONTEND_URL:}
