@@ -7,7 +7,10 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  devtools:
+    restart:
+      enabled: true
 
   jpa:
     hibernate:
@@ -41,4 +44,4 @@ facebook:
   access-token: ${FACEBOOK_PAGE_ACCESS_TOKEN:}
 
 frontend:
-  url: ${FRONTEND_URL:}
+  url: ${FRONTEND_URL:http://localhost:4200}
