@@ -30,3 +30,41 @@ build/
 !**/src/test/**/build/
 
 .env
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Java
+*.class
+
+# Angular / Frontend
+apps/front/node_modules/
+apps/front/.angular/
+apps/front/.angular/cache/
+apps/front/dist/
+apps/front/tmp/
+apps/front/out-tsc/
+apps/front/bazel-out/
+apps/front/npm-debug.log
+apps/front/yarn-error.log
+apps/front/.sass-cache/
+apps/front/connect.lock
+apps/front/coverage
+apps/front/libpeerconnection.log
+apps/front/testem.log
+apps/front/typings
+
+# VSCode (frontend specific)
+apps/front/.vscode/*
+!apps/front/.vscode/settings.json
+!apps/front/.vscode/tasks.json
+!apps/front/.vscode/launch.json
+!apps/front/.vscode/extensions.json
+apps/front/.history/*
+
+# System files
+apps/front/.DS_Store
+apps/front/Thumbs.db
