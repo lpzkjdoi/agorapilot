@@ -50,8 +50,8 @@ public class Publication {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public Publication(String content) {
+    public Publication(String content, PublicationStatus status) {
         this.content = content;
-        this.status = PublicationStatus.DRAFT;
+        this.status = status == null ? PublicationStatus.DRAFT : status;
     }
 }

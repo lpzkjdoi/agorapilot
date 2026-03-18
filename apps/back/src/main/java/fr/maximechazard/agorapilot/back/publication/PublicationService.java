@@ -15,7 +15,7 @@ public class PublicationService {
     private final PublicationMapper mapper;
 
     public PublicationDTO create(CreatePublicationRequest request) {
-        Publication publication = new Publication(request.getContent());
+        Publication publication = new Publication(request.getContent(), request.getStatus());
         return mapper.toDTO(publicationRepository.save(publication));
     }
 
