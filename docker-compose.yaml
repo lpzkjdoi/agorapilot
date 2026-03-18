@@ -10,6 +10,33 @@ services:
       - "5433:5432"
     volumes:
       - agorapilot-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d agorapilot-db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  back:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: agorapilot-back
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/agorapilot-db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./apps/back:/app
+      - maven-cache:/root/.m2
+    command: mvn spring-boot:run
 
 volumes:
   agorapilot-db-data:
+  maven-cache:

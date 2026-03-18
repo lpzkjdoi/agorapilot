@@ -1,0 +1,34 @@
+package fr.maximechazard.agorapilot.back.campaign;
+
+import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class CampaignMapper {
+    private final PublicationMapper publicationMapper;
+
+    public CampaignDTO toDTO(Campaign campaign) {
+        List<PublicationDTO> publications = new ArrayList<>();
+
+        if (campaign.getPublications() != null && !campaign.getPublications().isEmpty()) {
+            publications = campaign.getPublications().stream().map(publicationMapper::toDTO).toList();
+        }
+
+        return new CampaignDTO(
+                campaign.getId(),
+                campaign.getName(),
+                campaign.getDescription(),
+                campaign.getStartDate(),
+                campaign.getEndDate(),
+                campaign.getStatus(),
+                publications
+        );
+    }
+}
