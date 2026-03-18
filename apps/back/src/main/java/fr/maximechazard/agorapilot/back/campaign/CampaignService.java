@@ -23,7 +23,7 @@ public class CampaignService {
 
         if (request.getPublications() != null && !request.getPublications().isEmpty()) {
             for (CreatePublicationRequest p : request.getPublications()) {
-                Publication publication = new Publication(p.getContent());
+                Publication publication = new Publication(p.getContent(), p.getStatus());
                 campaign.addPublication(publication);
             }
         }
