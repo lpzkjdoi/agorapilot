@@ -1,11 +1,28 @@
-import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith } from 'rxjs';
-import { PublicationService } from "../publication-service";
-import { Publication } from '../types/publication.type';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { finalize } from "rxjs";
+import {
+  PublicationFormComponent,
+} from '../features/publications/components/publication-form/publication-form.component';
+import {
+  CreatePublicationFormValue,
+  CreatePublicationRequest,
+  Publication,
+} from '../features/publications/publication.model';
+import {
+  PublicationsService,
+} from '../features/publications/publications.service';
 
 type PublicationsState = {
-  data: Publication[];
+  publications: Publication[];
   loading: boolean;
   error: string | null;
 };
@@ -13,44 +30,91 @@ type PublicationsState = {
 @Component({
   selector: 'app-homepage',
   standalone: true,
-  imports: [],
+  imports: [PublicationFormComponent],
   templateUrl: './homepage.html',
   styleUrl: './homepage.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HomepageComponent {
-  private readonly publicationService = inject(PublicationService);
+export class HomepageComponent implements OnInit {
+  private readonly publicationService = inject(PublicationsService);
+  private destroyRef = inject(DestroyRef);
 
-  private readonly publicationsState = toSignal(
-    this.publicationService.getPublications().pipe(
-      map((publications): PublicationsState => ({
-        data: publications,
-        loading: false,
-        error: null,
-      })),
-      startWith({
-        data: [],
-        loading: true,
-        error: null,
-      }),
-      catchError(() =>
-        of({
-          data: [],
+  private readonly publicationsState = signal<PublicationsState>({
+    publications: [],
+    loading: false,
+    error: null,
+  });
+
+  ngOnInit(): void {
+    this.loadPublications()
+  }
+
+  private loadPublications() {
+    this.publicationsState.update(state => ({
+      ...state,
+      loading: true,
+      error: null,
+    }));
+
+    this.publicationService.getPublications()
+        .pipe(
+          finalize(() => {
+            this.publicationsState.update(state => ({
+              ...state,
+              loading: false,
+            }));
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: (pubs: Publication[]) => {
+            this.publicationsState.update(state => ({
+              ...state,
+              publications: pubs,
+            }));
+          },
+          error: () => {
+            this.publicationsState.update(state => ({
+              ...state,
+              error: 'Impossible de charger les publications.',
+            }));
+          },
+        });
+  }
+
+  protected handleCreatePublication(payload: CreatePublicationFormValue) {
+    const newPublication: CreatePublicationRequest = {
+      ...payload,
+      status: payload.status ? 'VERIFIED' : 'DRAFT',
+    }
+
+    this.publicationService.createPublication(newPublication).pipe(
+      finalize(() => {
+        this.publicationsState.update(state => ({
+          ...state,
           loading: false,
-          error: 'Impossible de charger les publications.',
-        }),
-      ),
-    ),
-    {
-      initialValue: {
-        data: [],
-        loading: true,
-        error: null,
-      },
-    },
-  );
+        }));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    )
+        .subscribe({
+          next: (pub: Publication) => {
+            this.publicationsState.update(state => ({
+              ...state,
+              publications: [...state.publications, pub],
+            }));
+          },
+          error: () => {
+            this.publicationsState.update(state => ({
+              ...state,
+              error: 'Impossible de charger les publications.',
+            }));
+          },
+        });
+  }
 
-  readonly publications = computed(() => this.publicationsState().data);
-  readonly isLoading = computed(() => this.publicationsState().loading);
-  readonly errorMessage = computed(() => this.publicationsState().error);
-  readonly isEmpty = computed(() => this.publications().length === 0)
+  protected readonly publications = computed(() => this.publicationsState().publications);
+  protected readonly isLoading = computed(() => this.publicationsState().loading);
+  protected readonly errorMessage = computed(() => this.publicationsState().error);
+  protected readonly isEmpty = computed(() => this.publicationsState().publications.length === 0);
 }
