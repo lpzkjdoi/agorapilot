@@ -1,0 +1,13 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <label for="content">
+    Contenu :
+    <textarea id="content" formControlName="content"></textarea>
+
+    @if (form.controls.content.touched && form.controls.content.invalid) {
+      <p>Le contenu est obligatoire.</p>
+    }
+  </label>
+  <label for="status">Vérifier directement ?</label>
+  <input id="status" formControlName="status" type="checkbox">
+  <button>Valider</button>
+</form>

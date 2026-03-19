@@ -14,4 +14,11 @@
       <li>{{ publication.id }} - {{ publication.content }} - {{ publication.status }}</li>
     }
   </ul>
+
+  <div>
+    <h1>
+      Ajouter une publication
+    </h1>
+    <app-publication-form (submitted)="handleCreatePublication($event)" />
+  </div>
 </div>
