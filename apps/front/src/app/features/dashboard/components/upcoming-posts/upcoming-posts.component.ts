@@ -4,7 +4,7 @@ import {
   computed,
   input,
 } from '@angular/core';
-import { Occurrence } from "../../../../models/occurrence.model";
+import { Occurrence } from "../../../occurrences/occurrence.model";
 import {
   UpcomingPostCardComponent,
 } from "./components/upcoming-post-card/upcoming-post-card.component";

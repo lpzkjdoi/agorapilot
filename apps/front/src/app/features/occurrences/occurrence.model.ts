@@ -1,4 +1,4 @@
-import { Publication } from "../features/publications/publication.model";
+import { Publication } from "../publications/publication.model";
 
 interface Delivery {
   id: number,
@@ -13,3 +13,5 @@ export type Occurrence = {
   publication: Publication
   deliveries: Delivery[]
 }
+
+export type WeeklyOccurrences = Map<string, Occurrence[]>

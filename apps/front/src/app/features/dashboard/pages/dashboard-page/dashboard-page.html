@@ -24,7 +24,8 @@
     </app-kpi>
   </div>
 
-  <div class="grid grid-cols-[2fr_1fr]">
+  <div class="grid grid-cols-[2fr_1fr] gap-4">
     <app-upcoming-posts />
+    <app-weekly-calendar [weeklyOccurrences]="weeklyOccurrences$ | async" />
   </div>
 </div>

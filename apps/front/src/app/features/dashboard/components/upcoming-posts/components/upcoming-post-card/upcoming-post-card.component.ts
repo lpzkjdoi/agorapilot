@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { Occurrence } from "../../../../../../models/occurrence.model";
+import { Occurrence } from "../../../../../occurrences/occurrence.model";
 
 @Component({
   selector: 'app-upcoming-post-card',
