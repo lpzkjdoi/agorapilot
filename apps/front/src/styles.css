@@ -1,2 +1,52 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  h1 {
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  h2 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  h3 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+
+  label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    color: #6B7280;
+  }
+
+  button {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+}
