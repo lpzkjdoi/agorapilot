@@ -23,25 +23,8 @@
       </svg>
     </app-kpi>
   </div>
-  @if (isLoading()) {
-    <p>Loading...</p>
-  }
-  @if (isEmpty() && !isLoading()) {
-    <p>Aucune publication</p>
-  }
-  @if (errorMessage()) {
-    <p>{{ errorMessage() }}</p>
-  }
-  <ul>
-    @for (publication of publications(); track publication.id) {
-      <li>{{ publication.id }} - {{ publication.content }} - {{ publication.status }}</li>
-    }
-  </ul>
 
-  <div>
-    <h1>
-      Ajouter une publication
-    </h1>
-    <app-publication-form (submitted)="handleCreatePublication($event)" />
+  <div class="grid grid-cols-[2fr_1fr]">
+    <app-upcoming-posts />
   </div>
 </div>

@@ -10,9 +10,6 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { finalize } from "rxjs";
 import {
-  PublicationFormComponent,
-} from '../../../publications/components/publication-form/publication-form.component';
-import {
   CreatePublicationFormValue,
   CreatePublicationRequest,
   Publication,
@@ -23,6 +20,9 @@ import {
 import {
   DashboardKpiComponent,
 } from "../../components/kpi/dashboard-kpi.component";
+import {
+  UpcomingPostsComponent,
+} from "../../components/upcoming-posts/upcoming-posts.component";
 
 type PublicationsState = {
   publications: Publication[];
@@ -33,7 +33,10 @@ type PublicationsState = {
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [PublicationFormComponent, DashboardKpiComponent],
+  imports: [
+    DashboardKpiComponent,
+    UpcomingPostsComponent,
+  ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
