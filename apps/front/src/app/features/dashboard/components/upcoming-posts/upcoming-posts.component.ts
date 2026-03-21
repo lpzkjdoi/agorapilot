@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Occurrence } from "../../../occurrences/occurrence.model";
 import {
   UpcomingPostCardComponent,
@@ -20,6 +15,4 @@ import {
 })
 export class UpcomingPostsComponent {
   upcomingOccurrences = input<Occurrence[]>([])
-
-  isEmpty = computed(() => this.upcomingOccurrences().length === 0)
 }
