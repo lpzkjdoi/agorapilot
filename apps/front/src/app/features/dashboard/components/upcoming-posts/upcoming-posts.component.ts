@@ -15,7 +15,6 @@ import {
     UpcomingPostCardComponent,
   ],
   templateUrl: './upcoming-posts.component.html',
-  styleUrl: './upcoming-posts.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

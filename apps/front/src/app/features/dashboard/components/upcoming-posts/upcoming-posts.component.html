@@ -8,15 +8,13 @@
       </svg>
     </button>
   </div>
-  @if (isEmpty()) {
-    <p>Aucune publication prévue</p>
-  } @else {
-    <ul>
-      @for (occurrence of upcomingOccurrences(); track occurrence.id) {
-        <li>
-          <app-upcoming-post-card [occurrence]="occurrence" />
-        </li>
-      }
-    </ul>
-  }
+  <ul>
+    @for (occurrence of upcomingOccurrences(); track occurrence.id) {
+      <li>
+        <app-upcoming-post-card [occurrence]="occurrence" />
+      </li>
+    } @empty {
+      <li><p>Aucune publication prévue</p></li>
+    }
+  </ul>
 </div>
