@@ -11,15 +11,15 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { finalize } from "rxjs";
 import {
   PublicationFormComponent,
-} from '../features/publications/components/publication-form/publication-form.component';
+} from '../../../publications/components/publication-form/publication-form.component';
 import {
   CreatePublicationFormValue,
   CreatePublicationRequest,
   Publication,
-} from '../features/publications/publication.model';
+} from '../../../publications/publication.model';
 import {
   PublicationsService,
-} from '../features/publications/publications.service';
+} from '../../../publications/publications.service';
 
 type PublicationsState = {
   publications: Publication[];
@@ -28,14 +28,14 @@ type PublicationsState = {
 };
 
 @Component({
-  selector: 'app-homepage',
+  selector: 'app-dashboard-page',
   standalone: true,
   imports: [PublicationFormComponent],
-  templateUrl: './homepage.html',
-  styleUrl: './homepage.css',
+  templateUrl: './dashboard-page.html',
+  styleUrl: './dashboard-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HomepageComponent implements OnInit {
+export class DashboardPageComponent implements OnInit {
   private readonly publicationService = inject(PublicationsService);
   private destroyRef = inject(DestroyRef);
 
