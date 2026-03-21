@@ -20,6 +20,9 @@ import {
 import {
   PublicationsService,
 } from '../../../publications/publications.service';
+import {
+  DashboardKpiComponent,
+} from "../../components/kpi/dashboard-kpi.component";
 
 type PublicationsState = {
   publications: Publication[];
@@ -30,7 +33,7 @@ type PublicationsState = {
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [PublicationFormComponent],
+  imports: [PublicationFormComponent, DashboardKpiComponent],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
