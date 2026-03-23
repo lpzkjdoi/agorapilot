@@ -1,0 +1,22 @@
+<div
+  class="shadow-card py-4 grid grid-cols-[1fr_3fr] gap-4 rounded-md cursor-pointer hover:shadow-hover"
+  [class]="hasPosts() ? 'bg-[#E8EAF6] border border-[#C5CAE9]':'bg-ui-bg border border-ui-border'">
+  <div class="flex flex-col text-center border-r border-r-gray-400">
+    <p class="font-bold">
+      {{ date() | date:'dd' }}
+    </p>
+    <p class="text-gray-500">
+      {{ date() | date:'EEE':'':'fr-FR' }}
+    </p>
+  </div>
+  <div class="flex items-center justify-between w-full text-gray-500 p-2">
+    <p [class]="hasPosts() ? 'font-bold' :''">
+      {{ numberOfPosts() }} post{{ numberOfPosts() > 1 ? 's' : '' }}
+    </p>
+    <button class="flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#6a7282">
+        <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+      </svg>
+    </button>
+  </div>
+</div>

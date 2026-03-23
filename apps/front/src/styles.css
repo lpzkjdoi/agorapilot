@@ -1,2 +1,88 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+@tailwind utilities;
+
+@theme {
+  --color-ui-bg: #F8F9FB;
+  --color-ui-card: #FFFFFF;
+  --color-ui-border: #E5E7EB;
+  --color-ui-text-primary: #111827;
+  --color-ui-text-secondary: #6B7280;
+  --color-ui-text-muted: #9CA3AF;
+
+  --color-brand-blue: #2F6BFF;
+  --color-brand-purple: #A93BFF;
+  --color-brand-pink: #FF2E7A;
+
+  --color-status-scheduled: #60A5FA;
+  --color-status-pending: #FBBF24;
+  --color-status-success: #34D399;
+  --color-status-danger: #F87171;
+
+  --color-platform-facebook: #3B82F6;
+  --color-platform-intramuros: #A78BFA;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --background-image-brand-gradient: linear-gradient(90deg, #2F6BFF 0%, #A93BFF 50%, #FF2E7A 100%);
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  h1 {
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 700;
+    color: var(--color-ui-text-primary);
+  }
+
+  h2 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    color: var(--color-ui-text-primary);
+  }
+
+  h3 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--color-ui-text-primary);
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+
+  label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    color: var(--color-ui-text-secondary);
+  }
+
+  button {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+}
