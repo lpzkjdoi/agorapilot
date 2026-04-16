@@ -28,6 +28,8 @@ public class PublicationDelivery {
 
     private LocalDateTime publishedAt;
     private String externalId;
+
+    @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
     @ManyToOne(fetch = FetchType.LAZY)
