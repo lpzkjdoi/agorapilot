@@ -15,6 +15,7 @@ import { WeeklyOccurrences } from "../../../../../occurrences/occurrence.model";
     WeeklyOccurrenceCardComponent,
   ],
   templateUrl: './weekly-calendar.component.html',
+  styleUrl: './weekly-calendar.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

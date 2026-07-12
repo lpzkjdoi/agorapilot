@@ -1,0 +1,55 @@
+.occurrence-card {
+  box-shadow: var(--shadow-card);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background-color: var(--color-ui-bg);
+  border: 1px solid var(--color-ui-border);
+}
+
+.occurrence-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.occurrence-card.has-posts {
+  background-color: #E8EAF6;
+  border-color: #C5CAE9;
+}
+
+.occurrence-date {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  border-right: 1px solid #9CA3AF;
+}
+
+.occurrence-day {
+  font-weight: 700;
+}
+
+.occurrence-weekday {
+  color: #6B7280;
+}
+
+.occurrence-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  color: #6B7280;
+  padding: 0.5rem;
+}
+
+.occurrence-card.has-posts .occurrence-count {
+  font-weight: 700;
+}
+
+.occurrence-chevron {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -10,6 +10,7 @@ import {
   selector: 'app-weekly-occurrence-card',
   imports: [DatePipe],
   templateUrl: './weekly-occurrence-card.component.html',
+  styleUrl: './weekly-occurrence-card.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

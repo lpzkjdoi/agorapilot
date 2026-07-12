@@ -29,6 +29,7 @@ import {
     WeeklyCalendarComponent,
   ],
   templateUrl: './dashboard-page.html',
+  styleUrl: './dashboard-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardPageComponent {
