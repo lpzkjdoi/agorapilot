@@ -11,6 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class FacebookClient {
     private final RestClient restClient;
+    private final FacebookProperties props;
     private final ObjectMapper mapper;
 
     public FacebookPostResponse publish(Publication publication, String token) {
@@ -18,7 +19,7 @@ public class FacebookClient {
 
         String response = restClient.post()
                 .uri(uriBuilder -> uriBuilder
-                        .pathSegment("feed")
+                        .pathSegment(props.pageId(), "feed")
                         .build())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
