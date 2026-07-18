@@ -1,9 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
-@import "tailwindcss";
-
-@tailwind utilities;
-
-@theme {
+:root {
   --color-ui-bg: #F8F9FB;
   --color-ui-card: #FFFFFF;
   --color-ui-border: #E5E7EB;
@@ -39,50 +34,102 @@
   --spacing-22: 5.5rem;
 }
 
-@layer base {
-  html,
-  body {
-    height: 100%;
-  }
+/* Reset minimal équivalent au Preflight de Tailwind (retiré avec @import "tailwindcss"),
+   limité aux éléments réellement utilisés dans ce projet. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
 
-  h1 {
-    font-size: 28px;
-    line-height: 36px;
-    font-weight: 700;
-    color: var(--color-ui-text-primary);
-  }
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+}
 
-  h2 {
-    font-size: 20px;
-    line-height: 28px;
-    font-weight: 600;
-    color: var(--color-ui-text-primary);
-  }
+body {
+  line-height: inherit;
+}
 
-  h3 {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 600;
-    color: var(--color-ui-text-primary);
-  }
+ol, ul {
+  list-style: none;
+}
 
-  p {
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 400;
-  }
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  vertical-align: middle;
+}
 
-  label {
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
-    color: var(--color-ui-text-secondary);
-  }
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
 
-  button {
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 600;
-  }
+button, select {
+  text-transform: none;
+}
+
+button, input:where([type='button'], [type='reset'], [type='submit']) {
+  appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Styles de base globaux (repris tels quels de l'ancien @layer base) */
+html, body {
+  height: 100%;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+  color: var(--color-ui-text-primary);
+}
+
+h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--color-ui-text-primary);
+}
+
+h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--color-ui-text-primary);
+}
+
+p {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--color-ui-text-secondary);
+}
+
+button {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
 }

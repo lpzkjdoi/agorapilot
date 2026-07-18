@@ -12,6 +12,7 @@ import {
     RouterLinkActive,
   ],
   templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

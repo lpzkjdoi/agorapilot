@@ -1,0 +1,10 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+}
+
+.content {
+  padding: 1rem;
+  gap: 0.5rem;
+  background-color: var(--color-ui-bg);
+}

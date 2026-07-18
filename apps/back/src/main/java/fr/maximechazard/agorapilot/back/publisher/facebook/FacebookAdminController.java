@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -12,6 +13,7 @@ import java.util.Map;
 public class FacebookAdminController {
 
     private final FacebookTokenService tokenService;
+    private final FacebookTokenScheduler tokenScheduler;
 
     // Appeler une fois avec un token fraîchement généré depuis le Graph Explorer
     @PostMapping("/bootstrap")
@@ -22,6 +24,11 @@ public class FacebookAdminController {
 
     @GetMapping("/token/status")
     public ResponseEntity<Map<String, Object>> status() {
-        return ResponseEntity.ok(Map.of("token", tokenService.getCurrentPageToken().substring(0, 10) + "..."));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("page", tokenService.getTokenStatus(FacebookTokenService.PAGE_TOKEN_TYPE).orElse(null));
+        body.put("user", tokenService.getTokenStatus(FacebookTokenService.USER_TOKEN_TYPE).orElse(null));
+        body.put("lastRenewalCheckAt", tokenScheduler.getLastCheckAt());
+        body.put("lastRenewalError", tokenScheduler.getLastError());
+        return ResponseEntity.ok(body);
     }
 }

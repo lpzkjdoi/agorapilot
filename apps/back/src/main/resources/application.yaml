@@ -36,8 +36,8 @@ server:
   port: ${PORT:8080}
 
 facebook:
-  api-base-url: ${FACEBOOK_API_BASE_URL:}
-  api-version: ${FACEBOOK_API_VERSION:}
+  api-base-url: ${FACEBOOK_API_BASE_URL:https://graph.facebook.com}
+  api-version: ${FACEBOOK_API_VERSION:v25.0}
   client-secret: ${FACEBOOK_CLIENT_SECRET:}
   client-id: ${FACEBOOK_CLIENT_ID:}
   page-id: ${FACEBOOK_PAGE_ID:}

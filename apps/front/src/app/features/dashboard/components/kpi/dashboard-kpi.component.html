@@ -1,13 +1,13 @@
-<div class="gap-2 bg-white rounded-2xl p-4 size-full justify-between flex flex-col shadow-card">
-  <div class="flex justify-between gap-2">
+<div class="kpi-card">
+  <div class="kpi-card-header">
     <label>
       {{ title() }}
     </label>
-    <div class="rounded-lg p-3 shadow-card" [style.background-color]="color()">
+    <div class="kpi-icon-badge" [style.background-color]="color()">
       <ng-content />
     </div>
   </div>
-  <label class="text-2xl font-semibold text-black">
+  <label class="kpi-value">
     {{ value() }}
   </label>
 </div>
