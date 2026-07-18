@@ -1,0 +1,52 @@
+name: Front CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/front/**'
+      - '.github/workflows/front-ci.yml'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/front/**'
+      - '.github/workflows/front-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  front-build-test:
+    name: Front CI / build & test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/front
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/front/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint volontairement non bloquant pour ce premier jet : il remonte les
+      # écarts sans casser la CI. À basculer en bloquant une fois les règles
+      # arbitrées et le code aligné (cf. `npm run lint`).
+      - name: Lint (non blocking)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Unit tests
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: Production build
+        run: npm run build -- --configuration production

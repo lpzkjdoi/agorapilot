@@ -2,17 +2,23 @@ name: Back CI
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+    paths:
+      - 'apps/back/**'
+      - '.github/workflows/ci.yml'
   push:
     branches: [ main, develop ]
+    paths:
+      - 'apps/back/**'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
   checks: write
 
 jobs:
-  back-tests:
-    name: Back CI / back-tests
+  back-build-test:
+    name: Back CI / build & test
     runs-on: ubuntu-latest
 
     defaults:
@@ -30,5 +36,16 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Run tests
-        run: mvn -B test
+      # `verify` exécute la compilation, les tests puis le packaging du jar.
+      # On produit ainsi un artefact réellement déployable, pas seulement des tests verts.
+      - name: Build & test
+        run: mvn -B verify
+
+      - name: Upload jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-jar
+          path: apps/back/target/*.jar
+          if-no-files-found: warn
+          retention-days: 7
