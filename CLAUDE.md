@@ -5,9 +5,12 @@ respecter **systématiquement**, sans avoir besoin qu'on me les redemande.
 
 ## Workflow Git & PR
 
+- **Sauf mention explicite du contraire, toute tâche part de `develop`.**
+  Créer la branche de travail depuis `develop` à jour
+  (`git fetch origin develop && git checkout -B claude/<desc> origin/develop`).
 - **Toujours** développer sur une branche dédiée nommée `claude/<description-courte>`.
-  Ne jamais committer directement sur `main`.
-- **Ouvrir automatiquement une Pull Request en draft** vers `main` après le push,
+  Ne jamais committer directement sur `develop` ni `main`.
+- **Ouvrir automatiquement une Pull Request en draft vers `develop`** après le push,
   s'il n'en existe pas déjà une d'ouverte pour la branche.
 - Messages de commit clairs et descriptifs (impératif, en français).
 
