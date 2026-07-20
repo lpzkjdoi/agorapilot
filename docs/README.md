@@ -17,3 +17,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-20 | [Migration de la navbar (gauche → haut)](./changelog/2026-07-20-navbar-top-migration.md) | _(voir branche `claude/session-xfe1tv`)_ |
 | 2026-07-20 | [Tests unitaires des composants front + convention](./changelog/2026-07-20-front-unit-tests.md) | _(voir branche `claude/session-xfe1tv`)_ |
 | 2026-07-20 | [Règles de fonctionnement persistantes (CLAUDE.md)](./changelog/2026-07-20-persistent-rules-claude-md.md) | _voir PR_ |
+| 2026-07-20 | [Lien vers la maquette Figma dans CLAUDE.md](./changelog/2026-07-20-lien-maquette-figma.md) | _voir PR_ |
