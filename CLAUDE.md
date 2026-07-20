@@ -63,6 +63,16 @@ Une entrée de changelog est ajoutée **à chaque tâche de développement signi
   effectuée, lien vers le commit.
 - Mettre à jour le tableau récapitulatif dans `docs/README.md`.
 
+## Design / maquette (référence UI)
+
+Maquette Figma de référence :
+<https://www.figma.com/make/r5V5mD0doadtBEFYxHeNO9/AgoraPilot?p=f&t=VCDVoJru7FfhBeIj-0>
+
+**Quand on me demande d'implémenter un élément ou un composant d'interface, ou
+qu'on fait référence à « la maquette », je dois m'appuyer sur cette maquette
+Figma** (mise en page, espacements, couleurs, composants) pour reproduire
+fidèlement le design attendu.
+
 ## Stack technique (rappel)
 
 - **Backend** `apps/back` : Java 21, Spring Boot 4, Spring Data JPA, Spring Security,
