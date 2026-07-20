@@ -1,22 +1,23 @@
-<nav class="sidebar-nav">
-  <div class="sidebar-logo">
-    <p>AgoraPilot</p>
-  </div>
-  <div class="sidebar-nav-list">
-    <button sideBarButton
+<header class="navbar">
+  <a class="navbar-logo" routerLink="/dashboard">
+    <span class="navbar-logo-badge">AP</span>
+    <span class="navbar-logo-text">AgoraPilot</span>
+  </a>
+  <nav class="navbar-nav">
+    <button navBarButton
             name="Dashboard"
-            class="sidebar-nav-button"
+            class="navbar-nav-button"
             routerLink="/dashboard"
             routerLinkActive="active"
     >
       <svg xmlns="http://www.w3.org/2000/svg"
-           height="24px"
+           height="20px"
            viewBox="0 -960 960 960"
-           width="24px"
+           width="20px"
            fill="currentColor"
       >
         <path d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z" />
       </svg>
     </button>
-  </div>
-</nav>
+  </nav>
+</header>

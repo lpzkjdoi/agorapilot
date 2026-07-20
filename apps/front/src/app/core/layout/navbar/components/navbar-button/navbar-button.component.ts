@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
-  selector: 'button[sideBarButton]',
+  selector: 'button[navBarButton]',
   imports: [],
-  templateUrl: './sidebar-button.component.html',
+  templateUrl: './navbar-button.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SidebarButtonComponent {
+export class NavbarButtonComponent {
   name = input.required<string>()
 }
