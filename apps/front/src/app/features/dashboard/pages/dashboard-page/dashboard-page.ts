@@ -6,9 +6,6 @@ import {
 } from '@angular/core';
 import { toSignal } from "@angular/core/rxjs-interop";
 import { catchError, EMPTY, tap } from "rxjs";
-import {
-  NotificationsService,
-} from "../../../../core/notifications/notifications.service";
 import { OccurrencesService } from "../../../occurrences/occurrences.service";
 import {
   DashboardKpiComponent,
@@ -34,7 +31,6 @@ import {
 })
 export class DashboardPageComponent {
   private readonly occurrencesService = inject(OccurrencesService);
-  private readonly notificationsService = inject(NotificationsService)
 
   protected readonly loading = signal(true)
 
@@ -43,7 +39,7 @@ export class DashboardPageComponent {
                                                         tap(() => this.loading.set(false)),
                                                         catchError((err) => {
                                                           this.loading.set(false);
-                                                          this.notificationsService.send(err);
+                                                          console.error('Failed to load weekly occurrences', err);
                                                           return EMPTY;
                                                         })))
 }
