@@ -1,27 +1,76 @@
-# AgoraPilot — conventions projet
+# CLAUDE.md — Règles de fonctionnement AgoraPilot
 
-## Tests front (Angular) — obligatoire
+Ce fichier est chargé automatiquement à chaque session. Il définit les règles à
+respecter **systématiquement**, sans avoir besoin qu'on me les redemande.
 
-Chaque composant du front (`apps/front`) doit avoir un fichier de test unitaire
-`*.spec.ts` à côté de lui.
+## Workflow Git & PR
 
-**Règle à appliquer systématiquement :** dès qu'un composant est **créé** ou
-**modifié**, son `*.spec.ts` doit être **ajouté** ou **mis à jour** dans le même
-changement. Un composant sans test, ou dont le test ne reflète plus le
-comportement après modification, est considéré comme incomplet.
+- **Sauf mention explicite du contraire, toute tâche part de `develop`.**
+  Créer la branche de travail depuis `develop` à jour
+  (`git fetch origin develop && git checkout -B claude/<desc> origin/develop`).
+- **Toujours** développer sur une branche dédiée nommée `claude/<description-courte>`.
+  Ne jamais committer directement sur `develop` ni `main`.
+- **Ouvrir automatiquement une Pull Request en draft vers `develop`** après le push,
+  s'il n'en existe pas déjà une d'ouverte pour la branche.
+- Messages de commit clairs et descriptifs (impératif, en français).
+- Le modèle de branches, le cycle de contribution et le versionnage sont décrits
+  dans [`docs/gitflow.md`](./docs/gitflow.md).
 
-- Framework : Karma + Jasmine (config `apps/front/karma.conf.js`).
-- Lancer la suite : `cd apps/front && npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox`
-  (le lanceur `ChromeHeadlessNoSandbox` ajoute `--no-sandbox`, requis en CI et en conteneur ;
-  en local, exporter `CHROME_BIN` vers un binaire Chromium si Chrome n'est pas installé).
-- La CI **Front CI** (`.github/workflows/front-ci.yml`) exécute ces tests à chaque
-  push et à chaque pull request vers `main` ou `develop`. Les tests doivent être
-  verts avant de fusionner vers `develop`.
+## Tests — systématiques
 
-Points d'attention rencontrés (utiles pour écrire de nouveaux tests) :
+Toute évolution du code s'accompagne de tests. Ne jamais livrer de code non testé.
 
-- Inputs `input.required` / signaux : les définir via `fixture.componentRef.setInput(...)`
-  avant `detectChanges()`.
+### Backend (`apps/back`) — Java 21 / Spring Boot, JUnit
+
+```bash
+cd apps/back && mvn -B verify
+```
+
+C'est ce que vérifie la CI **Back CI** (`.github/workflows/ci.yml`) : les tests
+back doivent passer avant tout push.
+
+### Frontend (`apps/front`) — Angular 20, Karma/Jasmine — obligatoire
+
+Chaque composant du front doit avoir un fichier de test unitaire `*.spec.ts` à
+côté de lui. **Dès qu'un composant est créé ou modifié, son `*.spec.ts` doit être
+ajouté ou mis à jour dans le même changement.** Un composant sans test, ou dont le
+test ne reflète plus le comportement après modification, est considéré comme
+incomplet.
+
+```bash
+cd apps/front && npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+```
+
+Le lanceur `ChromeHeadlessNoSandbox` ajoute `--no-sandbox`, requis en CI et en
+conteneur ; en local, exporter `CHROME_BIN` vers un binaire Chromium si Chrome
+n'est pas installé. La CI **Front CI** (`.github/workflows/front-ci.yml`) exécute
+ces tests à chaque push et PR vers `main` ou `develop` ; ils doivent être verts
+avant de fusionner vers `develop`.
+
+Points d'attention pour écrire de nouveaux tests front :
+
+- Inputs `input.required` / signaux : les définir via
+  `fixture.componentRef.setInput(...)` avant `detectChanges()`.
 - Composants utilisant `RouterLink` / `RouterLinkActive` : fournir `provideRouter([])`.
 - `DatePipe` avec la locale `fr-FR` : enregistrer la locale dans le spec
   (`registerLocaleData(localeFr, 'fr-FR')`) sinon le rendu lève une erreur.
+
+## Documentation — systématique
+
+Une entrée de changelog est ajoutée **à chaque tâche de développement significative** :
+
+- Créer `docs/changelog/AAAA-MM-JJ-sujet.md` : contexte, changements, vérification
+  effectuée, lien vers le commit.
+- Mettre à jour le tableau récapitulatif dans `docs/README.md`.
+
+## Stack technique (rappel)
+
+- **Backend** `apps/back` : Java 21, Spring Boot 4, Spring Data JPA, Spring Security,
+  PostgreSQL (H2 en test), Lombok, springdoc-openapi. Build : Maven (`./mvnw`).
+- **Frontend** `apps/front` : Angular 20 (standalone, signals), TypeScript strict, RxJS.
+
+## Domaine métier
+
+Publications → Occurrences (diffusions planifiées) → Livraisons (par canal :
+Facebook Page via Graph API ; Intramuros à venir). Campagnes = regroupement de
+publications limité dans le temps.
