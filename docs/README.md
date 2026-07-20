@@ -15,3 +15,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-15 | [Durcissement du renouvellement du token Facebook](./changelog/2026-07-15-facebook-token-renewal-hardening.md) | [`30b31d4`](https://github.com/lpzkjdoi/agorapilot/commit/30b31d4c4850f1a1124010c04415317e3ec4d3b0) |
 | 2026-07-18 | [CI/CD : Front CI, durcissement Back CI et gitflow](./changelog/2026-07-18-cicd-pipelines-gitflow.md) | _(voir branche `develop`)_ |
 | 2026-07-20 | [Migration de la navbar (gauche → haut)](./changelog/2026-07-20-navbar-top-migration.md) | _(voir branche `claude/session-xfe1tv`)_ |
+| 2026-07-20 | [Tests unitaires des composants front + convention](./changelog/2026-07-20-front-unit-tests.md) | _(voir branche `claude/session-xfe1tv`)_ |
