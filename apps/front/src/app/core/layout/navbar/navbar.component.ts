@@ -1,20 +1,20 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from "@angular/router";
 import {
-  SidebarButtonComponent,
-} from "./components/sidebar-button/sidebar-button.component";
+  NavbarButtonComponent,
+} from "./components/navbar-button/navbar-button.component";
 
 @Component({
-  selector: 'app-sidebar',
+  selector: 'app-navbar',
   imports: [
-    SidebarButtonComponent,
+    NavbarButtonComponent,
     RouterLink,
     RouterLinkActive,
   ],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css',
+  templateUrl: './navbar.component.html',
+  styleUrl: './navbar.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SidebarComponent {
+export class NavbarComponent {
 }

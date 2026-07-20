@@ -1,9 +1,11 @@
 .layout {
-  display: grid;
-  grid-template-columns: 1fr 4fr;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .content {
+  flex: 1;
   padding: 1rem;
   gap: 0.5rem;
   background-color: var(--color-ui-bg);
