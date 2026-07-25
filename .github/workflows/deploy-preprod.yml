@@ -151,6 +151,11 @@ jobs:
       SSH_HOST: ${{ vars.PREPROD_SSH_HOST }}
       SSH_USER: ${{ vars.PREPROD_SSH_USER || 'agorapilot' }}
       REMOTE_DIR: ${{ vars.PREPROD_PATH || '/opt/agorapilot/preprod/repo' }}
+      # `BatchMode` interdit toute bascule sur le mot de passe : un problème de
+      # clé échoue immédiatement, au lieu de se déguiser en « Permission denied,
+      # please try again » suivi d'un refus sans cause apparente.
+      # `IdentitiesOnly` n'essaie que la clé de déploiement.
+      SSH_OPTS: "-o BatchMode=yes -o IdentitiesOnly=yes"
 
     steps:
       - name: Checkout
@@ -176,6 +181,25 @@ jobs:
           # répondant à cette adresse recevrait la clé de déploiement.
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+
+      # Échouer ici plutôt qu'au milieu du déploiement, avec de quoi diagnostiquer :
+      # l'empreinte affichée est celle de la clé publique correspondant au secret,
+      # à comparer avec les entrées de `authorized_keys` sur le VPS.
+      - name: Vérifier l'accès SSH
+        run: |
+          set -euo pipefail
+
+          if ! ssh-keygen -lf ~/.ssh/id_deploy; then
+            echo "::error::Le secret SSH_PRIVATE_KEY n'est pas une clé privée exploitable — en-tête/pied absents, ou clé publique collée à la place de la clé privée."
+            exit 1
+          fi
+
+          if ! ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" true; then
+            echo "::error::Connexion SSH refusée par $SSH_USER@$SSH_HOST. La clé publique correspondant à l'empreinte ci-dessus doit figurer dans ~/.ssh/authorized_keys de $SSH_USER sur le VPS."
+            exit 1
+          fi
+
+          echo "Connexion SSH établie."
 
       # Le `.env` du VPS est régénéré à chaque déploiement depuis l'environnement
       # GitHub, qui devient la source de vérité. Le format est celui de
@@ -224,15 +248,15 @@ jobs:
       - name: Sauvegarder le .env existant
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
             "mkdir -p '$REMOTE_DIR' && { [ -f '$REMOTE_DIR/.env' ] && cp '$REMOTE_DIR/.env' '$REMOTE_DIR/.env.bak' || true; }"
 
       - name: Téléverser le compose et le .env
         run: |
           set -euo pipefail
-          scp -i ~/.ssh/id_deploy docker-compose.preprod.yaml "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
-          scp -i ~/.ssh/id_deploy env.preprod "$SSH_USER@$SSH_HOST:$REMOTE_DIR/.env"
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "chmod 600 '$REMOTE_DIR/.env'"
+          scp $SSH_OPTS -i ~/.ssh/id_deploy docker-compose.preprod.yaml "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
+          scp $SSH_OPTS -i ~/.ssh/id_deploy env.preprod "$SSH_USER@$SSH_HOST:$REMOTE_DIR/.env"
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "chmod 600 '$REMOTE_DIR/.env'"
 
       # Le jeton du workflow suffit à tirer les images, et il expire à la fin du
       # run : le VPS n'a donc aucun identifiant GHCR durable à stocker. Il passe
@@ -244,13 +268,13 @@ jobs:
           GHCR_USER: ${{ github.actor }}
         run: |
           set -euo pipefail
-          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+          printf '%s' "$GHCR_TOKEN" | ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
             "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
 
       - name: Tirer les images et recréer le stack
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
             "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$REMOTE_DIR"
@@ -272,7 +296,7 @@ jobs:
       - name: Vérifier le déploiement
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
             "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$REMOTE_DIR"
@@ -315,4 +339,4 @@ jobs:
       - name: Déconnecter le VPS de GHCR
         if: always()
         run: |
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "docker logout ghcr.io" || true
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "docker logout ghcr.io" || true
