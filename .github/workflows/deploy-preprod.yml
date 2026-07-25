@@ -107,7 +107,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        # Les tags de cette action sont préfixés `v`, contrairement à la plupart
+        # des autres — une version sans le `v` échoue au démarrage du job.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
           format: table
