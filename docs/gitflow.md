@@ -59,16 +59,24 @@ Les workflows sont filtrés par chemin : une modification ne déclenche que la C
 
 > **Lint front non bloquant** pour l'instant (`continue-on-error`) : il remonte les écarts sans casser la CI. À basculer en bloquant une fois les règles arbitrées et le code aligné.
 
-## Déploiement (à venir)
+## Déploiement
 
 Cible retenue : **images Docker publiées sur GHCR**, puis déploiement par **SSH sur le VPS** (`docker compose pull && up -d`).
 
 - **Preprod** : automatique à chaque merge sur `develop`.
 - **Prod** : sur tag `vX.Y.Z` (ou merge `main`), avec un GitHub Environment `production` protégé (approbation manuelle).
 
+Le socle de la préproduction est en place : Dockerfiles de production, compose dédié
+branché sur le Traefik du VPS, et contrat de variables d'environnement. Le déploiement
+manuel est décrit dans **[`deploiement-preprod.md`](./deploiement-preprod.md)**.
+
+Reste à faire pour l'automatisation :
+- Workflow de publication des images sur GHCR (`permissions: packages: write`).
+- Workflow de déploiement preprod (push sur `develop`) puis prod (tag + approbation).
+
 Prérequis avant le premier déploiement prod :
-- Dockerfiles de production (back multi-stage Maven→JRE, front build→nginx).
 - Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.
+- Authentification applicative : la chaîne de filtres actuelle est permissive.
 
 ## Recommandations d'outillage GitHub
 
