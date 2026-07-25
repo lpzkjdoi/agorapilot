@@ -100,14 +100,23 @@ services:
       # lequel utiliser pour l'atteindre.
       - "traefik.docker.network=web"
       - "traefik.http.services.agorapilot-preprod.loadbalancer.server.port=80"
+      # Accès restreint au réseau WireGuard : toute autre IP source reçoit 403.
+      # Nom du middleware en `ipwhitelist` et non `ipallowlist` : le second
+      # n'existe qu'à partir de Traefik v2.11, le VPS tourne en v2.10.
+      # Le port 443 reste joignable publiquement, ce qui est délibéré : le
+      # challenge TLS-ALPN de Let's Encrypt est traité avant le routage, donc le
+      # renouvellement automatique du certificat continue de fonctionner.
+      - "traefik.http.middlewares.agorapilot-preprod-vpn.ipwhitelist.sourcerange=${PREPROD_ALLOWED_CIDRS:-10.8.0.0/24}"
       # HTTPS
       - "traefik.http.routers.agorapilot-preprod.rule=Host(`${PREPROD_HOST}`)"
       - "traefik.http.routers.agorapilot-preprod.entrypoints=websecure"
       - "traefik.http.routers.agorapilot-preprod.tls.certresolver=myresolver"
-      # HTTP → redirection vers HTTPS
+      - "traefik.http.routers.agorapilot-preprod.middlewares=agorapilot-preprod-vpn"
+      # HTTP → redirection vers HTTPS. Le filtre est appliqué en premier : une IP
+      # hors VPN reçoit 403 sans même apprendre qu'il existe une version HTTPS.
       - "traefik.http.routers.agorapilot-preprod-http.rule=Host(`${PREPROD_HOST}`)"
       - "traefik.http.routers.agorapilot-preprod-http.entrypoints=web"
-      - "traefik.http.routers.agorapilot-preprod-http.middlewares=agorapilot-preprod-https"
+      - "traefik.http.routers.agorapilot-preprod-http.middlewares=agorapilot-preprod-vpn,agorapilot-preprod-https"
       - "traefik.http.middlewares.agorapilot-preprod-https.redirectscheme.scheme=https"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
