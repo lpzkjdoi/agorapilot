@@ -129,6 +129,16 @@ fusion : l'appel des workflows réutilisables, et le déploiement de bout en bou
    ⚠️ `POSTGRES_PASSWORD` doit reprendre le mot de passe **déjà en place** sur le
    VPS, que PostgreSQL conserve depuis l'initialisation du volume.
 
+## Correctif après fusion
+
+Les jobs `scan` ont échoué au premier déploiement, dès la résolution de
+l'action : `aquasecurity/trivy-action@0.28.0` n'existe pas. Les tags de cette
+action sont **préfixés `v`**, contrairement à la plupart des autres — la version
+courante est `v0.36.0`. Corrigé, après vérification que les paramètres utilisés
+(`image-ref`, `format`, `output`, `severity`, `ignore-unfixed`, `exit-code`)
+existent bien dans cette version, et que les quatre autres actions de ce
+workflow — qui n'avaient encore jamais tourné — résolvent correctement.
+
 ## Commit
 
 _voir PR_
