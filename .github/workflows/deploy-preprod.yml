@@ -1,0 +1,316 @@
+# Publication des images sur GHCR puis déploiement de la préproduction.
+#
+# Déclenché à chaque poussée sur `develop` (donc à chaque fusion de PR), ce
+# workflow remplace le déploiement manuel décrit dans
+# docs/deploiement-preprod.md : plus de clone ni de build sur le VPS, dont le
+# vCPU unique et les 3,9 Go de RAM supportaient mal un build Maven + Angular.
+#
+# Le VPS ne fait plus que trois choses : recevoir le compose et le `.env`,
+# tirer les images, recréer les conteneurs.
+#
+# Configuration attendue côté GitHub — Settings → Environments → `preprod` :
+#
+#   Variables : PREPROD_HOST, PREPROD_ALLOWED_CIDRS, POSTGRES_DB, POSTGRES_USER,
+#               FACEBOOK_API_VERSION, FACEBOOK_CLIENT_ID, FACEBOOK_PAGE_ID, TZ,
+#               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
+#               PREPROD_PATH
+#   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY
+#
+# ⚠️ `POSTGRES_PASSWORD` doit reprendre **le mot de passe déjà en place** sur le
+# VPS : PostgreSQL conserve celui fixé à l'initialisation du volume, une valeur
+# différente ferait échouer la connexion du back sans rien réparer.
+
+name: Deploy preprod
+
+on:
+  push:
+    branches: [ develop ]
+    paths:
+      - 'apps/**'
+      - 'docker-compose.preprod.yaml'
+      - '.github/workflows/deploy-preprod.yml'
+  # Redéployer la tête de `develop` sans nouveau commit : VPS redémarré,
+  # variable d'environnement corrigée, image republiée…
+  workflow_dispatch:
+
+# Un seul déploiement à la fois sur le VPS, et surtout pas d'annulation en cours
+# de route : un `up -d` interrompu laisserait le stack à moitié recréé.
+concurrency:
+  group: deploy-preprod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build & push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Une image cassée sur deux ne doit pas laisser croire à un succès
+      # partiel : les deux builds vont au bout, le déploiement n'a lieu que si
+      # les deux réussissent.
+      fail-fast: false
+      matrix:
+        service: [ back, front ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Deux tags : le SHA du commit, seule référence réellement déployée
+      # (traçable et immuable), et `latest` pour dépanner à la main depuis le
+      # VPS sans avoir à retrouver un SHA.
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # Scan de vulnérabilités des images publiées. Volontairement **non bloquant**
+  # et hors du chemin du déploiement (`deploy` ne dépend que de `build`) : il
+  # informe, il n'arbitre pas. Les CVE d'une image de base ne sont pas
+  # corrigeables dans l'immédiat, et bloquer la préproduction là-dessus la
+  # rendrait inutilisable. À reconsidérer avant la mise en production.
+  scan:
+    name: Scan ${{ matrix.service }}
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ back, front ]
+
+    steps:
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          output: trivy-${{ matrix.service }}.txt
+          severity: HIGH,CRITICAL
+          # Sans correctif disponible en amont, il n'y a rien à faire du
+          # signalement : on ne garde que l'actionnable.
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Publier le rapport dans le résumé du run
+        if: always()
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          report="trivy-$SERVICE.txt"
+          {
+            echo "## Trivy — $SERVICE"
+            echo ''
+            if [ -s "$report" ]; then
+              echo '```'
+              cat "$report"
+              echo '```'
+            else
+              echo "Aucune vulnérabilité HIGH/CRITICAL corrigeable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Déploiement sur le VPS
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: preprod
+      url: https://${{ vars.PREPROD_HOST }}
+
+    env:
+      SSH_HOST: ${{ vars.PREPROD_SSH_HOST }}
+      SSH_USER: ${{ vars.PREPROD_SSH_USER || 'agorapilot' }}
+      REMOTE_DIR: ${{ vars.PREPROD_PATH || '/opt/agorapilot/preprod/repo' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Préparer la clé SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ vars.PREPROD_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_HOST" || { echo "::error::La variable PREPROD_SSH_HOST est vide."; exit 1; }
+          test -n "$KNOWN_HOSTS" || {
+            echo "::error::La variable PREPROD_SSH_KNOWN_HOSTS est vide. La récupérer avec : ssh-keyscan -H <hôte>"
+            exit 1
+          }
+
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # Empreinte du serveur épinglée plutôt que découverte à la volée
+          # (`StrictHostKeyChecking=no`) : sinon n'importe quelle machine
+          # répondant à cette adresse recevrait la clé de déploiement.
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # Le `.env` du VPS est régénéré à chaque déploiement depuis l'environnement
+      # GitHub, qui devient la source de vérité. Le format est celui de
+      # .env.preprod.example, inchangé.
+      - name: Générer le .env de préproduction
+        env:
+          PREPROD_HOST: ${{ vars.PREPROD_HOST }}
+          PREPROD_ALLOWED_CIDRS: ${{ vars.PREPROD_ALLOWED_CIDRS || '10.8.0.0/24' }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          FACEBOOK_API_VERSION: ${{ vars.FACEBOOK_API_VERSION || 'v25.0' }}
+          FACEBOOK_CLIENT_ID: ${{ vars.FACEBOOK_CLIENT_ID }}
+          FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
+          FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
+          TZ: ${{ vars.TZ || 'Europe/Paris' }}
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          for v in PREPROD_HOST POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD \
+                   FACEBOOK_CLIENT_ID FACEBOOK_CLIENT_SECRET FACEBOOK_PAGE_ID; do
+            test -n "${!v}" || { echo "::error::$v n'est pas défini dans l'environnement 'preprod'."; exit 1; }
+          done
+
+          # Écriture ligne à ligne avec printf plutôt qu'un heredoc : aucune
+          # substitution surprise si une valeur contient $, ` ou \.
+          {
+            printf 'PREPROD_HOST=%s\n'          "$PREPROD_HOST"
+            printf 'PREPROD_ALLOWED_CIDRS=%s\n' "$PREPROD_ALLOWED_CIDRS"
+            printf 'IMAGE_TAG=%s\n'             "$IMAGE_TAG"
+            printf 'BACK_IMAGE=ghcr.io/%s/agorapilot-back\n'   "$OWNER"
+            printf 'FRONT_IMAGE=ghcr.io/%s/agorapilot-front\n' "$OWNER"
+            printf 'POSTGRES_DB=%s\n'           "$POSTGRES_DB"
+            printf 'POSTGRES_USER=%s\n'         "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n'     "$POSTGRES_PASSWORD"
+            printf 'FACEBOOK_API_VERSION=%s\n'  "$FACEBOOK_API_VERSION"
+            printf 'FACEBOOK_CLIENT_ID=%s\n'    "$FACEBOOK_CLIENT_ID"
+            printf 'FACEBOOK_CLIENT_SECRET=%s\n' "$FACEBOOK_CLIENT_SECRET"
+            printf 'FACEBOOK_PAGE_ID=%s\n'      "$FACEBOOK_PAGE_ID"
+            printf 'TZ=%s\n'                    "$TZ"
+          } > env.preprod
+
+      - name: Sauvegarder le .env existant
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$REMOTE_DIR' && { [ -f '$REMOTE_DIR/.env' ] && cp '$REMOTE_DIR/.env' '$REMOTE_DIR/.env.bak' || true; }"
+
+      - name: Téléverser le compose et le .env
+        run: |
+          set -euo pipefail
+          scp -i ~/.ssh/id_deploy docker-compose.preprod.yaml "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
+          scp -i ~/.ssh/id_deploy env.preprod "$SSH_USER@$SSH_HOST:$REMOTE_DIR/.env"
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "chmod 600 '$REMOTE_DIR/.env'"
+
+      # Le jeton du workflow suffit à tirer les images, et il expire à la fin du
+      # run : le VPS n'a donc aucun identifiant GHCR durable à stocker. Il passe
+      # par l'entrée standard, jamais en argument, pour ne pas apparaître dans
+      # la table des processus du VPS.
+      - name: Connexion du VPS à GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
+
+      - name: Tirer les images et recréer le stack
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+
+          compose() { docker compose -f docker-compose.preprod.yaml "$@"; }
+
+          compose pull
+          # `--no-build` verrouille l'intention : si une image manquait, on veut
+          # un échec net, pas un build Maven + Angular improvisé sur un VPS à
+          # 1 vCPU.
+          compose up -d --no-build --remove-orphans
+          compose ps
+
+          # Images devenues orphelines après la recréation. Seulement les
+          # `dangling` : les autres stacks du VPS partagent ce démon Docker.
+          docker image prune -f
+          REMOTE
+
+      - name: Vérifier le déploiement
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+
+          # Le back démarre en une minute environ (start_period du healthcheck).
+          for i in $(seq 1 36); do
+            if curl -fsS http://127.0.0.1:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "Back UP après ${i} tentative(s)."
+              break
+            fi
+            if [ "$i" -eq 36 ]; then
+              echo "::error::Le back n'est pas UP après 3 minutes."
+              docker compose -f docker-compose.preprod.yaml logs --tail=80 back
+              exit 1
+            fi
+            sleep 5
+          done
+
+          # Vérification de bout en bout, depuis le VPS et non depuis le runner :
+          # la préproduction est filtrée sur le réseau WireGuard, une requête
+          # venue de GitHub recevrait 403. `10.8.0.1` est l'adresse du VPS sur
+          # `wg0`, donc dans la plage autorisée.
+          host=$(grep '^PREPROD_HOST=' .env | cut -d= -f2-)
+          for i in $(seq 1 12); do
+            code=$(curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}' "https://$host" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "https://$host répond 200."
+              exit 0
+            fi
+            # Un 404 juste après un `up -d` est transitoire : Traefik n'a
+            # momentanément plus de routeur pour cet hôte.
+            echo "Tentative $i : HTTP $code"
+            sleep 5
+          done
+
+          echo "::error::https://$host ne répond pas 200 (dernier code : $code)."
+          exit 1
+          REMOTE
+
+      - name: Déconnecter le VPS de GHCR
+        if: always()
+        run: |
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "docker logout ghcr.io" || true

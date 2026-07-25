@@ -1,20 +1,20 @@
 name: Back CI
 
 on:
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'apps/back/**'
-      - '.github/workflows/ci.yml'
   push:
     branches: [ main, develop ]
     paths:
       - 'apps/back/**'
       - '.github/workflows/ci.yml'
+  # Sur les pull requests, ce workflow n'est plus déclenché directement : il est
+  # appelé par « PR checks » (.github/workflows/pr-checks.yml), qui décide s'il
+  # y a lieu de vérifier le back et agrège les résultats dans un statut unique.
+  workflow_call:
 
+# `checks: write` a été retiré : aucune étape ne publie de check-run, et un
+# workflow appelé ne peut pas demander plus de droits que son appelant.
 permissions:
   contents: read
-  checks: write
 
 jobs:
   back-build-test:

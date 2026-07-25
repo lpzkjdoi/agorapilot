@@ -50,14 +50,51 @@ develop ───●───●───●───●───●────
 
 ## Intégration continue
 
-Les workflows sont filtrés par chemin : une modification ne déclenche que la CI concernée.
-
 | Workflow | Fichier | Déclencheurs | Étapes |
 |---|---|---|---|
-| Back CI | `.github/workflows/ci.yml` | PR / push sur `main`, `develop` (chemins `apps/back/**`) | `mvn verify` (build + tests + jar), upload du jar |
-| Front CI | `.github/workflows/front-ci.yml` | PR / push sur `main`, `develop` (chemins `apps/front/**`) | `npm ci`, lint (non bloquant), tests headless, build prod |
+| PR checks | `.github/workflows/pr-checks.yml` | PR vers `develop`, `main` | Détecte ce que la PR touche, appelle les CI concernées, publie le statut **`All checks green`** |
+| Back CI | `.github/workflows/ci.yml` | push sur `main`, `develop` (chemins `apps/back/**`) + appel par PR checks | `mvn verify` (build + tests + jar), upload du jar |
+| Front CI | `.github/workflows/front-ci.yml` | push sur `main`, `develop` (chemins `apps/front/**`) + appel par PR checks | `npm ci`, lint, tests Vitest, build prod |
+| Deploy preprod | `.github/workflows/deploy-preprod.yml` | push sur `develop` (chemins `apps/**`, compose preprod) + manuel | Publie les images sur GHCR, scan Trivy (non bloquant), régénère le `.env` du VPS, `pull` + `up -d`, vérifie la santé |
 
-> **Lint front non bloquant** pour l'instant (`continue-on-error`) : il remonte les écarts sans casser la CI. À basculer en bloquant une fois les règles arbitrées et le code aligné.
+Les montées de dépendances sont proposées en PR par Dependabot
+([`.github/dependabot.yml`](../.github/dependabot.yml)), chaque lundi, pour npm,
+Maven et les actions GitHub. Ces PR passent par « PR checks » comme les autres :
+une montée qui casse les tests ne peut pas être fusionnée.
+
+### Pourquoi un workflow « PR checks »
+
+Back CI et Front CI sont filtrés par chemin, pour ne pas payer une CI Java sur
+une modification de CSS. Mais un statut filtré ne s'exécute pas du tout quand le
+chemin ne correspond pas : déclaré obligatoire dans la protection de branche, il
+resterait indéfiniment « en attente » et bloquerait la PR.
+
+`pr-checks.yml` lève cette contradiction. Il est seul déclenché sur
+`pull_request`, compare la PR au point de divergence avec sa branche cible,
+n'appelle que les CI utiles, puis publie **un statut unique qui, lui, s'exécute
+toujours** : `All checks green`. Il échoue dès qu'une vérification appelée a
+échoué ou a été annulée ; un job simplement sauté (rien à vérifier de ce côté)
+est un succès.
+
+### Protection de branche
+
+`develop` et `main` sont protégées : pas de poussée directe, et fusion
+conditionnée à un seul statut obligatoire, **`All checks green`**. C'est
+volontairement le seul : ajouter demain une CI (mobile, e2e, scan de sécurité)
+suffit à la rendre bloquante sans retoucher la configuration du dépôt.
+
+Réglage côté GitHub — *Settings → Rules → Rulesets → New branch ruleset* :
+
+| Réglage | Valeur |
+|---|---|
+| Target branches | `develop`, `main` |
+| Restrict deletions | ✔ |
+| Require a pull request before merging | ✔ |
+| Require status checks to pass | ✔ → ajouter `All checks green` |
+| Require branches to be up to date before merging | ✔ |
+| Block force pushes | ✔ |
+
+> **Le lint front est bloquant** depuis le 2026-07-25, le code ayant été aligné sur les règles. La seule exception est documentée sur place, dans `navbar-button.component.ts` : ce composant s'applique en attribut sur un `<button>` natif, là où `@angular-eslint/component-selector` attend un sélecteur d'élément.
 
 ## Déploiement
 
@@ -68,11 +105,16 @@ Cible retenue : **images Docker publiées sur GHCR**, puis déploiement par **SS
 
 Le socle de la préproduction est en place : Dockerfiles de production, compose dédié
 branché sur le Traefik du VPS, et contrat de variables d'environnement. Le déploiement
-manuel est décrit dans **[`deploiement-preprod.md`](./deploiement-preprod.md)**.
+manuel reste décrit dans **[`deploiement-preprod.md`](./deploiement-preprod.md)**, qui
+documente aussi le déploiement automatique.
 
-Reste à faire pour l'automatisation :
-- Workflow de publication des images sur GHCR (`permissions: packages: write`).
-- Workflow de déploiement preprod (push sur `develop`) puis prod (tag + approbation).
+**Preprod : automatisée.** `deploy-preprod.yml` publie les deux images sur GHCR
+(taguées au SHA du commit), régénère le `.env` du VPS depuis l'environnement GitHub
+`preprod`, puis `docker compose pull && up -d --no-build`. Plus aucun build sur le
+VPS, dont le vCPU unique s'en accommodait mal.
+
+Reste à faire :
+- Workflow de déploiement prod (tag `vX.Y.Z`, Environment `production` avec approbation manuelle).
 
 Prérequis avant le premier déploiement prod :
 - Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.

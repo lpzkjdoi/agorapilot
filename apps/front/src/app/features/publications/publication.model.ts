@@ -1,4 +1,4 @@
-export type Publication = {
+export interface Publication {
   id: number,
   content: string,
   status: "DRAFT" | "VERIFIED",
@@ -6,7 +6,7 @@ export type Publication = {
 
 export type CreatePublicationRequest = Omit<Publication, 'id'>
 
-export type CreatePublicationFormValue = {
+export interface CreatePublicationFormValue {
   content: Publication['content']
   status: boolean
 }
