@@ -32,7 +32,7 @@ describe('WeeklyOccurrenceCardComponent', () => {
 
     expect(component.date()).toBe('2026-07-20');
     expect(component.numberOfPosts()).toBe(3);
-    expect(component.hasPosts()).toBeTrue();
+    expect(component.hasPosts()).toBe(true);
   });
 
   it('should report no posts for an empty value', () => {
@@ -40,7 +40,7 @@ describe('WeeklyOccurrenceCardComponent', () => {
     const component = fixture.componentInstance;
 
     expect(component.numberOfPosts()).toBe(0);
-    expect(component.hasPosts()).toBeFalse();
+    expect(component.hasPosts()).toBe(false);
   });
 
   it('should toggle the has-posts class based on the count', () => {
@@ -49,14 +49,14 @@ describe('WeeklyOccurrenceCardComponent', () => {
       (withPosts.nativeElement as HTMLElement)
         .querySelector('.occurrence-card')
         ?.classList.contains('has-posts'),
-    ).toBeTrue();
+    ).toBe(true);
 
     const withoutPosts = createWith(['2026-07-20', '']);
     expect(
       (withoutPosts.nativeElement as HTMLElement)
         .querySelector('.occurrence-card')
         ?.classList.contains('has-posts'),
-    ).toBeFalse();
+    ).toBe(false);
   });
 
   it('should pluralize the post label', () => {

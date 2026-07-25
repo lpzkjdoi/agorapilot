@@ -18,8 +18,8 @@ describe('PublicationFormComponent', () => {
     const fixture = TestBed.createComponent(PublicationFormComponent);
     const form = fixture.componentInstance.form;
 
-    expect(form.invalid).toBeTrue();
-    expect(form.controls.status.value).toBeTrue();
+    expect(form.invalid).toBe(true);
+    expect(form.controls.status.value).toBe(true);
   });
 
   it('should not emit and should mark controls as touched on an invalid submit', () => {
@@ -32,7 +32,7 @@ describe('PublicationFormComponent', () => {
     component.onSubmit();
 
     expect(emitted).toBeUndefined();
-    expect(component.form.controls.content.touched).toBeTrue();
+    expect(component.form.controls.content.touched).toBe(true);
   });
 
   it('should emit the form value and reset on a valid submit', () => {
@@ -48,7 +48,7 @@ describe('PublicationFormComponent', () => {
     expect(emitted).toEqual({ content: 'Nouvelle annonce', status: false });
     // The form is reset to its defaults after a successful submit.
     expect(component.form.controls.content.value).toBe('');
-    expect(component.form.controls.status.value).toBeTrue();
+    expect(component.form.controls.status.value).toBe(true);
   });
 
   it('should reject content longer than 2000 characters', () => {
@@ -56,6 +56,6 @@ describe('PublicationFormComponent', () => {
     const component = fixture.componentInstance;
 
     component.form.controls.content.setValue('x'.repeat(2001));
-    expect(component.form.controls.content.invalid).toBeTrue();
+    expect(component.form.controls.content.invalid).toBe(true);
   });
 });

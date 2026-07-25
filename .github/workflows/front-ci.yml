@@ -45,10 +45,10 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-      # Le lanceur ChromeHeadlessNoSandbox (défini dans karma.conf.js) ajoute
-      # --no-sandbox, requis sur les runners GitHub et en conteneur.
+      # Vitest sous jsdom : aucun navigateur à installer sur le runner. Le mode
+      # surveillance est désactivé d'office hors TTY, donc `npm test` suffit.
       - name: Unit tests
-        run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+        run: npm test
 
       - name: Production build
         run: npm run build -- --configuration production

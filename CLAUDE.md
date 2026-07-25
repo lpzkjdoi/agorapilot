@@ -29,31 +29,37 @@ cd apps/back && mvn -B verify
 C'est ce que vérifie la CI **Back CI** (`.github/workflows/ci.yml`) : les tests
 back doivent passer avant tout push.
 
-### Frontend (`apps/front`) — Angular 20, Karma/Jasmine — obligatoire
+### Frontend (`apps/front`) — Angular 20, Vitest — obligatoire
 
 Chaque composant du front doit avoir un fichier de test unitaire `*.spec.ts` à
 côté de lui. **Dès qu'un composant est créé ou modifié, son `*.spec.ts` doit être
 ajouté ou mis à jour dans le même changement.** Un composant sans test, ou dont le
 test ne reflète plus le comportement après modification, est considéré comme
-incomplet.
+incomplet. La même règle vaut pour les services.
 
 ```bash
-cd apps/front && npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+cd apps/front && npm test
 ```
 
-Le lanceur `ChromeHeadlessNoSandbox` ajoute `--no-sandbox`, requis en CI et en
-conteneur ; en local, exporter `CHROME_BIN` vers un binaire Chromium si Chrome
-n'est pas installé. La CI **Front CI** (`.github/workflows/front-ci.yml`) exécute
-ces tests à chaque push et PR vers `main` ou `develop` ; ils doivent être verts
-avant de fusionner vers `develop`.
+Les tests tournent sous **Vitest**, via le builder `@angular/build:unit-test`, dans
+un environnement **jsdom** : aucun navigateur ni `CHROME_BIN` n'est requis, ni en
+local ni en CI. `npm run test:watch` pour le mode surveillance,
+`npm run test:coverage` pour la couverture. La CI **Front CI**
+(`.github/workflows/front-ci.yml`) exécute ces tests à chaque push et PR vers
+`main` ou `develop` ; ils doivent être verts avant de fusionner vers `develop`.
 
 Points d'attention pour écrire de nouveaux tests front :
 
+- Les globales (`describe`, `it`, `expect`, `vi`) sont fournies par le builder,
+  sans import. Utiliser `vi.fn()` / `vi.spyOn()` — les API `jasmine.*` et les
+  matchers `toBeTrue()` / `toBeFalse()` n'existent pas ; écrire `toBe(true)`.
 - Inputs `input.required` / signaux : les définir via
   `fixture.componentRef.setInput(...)` avant `detectChanges()`.
 - Composants utilisant `RouterLink` / `RouterLinkActive` : fournir `provideRouter([])`.
 - `DatePipe` avec la locale `fr-FR` : enregistrer la locale dans le spec
   (`registerLocaleData(localeFr, 'fr-FR')`) sinon le rendu lève une erreur.
+- Services HTTP : `provideHttpClient()` + `provideHttpClientTesting()`, puis
+  `HttpTestingController` ; terminer par `httpTesting.verify()`.
 
 ## Documentation — systématique
 

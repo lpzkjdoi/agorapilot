@@ -30,7 +30,18 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Les tests unitaires tournent sous [Vitest](https://vitest.dev), via le builder
+`@angular/build:unit-test` et un environnement jsdom : aucun navigateur n'est
+nécessaire.
+
+| Commande | Effet |
+|---|---|
+| `npm test` | exécute la suite une fois (mode surveillance désactivé hors TTY) |
+| `npm run test:watch` | relance les tests concernés à chaque modification |
+| `npm run test:coverage` | ajoute un rapport de couverture (provider v8) |
+
+Les globales `describe` / `it` / `expect` / `vi` sont injectées par le builder :
+aucun import n'est nécessaire dans les specs.
 
 ## Running end-to-end tests
 
