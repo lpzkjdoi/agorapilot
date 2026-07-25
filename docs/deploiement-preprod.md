@@ -168,6 +168,36 @@ Une fois les images publiées sur GHCR, `IMAGE_TAG` renseigné dans le `.env` :
 docker compose -f docker-compose.preprod.yaml pull && docker compose -f docker-compose.preprod.yaml up -d
 ```
 
+## Développer le front en local contre le back de préproduction
+
+Pour itérer sur l'interface sans faire tourner le stack Docker de développement,
+`ng serve` peut proxifier `/api` vers la préproduction :
+
+```bash
+cd apps/front && npm run start:preprod
+```
+
+Le script s'appuie sur [`proxy.conf.preprod.json`](../apps/front/proxy.conf.preprod.json),
+qui remplace la cible `http://localhost:8080` de
+[`proxy.conf.json`](../apps/front/proxy.conf.json) par `https://$PREPROD_HOST`.
+`npm start` reste inchangé et continue de viser le back local.
+
+Trois points à connaître :
+
+- **Le VPN est obligatoire.** Le middleware `agorapilot-preprod-vpn` filtre sur
+  l'IP source ; hors tunnel WireGuard, tous les appels du proxy reçoivent 403
+  (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)).
+- **Aucun CORS n'entre en jeu.** Le proxy de `ng serve` est côté Node : le
+  navigateur ne voit que `localhost:4200`. Le `FRONTEND_URL` du back et sa
+  `CorsConfigurationSource` ne sont pas sollicités. `changeOrigin: true` est en
+  revanche indispensable — sans lui l'en-tête `Host` reste `localhost` et la
+  règle `Host(...)` de Traefik ne route pas la requête.
+- **Les données sont celles de la préproduction**, y compris la page Facebook
+  réelle désignée par `FACEBOOK_PAGE_ID` : une publication déclenchée depuis le
+  front local part pour de bon. Ce mode convient à la mise au point d'interface ;
+  dès qu'il s'agit d'écrire, ou de modifier le back, utiliser
+  [`docker-compose.yaml`](../docker-compose.yaml).
+
 ## Endpoints d'administration Facebook
 
 `FacebookAdminController` expose `POST /admin/facebook/bootstrap` et
