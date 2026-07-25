@@ -37,12 +37,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Lint volontairement non bloquant pour ce premier jet : il remonte les
-      # écarts sans casser la CI. À basculer en bloquant une fois les règles
-      # arbitrées et le code aligné (cf. `npm run lint`).
-      - name: Lint (non blocking)
+      # Bloquant depuis que le code est aligné sur les règles (2026-07-25).
+      # La seule exception au lint est documentée sur place, dans
+      # navbar-button.component.ts.
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       # Vitest sous jsdom : aucun navigateur à installer sur le runner. Le mode
       # surveillance est désactivé d'office hors TTY, donc `npm test` suffit.

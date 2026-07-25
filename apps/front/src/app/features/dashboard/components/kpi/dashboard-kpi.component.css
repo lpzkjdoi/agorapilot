@@ -17,6 +17,16 @@
   gap: 0.5rem;
 }
 
+/* Reprend ce que la règle globale sur `label` appliquait avant le passage à
+   `span` : ce texte n'étiquette aucun champ de formulaire. */
+.kpi-title {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--color-ui-text-secondary);
+}
+
 .kpi-icon-badge {
   padding: 0.75rem;
   border-radius: var(--radius-lg);
@@ -27,5 +37,6 @@
   font-size: 1.5rem;
   line-height: 2rem;
   font-weight: 600;
+  letter-spacing: 0.2px;
   color: #000000;
 }

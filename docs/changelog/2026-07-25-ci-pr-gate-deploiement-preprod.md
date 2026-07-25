@@ -70,16 +70,52 @@ lançable à la main.
      l'entrée standard puis révoqué par un `docker logout` : aucun identifiant
      durable n'est stocké sur la machine, et les images peuvent rester privées.
 
+### Lint front bloquant
+
+`front-ci.yml` perd son `continue-on-error` sur l'étape de lint. Les six erreurs
+que le lint remontait jusqu'ici ont été corrigées :
+
+| Fichier | Règle | Correction |
+|---|---|---|
+| `publication.model.ts`, `occurrence.model.ts` | `@typescript-eslint/consistent-type-definitions` | Trois alias d'objet passés en `interface`. Les alias qui n'en sont pas (`Omit<…>`, `Map<…>`) restent des `type` |
+| `dashboard-kpi.component.html` | `@angular-eslint/template/label-has-associated-control` | Les deux `<label>` deviennent des `<span>` : ils n'étiquetaient aucun champ. La mise en forme que la règle globale sur `label` leur donnait est reprise dans `.kpi-title` (et `letter-spacing` ajouté à `.kpi-value`), pour un rendu identique |
+| `navbar-button.component.ts` | `@angular-eslint/component-selector` | Sélecteur renommé `button[navBarButton]` → `button[appNavbarButton]`, plus un `eslint-disable-next-line` commenté : la règle exige un sélecteur d'élément, or ce composant habille un `<button>` natif — en faire un élément imposerait un bouton imbriqué, au prix de la sémantique et du focus |
+
+### Dependabot
+
+`.github/dependabot.yml` : npm (`apps/front`), Maven (`apps/back`) et
+`github-actions`, chaque lundi. Correctifs et versions mineures regroupés par
+écosystème pour limiter le bruit ; les majeures arrivent isolées. Le cas le plus
+utile est `github-actions` : les actions sont épinglées sur des tags mutables
+(`@v4`, `@v6`), donc ni les correctifs de sécurité ni les dépréciations de
+runner ne remontent autrement.
+
+### Scan Trivy des images
+
+Un job `scan` dans `deploy-preprod.yml`, en matrice back/front, sur les images
+qui viennent d'être publiées : `HIGH,CRITICAL`, `ignore-unfixed`, rapport publié
+dans le résumé du run.
+
+Il est **non bloquant et hors du chemin du déploiement** (`deploy` ne dépend que
+de `build`) : une CVE d'image de base n'est pas corrigeable dans l'immédiat, et
+bloquer la préproduction là-dessus la rendrait inutilisable. À reconsidérer
+avant la mise en production.
+
 ## Vérification
 
 Ces workflows ne s'exécutent réellement qu'une fois sur GitHub ; ce qui a pu
 être vérifié localement l'a été :
 
-- Syntaxe YAML des quatre workflows validée (`js-yaml`) — 4/4 OK.
-- Les 15 scripts `run:` extraits et passés à `bash -n` — 0 erreur.
+- Syntaxe YAML des quatre workflows et de `dependabot.yml` validée (`js-yaml`)
+  — 5/5 OK.
+- Les 16 scripts `run:` extraits et passés à `bash -n` — 0 erreur.
 - Logique de détection des changements rejouée sur huit diffs représentatifs
   (front seul, back seul, docs seules, mixte, chaque workflow, diff vide) :
   résultats conformes dans les huit cas.
+- `cd apps/front && npm run lint` → « All files pass linting ».
+- `cd apps/front && npm test` → 13 fichiers, 52 tests verts.
+- Rendu des cartes KPI comparé avant/après le passage de `<label>` à `<span>`
+  sur `http://localhost:4200/dashboard` : identique.
 
 Restent à valider en conditions réelles, à la première PR et à la première
 fusion : l'appel des workflows réutilisables, et le déploiement de bout en bout.

@@ -54,8 +54,13 @@ develop ───●───●───●───●───●────
 |---|---|---|---|
 | PR checks | `.github/workflows/pr-checks.yml` | PR vers `develop`, `main` | Détecte ce que la PR touche, appelle les CI concernées, publie le statut **`All checks green`** |
 | Back CI | `.github/workflows/ci.yml` | push sur `main`, `develop` (chemins `apps/back/**`) + appel par PR checks | `mvn verify` (build + tests + jar), upload du jar |
-| Front CI | `.github/workflows/front-ci.yml` | push sur `main`, `develop` (chemins `apps/front/**`) + appel par PR checks | `npm ci`, lint (non bloquant), tests Vitest, build prod |
-| Deploy preprod | `.github/workflows/deploy-preprod.yml` | push sur `develop` (chemins `apps/**`, compose preprod) + manuel | Publie les images sur GHCR, régénère le `.env` du VPS, `pull` + `up -d`, vérifie la santé |
+| Front CI | `.github/workflows/front-ci.yml` | push sur `main`, `develop` (chemins `apps/front/**`) + appel par PR checks | `npm ci`, lint, tests Vitest, build prod |
+| Deploy preprod | `.github/workflows/deploy-preprod.yml` | push sur `develop` (chemins `apps/**`, compose preprod) + manuel | Publie les images sur GHCR, scan Trivy (non bloquant), régénère le `.env` du VPS, `pull` + `up -d`, vérifie la santé |
+
+Les montées de dépendances sont proposées en PR par Dependabot
+([`.github/dependabot.yml`](../.github/dependabot.yml)), chaque lundi, pour npm,
+Maven et les actions GitHub. Ces PR passent par « PR checks » comme les autres :
+une montée qui casse les tests ne peut pas être fusionnée.
 
 ### Pourquoi un workflow « PR checks »
 
@@ -89,7 +94,7 @@ Réglage côté GitHub — *Settings → Rules → Rulesets → New branch rules
 | Require branches to be up to date before merging | ✔ |
 | Block force pushes | ✔ |
 
-> **Lint front non bloquant** pour l'instant (`continue-on-error`) : il remonte les écarts sans casser la CI. À basculer en bloquant une fois les règles arbitrées et le code aligné.
+> **Le lint front est bloquant** depuis le 2026-07-25, le code ayant été aligné sur les règles. La seule exception est documentée sur place, dans `navbar-button.component.ts` : ce composant s'applique en attribut sur un `<button>` natif, là où `@angular-eslint/component-selector` attend un sélecteur d'élément.
 
 ## Déploiement
 

@@ -83,6 +83,60 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
+  # Scan de vulnérabilités des images publiées. Volontairement **non bloquant**
+  # et hors du chemin du déploiement (`deploy` ne dépend que de `build`) : il
+  # informe, il n'arbitre pas. Les CVE d'une image de base ne sont pas
+  # corrigeables dans l'immédiat, et bloquer la préproduction là-dessus la
+  # rendrait inutilisable. À reconsidérer avant la mise en production.
+  scan:
+    name: Scan ${{ matrix.service }}
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ back, front ]
+
+    steps:
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          output: trivy-${{ matrix.service }}.txt
+          severity: HIGH,CRITICAL
+          # Sans correctif disponible en amont, il n'y a rien à faire du
+          # signalement : on ne garde que l'actionnable.
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Publier le rapport dans le résumé du run
+        if: always()
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          report="trivy-$SERVICE.txt"
+          {
+            echo "## Trivy — $SERVICE"
+            echo ''
+            if [ -s "$report" ]; then
+              echo '```'
+              cat "$report"
+              echo '```'
+            else
+              echo "Aucune vulnérabilité HIGH/CRITICAL corrigeable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Déploiement sur le VPS
     needs: build

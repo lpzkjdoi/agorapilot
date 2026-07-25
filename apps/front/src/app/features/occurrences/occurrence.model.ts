@@ -6,7 +6,7 @@ interface Delivery {
   status: "PENDING" | "PUBLISHED" | "FAILED"
 }
 
-export type Occurrence = {
+export interface Occurrence {
   id: number,
   scheduledAt: string,
   status: "SCHEDULED" | "PUBLISHED"

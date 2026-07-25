@@ -28,7 +28,7 @@ describe('DashboardKpiComponent', () => {
     const fixture = createWith('Campagnes actives', 4);
     const compiled = fixture.nativeElement as HTMLElement;
 
-    expect(compiled.querySelector('.kpi-card-header label')?.textContent?.trim()).toBe(
+    expect(compiled.querySelector('.kpi-card-header .kpi-title')?.textContent?.trim()).toBe(
       'Campagnes actives',
     );
     expect(compiled.querySelector('.kpi-value')?.textContent?.trim()).toBe('4');
