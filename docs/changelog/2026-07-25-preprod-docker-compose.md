@@ -110,17 +110,36 @@ le bootstrap du token, dette connue. `docs/gitflow.md` y renvoie et sa section
   variables interpolées contre `.env.preprod.example` → les 13 variables se correspondent
   exactement, sans manquante ni superflue.
 
-### Non vérifié localement
+### Non vérifié sur le poste de développement
 
-Ni Docker ni Chrome ne sont installés sur le poste de développement utilisé :
+Ni Docker ni Chrome n'y sont installés :
 
 - `docker compose config`, la construction des images et le démarrage bout en bout n'ont pas
-  pu être exécutés. Premier lancement à faire sur le VPS en suivant le runbook.
+  pu être exécutés localement. **Vérifiés depuis sur le VPS** — voir ci-dessous.
 - Les tests unitaires front (Karma) n'ont pas pu tourner (`CHROME_BIN` absent). Ils sont
   exécutés par le workflow **Front CI** à chaque push. Aucun spec ne référence
   `environment.apiUrl` et le build de production passe.
-- `nginx -t` n'a pas pu valider `docker/nginx.conf` ; la syntaxe sera vérifiée au premier
-  build de l'image.
+
+### Vérifié sur le VPS le 2026-07-25
+
+Déploiement manuel effectué et validé sur <https://preprod.chariotte-manager.fr> :
+
+- Les deux images se construisent sur le VPS (1 vCPU, 3.9 Go) sans incident mémoire, et
+  `docker compose up -d --build` réussit du premier coup.
+- La chaîne de healthchecks se comporte comme prévu : `db` healthy → `back` démarre →
+  `back` healthy → `front` démarre. La dépendance qui évite l'échec de nginx à la résolution
+  du nom `back` est donc effective.
+- `The following 1 profile is active: "preprod"`, et `/api/publications`, `/api/campaigns`,
+  `/api/occurrences/weekly` répondent **200** — la correction de `SecurityConfig` tient en
+  conditions réelles.
+- Certificat Let's Encrypt obtenu au premier essai, redirection HTTP → HTTPS en 302.
+- Proxy `/api` fonctionnel de bout en bout à travers Traefik puis nginx ; fallback SPA
+  opérationnel ; `/admin/facebook/token/status` renvoie bien `text/html` (la SPA) depuis
+  Internet, jamais l'API.
+- `nginx -t` n'a pas été lancé explicitement, mais la conf est validée de fait : nginx
+  démarre et sert correctement les trois cas (statique, proxy, fallback).
+- Les logs sont horodatés `+02:00` : le `tzdata` de l'image back produit l'effet attendu.
+- Base : cinq tables créées par `ddl-auto`, aucun port publié, volume persistant en place.
 
 ## Suite
 
