@@ -34,4 +34,16 @@ describe('NavbarButtonComponent', () => {
     const label = (fixture.nativeElement as HTMLElement).querySelector('p');
     expect(label?.textContent?.trim()).toBe('Campagnes');
   });
+
+  it('should let the label inherit the button colour and weight of the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarButtonComponent);
+    fixture.componentRef.setInput('name', 'Dashboard');
+    fixture.detectChanges();
+
+    const label = (fixture.nativeElement as HTMLElement).querySelector('p') as HTMLElement;
+    const styles = getComputedStyle(label);
+
+    expect(styles.fontWeight).toBe('500');
+    expect(styles.color).toBe('inherit');
+  });
 });
