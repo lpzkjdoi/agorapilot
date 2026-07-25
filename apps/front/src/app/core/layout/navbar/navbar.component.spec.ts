@@ -36,4 +36,21 @@ describe('NavbarComponent', () => {
     // The Dashboard entry is wired to the router (routerLink="/dashboard").
     expect(button?.getAttribute('routerlink')).toBe('/dashboard');
   });
+
+  it('should paint the header with the dark blue bar of the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('.navbar') as HTMLElement;
+
+    expect(getComputedStyle(header).backgroundColor).toBe('rgb(30, 58, 138)');
+  });
+
+  it('should render the navigation icon at the 16px size of the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const icon = (fixture.nativeElement as HTMLElement).querySelector('.navbar-nav-button svg');
+
+    expect(icon?.getAttribute('width')).toBe('16px');
+    expect(icon?.getAttribute('height')).toBe('16px');
+  });
 });

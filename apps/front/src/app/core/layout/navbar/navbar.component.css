@@ -4,12 +4,11 @@
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   height: 4rem;
   padding: 0 1.5rem;
-  background-color: var(--color-ui-card);
-  border-bottom: 1px solid var(--color-ui-border);
-  box-shadow: var(--shadow-card);
+  background-color: #1E3A8A;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-logo {
@@ -17,6 +16,7 @@
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+  margin-right: 0.5rem;
   text-decoration: none;
 }
 
@@ -26,20 +26,21 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
-  background-image: var(--background-image-brand-gradient);
+  background-color: rgba(255, 255, 255, 0.15);
   color: #FFFFFF;
   font-size: 12px;
+  line-height: 16px;
   font-weight: 700;
 }
 
 .navbar-logo-text {
   font-size: 18px;
+  line-height: 28px;
   font-weight: 700;
-  background-image: var(--background-image-brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  letter-spacing: -0.025em;
+  color: #FFFFFF;
 }
 
 .navbar-nav {
@@ -53,18 +54,42 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  color: var(--color-ui-text-secondary);
-  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background-color: rgba(255, 255, 255, 0);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.navbar-nav-button.active {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+/* Icône projetée depuis ce template : teinte propre à l'entrée de navigation,
+   qui bascule au blanc au survol et sur l'entrée active (cf. maquette). */
+.navbar-nav-button svg {
+  width: 1rem;
+  height: 1rem;
+  color: #93C5FD;
+  transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navbar-nav-button:hover {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.navbar-nav-button:hover svg {
+  color: #FFFFFF;
+}
+
+.navbar-nav-button.active {
+  border-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.navbar-nav-button.active svg {
+  color: #FFFFFF;
 }

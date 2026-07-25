@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'button[navBarButton]',
   imports: [],
   templateUrl: './navbar-button.component.html',
+  styleUrl: './navbar-button.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
