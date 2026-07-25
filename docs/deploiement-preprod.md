@@ -10,7 +10,7 @@ Trois conteneurs, décrits par [`docker-compose.preprod.yaml`](../docker-compose
 
 | Service | Rôle | Exposition |
 |---|---|---|
-| `front` | nginx : sert la SPA Angular **et** proxifie `/api` vers le back | Réseau `web` → Traefik → `https://$PREPROD_HOST` |
+| `front` | nginx : sert la SPA Angular **et** proxifie `/api` vers le back | Réseau `web` → Traefik → `https://$PREPROD_HOST`, **restreint au VPN** |
 | `back` | Spring Boot, profil `preprod` | Réseau interne + `127.0.0.1:8080` sur le VPS |
 | `db` | PostgreSQL 16, volume `db-data` | Réseau interne uniquement |
 
@@ -21,6 +21,64 @@ Deux conséquences de ce montage :
   prod sans reconstruction.
 - **Un seul point d'entrée public.** Seul `front` est attaché au réseau Traefik.
   La base n'est joignable par personne d'autre que le back.
+
+## Accès restreint au VPN
+
+La préproduction n'est joignable que depuis le réseau WireGuard du VPS
+(`wg0`, `10.8.0.0/24`). Toute autre IP source reçoit **403**.
+
+C'est un middleware Traefik `ipwhitelist` porté par le conteneur `front`, dont la
+plage vient de `PREPROD_ALLOWED_CIDRS`. Trois points à retenir :
+
+- **Le nom du middleware est `ipwhitelist`, pas `ipallowlist`.** Le second
+  n'existe qu'à partir de Traefik v2.11 ; le VPS tourne en v2.10, et
+  `ipwhitelist` y a été vérifié fonctionnel. À reprendre si Traefik est mis à
+  niveau, le renommage étant l'inverse (`ipwhitelist` disparaît en v3).
+- **Le port 443 reste joignable publiquement**, et c'est délibéré : le challenge
+  TLS-ALPN de Let's Encrypt est traité pendant la poignée de main TLS, avant tout
+  routage HTTP, donc le filtre ne devrait pas le bloquer. Un observateur externe
+  peut en déduire que le domaine existe, mais n'obtient aucun contenu.
+  ⚠️ **Point non encore vérifié en pratique** : le certificat courant a été émis
+  *avant* la mise en place du filtre et n'expire que le 23 octobre 2026, donc le
+  premier renouvellement sous filtre aura lieu vers fin septembre. Ce qui est
+  vérifié, c'est que la poignée de main TLS aboutit toujours pour un client
+  externe (le certificat est bien servi avant le 403), ce qui est la couche sur
+  laquelle opère le challenge. Si le renouvellement échouait malgré tout, la
+  solution est de basculer le resolver sur un challenge **DNS-01**, qui ne
+  requiert aucune joignabilité publique.
+- **Les clients doivent être en tunnel complet** (`AllowedIPs = 0.0.0.0/0`).
+  En tunnel partagé, le trafic vers l'IP publique du VPS sortirait hors du tunnel
+  et serait rejeté. Attention : ajouter simplement l'IP publique du VPS aux
+  `AllowedIPs` d'un tunnel partagé crée une boucle de routage, le handshake
+  WireGuard partant lui-même dans le tunnel.
+
+Le domaine n'a **pas d'enregistrement AAAA**, ce qui est important : un tunnel
+déclaré en `0.0.0.0/0` ne capte pas l'IPv6. Si un AAAA est ajouté un jour, il
+faudra soit passer les clients en `0.0.0.0/0, ::/0`, soit ajouter la plage IPv6
+correspondante à `PREPROD_ALLOWED_CIDRS`, sans quoi les clients sur réseau IPv6
+seraient rejetés.
+
+### Vérifier le filtrage
+
+Hors VPN, depuis n'importe quelle machine :
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+```
+
+Attendu : **403**. Connecté au VPN, la même commande doit renvoyer **200**.
+
+Le filtrage peut aussi être testé depuis le VPS lui-même, sans client VPN, en
+choisissant l'interface source — `10.8.0.1` étant dans la plage autorisée :
+
+```bash
+curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+```
+
+**Un 404 juste après un déploiement est normal et transitoire** : pendant la
+recréation du conteneur `front`, Traefik n'a momentanément plus de routeur pour
+cet hôte et répond 404. Attendre quelques secondes et refaire le test — un 404
+persistant, lui, signale un problème de découverte (labels, réseau `web`).
 
 ## Prérequis
 
