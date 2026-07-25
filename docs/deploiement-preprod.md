@@ -56,7 +56,7 @@ variable. Les points à ne pas manquer :
 - `PREPROD_HOST` : le sous-domaine, **sans** `https://`.
 - `POSTGRES_PASSWORD` : à générer (`openssl rand -base64 32`). Aucune valeur par
   défaut : le déploiement échoue si elle est vide.
-- Les quatre variables `FACEBOOK_*` : sans elles, `docker compose up` s'arrête
+- Les trois variables `FACEBOOK_*` : sans elles, `docker compose up` s'arrête
   avec un message nommant la variable manquante.
 
 Puis démarrer :
@@ -124,11 +124,40 @@ page depuis un poste de travail, ouvrir un tunnel SSH :
 ssh -L 8080:127.0.0.1:8080 utilisateur@vps
 ```
 
-puis, dans un autre terminal :
+Il faut ensuite un **token utilisateur de courte durée**, généré depuis le
+[Graph API Explorer](https://developers.facebook.com/tools/explorer/). Deux
+précautions, faute de quoi le bootstrap échoue :
+
+1. **Sélectionner la bonne app** dans le menu « Meta App » en haut à droite,
+   celle dont l'identifiant est dans `FACEBOOK_CLIENT_ID`. L'explorateur émet
+   sinon un token rattaché à une autre app, et l'échange est refusé avec
+   `The access token does not belong to application <id>`.
+2. Demander les permissions `pages_show_list`, `pages_read_engagement` et
+   `pages_manage_posts`.
+
+En cas de doute sur l'app à laquelle un token appartient, le
+[débogueur de token](https://developers.facebook.com/tools/debug/accesstoken/)
+affiche son App ID.
+
+Le token se passe ensuite **en paramètre de requête** — il est obligatoire :
 
 ```bash
-curl -X POST http://127.0.0.1:8080/admin/facebook/bootstrap
+curl -X POST "http://127.0.0.1:8080/admin/facebook/bootstrap?shortLivedToken=LE_TOKEN"
 ```
+
+Réponse attendue : `Token successfully initialized`. Le service échange ce token
+contre un token utilisateur longue durée, en dérive le token de page, et stocke
+les deux en base (table `facebook_tokens`). Vérifier ensuite :
+
+```bash
+curl -s http://127.0.0.1:8080/admin/facebook/token/status
+```
+
+Un `expiresAt` à dix ans (`daysRemaining` ≈ 3650) est normal : Facebook a renvoyé
+un token permanent (`expires_at: 0`), que le code convertit en `now + 10 ans`.
+
+En cas d'échec, l'erreur de Facebook est renvoyée telle quelle dans la réponse
+HTTP (message et code), sans avoir à consulter les logs du conteneur.
 
 Le renouvellement ultérieur est automatique (`FacebookTokenScheduler`, cron
 `0 0 3 * * *`). C'est la raison de la variable `TZ` : sans elle, le conteneur
@@ -142,7 +171,7 @@ deviendra la source de vérité, via un Environment `preprod` :
 | Type GitHub | Variables |
 |---|---|
 | **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_PAGE_ID`, `FACEBOOK_API_VERSION`, `TZ` |
-| **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `SSH_PRIVATE_KEY` |
+| **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
 
 Le workflow de déploiement, déclenché à chaque merge sur `develop`, régénérera le
 `.env` sur le VPS depuis ces valeurs avec `IMAGE_TAG` = SHA du commit, puis
@@ -159,3 +188,11 @@ GHCR (avec `permissions: packages: write`) et celui de déploiement.
   donc pas contenir de données réelles sensibles.
 - **Swagger UI est public** sur la préproduction (`/swagger-ui/`), choix assumé
   pour un environnement de test.
+- **La validité réelle du token Facebook n'est jamais vérifiée.**
+  `FacebookTokenService.renewIfNeeded()` ne se déclenche que si la date
+  d'expiration *stockée* arrive à moins de 15 jours. Avec un token permanent
+  (enregistré à dix ans), le job nocturne ne fait donc jamais rien — ce qui est
+  correct tant que le token reste valide. Mais si Facebook l'invalide
+  prématurément (mot de passe changé, permission révoquée, revue d'app), rien ne
+  le détecte : on ne l'apprend qu'au premier échec de publication. Un appel
+  périodique à `debug_token` pour contrôler `is_valid` comblerait ce trou.

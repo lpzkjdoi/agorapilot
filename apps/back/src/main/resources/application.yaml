@@ -41,7 +41,8 @@ facebook:
   client-secret: ${FACEBOOK_CLIENT_SECRET:}
   client-id: ${FACEBOOK_CLIENT_ID:}
   page-id: ${FACEBOOK_PAGE_ID:}
-  access-token: ${FACEBOOK_PAGE_ACCESS_TOKEN:}
+  # Pas de access-token : le token de page vit en base (table facebook_tokens),
+  # alimenté par POST /admin/facebook/bootstrap.
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:4200}

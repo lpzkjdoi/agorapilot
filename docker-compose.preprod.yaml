@@ -61,7 +61,9 @@ services:
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
       FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
-      FACEBOOK_PAGE_ACCESS_TOKEN: ${FACEBOOK_PAGE_ACCESS_TOKEN:?FACEBOOK_PAGE_ACCESS_TOKEN est requis}
+      # Pas de token de page ici : il est obtenu par POST /admin/facebook/bootstrap
+      # et stocké en base (table facebook_tokens), puis renouvelé par
+      # FacebookTokenScheduler. Voir docs/deploiement-preprod.md.
       # FacebookTokenScheduler tourne en cron "0 0 3 * * *" sans zone explicite.
       TZ: ${TZ:-Europe/Paris}
     # Publié sur la boucle locale uniquement : permet d'atteindre les endpoints
