@@ -23,9 +23,19 @@ public class SecurityConfig {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    /**
+     * Chaîne de filtres permissive : aucune authentification n'est encore
+     * implémentée (cf. roadmap du README).
+     * <p>
+     * Elle doit couvrir tous les profils réellement déployés. Sans elle, Spring
+     * Security applique sa configuration par défaut — HTTP Basic sur l'ensemble
+     * des endpoints avec un mot de passe généré au démarrage — et le
+     * {@link #corsConfigurationSource()} n'est plus câblé, ce qui rend l'API
+     * inutilisable depuis le front.
+     */
     @Bean
-    @Profile("dev")
-    SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
+    @Profile({"dev", "preprod"})
+    SecurityFilterChain permissiveSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

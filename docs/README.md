@@ -5,6 +5,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 ## Structure
 
 - [`gitflow.md`](./gitflow.md) — modèle de branches, cycle de contribution, versionnage et conventions CI/CD. Référence mise à jour quand le processus évolue.
+- [`deploiement-preprod.md`](./deploiement-preprod.md) — runbook de la préproduction sur VPS : prérequis, variables d'environnement, commandes de déploiement et vérifications.
 - [`changelog/`](./changelog) — un compte-rendu par tâche/évolution significative : contexte, changements, vérification effectuée, lien vers le commit correspondant. Une nouvelle entrée est ajoutée à chaque tâche de développement.
 
 ## Changelog
@@ -18,3 +19,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-20 | [Tests unitaires des composants front + convention](./changelog/2026-07-20-front-unit-tests.md) | _(voir branche `claude/session-xfe1tv`)_ |
 | 2026-07-20 | [Règles de fonctionnement persistantes (CLAUDE.md)](./changelog/2026-07-20-persistent-rules-claude-md.md) | _voir PR_ |
 | 2026-07-20 | [Lien vers la maquette Figma dans CLAUDE.md](./changelog/2026-07-20-lien-maquette-figma.md) | _voir PR_ |
+| 2026-07-25 | [Socle de préproduction : Dockerfiles, compose dédié et variables d'environnement](./changelog/2026-07-25-preprod-docker-compose.md) | _voir PR_ |

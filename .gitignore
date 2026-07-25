@@ -29,7 +29,12 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Variables d'environnement : jamais versionnées, sauf les fichiers d'exemple
+# qui servent de contrat (ex. .env.preprod.example).
 .env
+.env.*
+!.env.*.example
+
 # OS
 .DS_Store
 Thumbs.db
