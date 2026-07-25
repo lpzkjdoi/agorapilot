@@ -23,3 +23,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-25 | [Corrections issues de la première mise en service de la préproduction](./changelog/2026-07-25-corrections-post-mise-en-service.md) | [`4d7d4ec`](https://github.com/lpzkjdoi/agorapilot/commit/4d7d4ec) |
 | 2026-07-25 | [Accès à la préproduction restreint au réseau WireGuard](./changelog/2026-07-25-preprod-acces-vpn.md) | _voir PR_ |
 | 2026-07-25 | [Développer le front en local contre le back de préproduction](./changelog/2026-07-25-front-local-vers-back-preprod.md) | _voir PR_ |
+| 2026-07-25 | [Migration des tests front de Karma/Jasmine vers Vitest](./changelog/2026-07-25-migration-vitest.md) | _voir PR_ |

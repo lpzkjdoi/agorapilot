@@ -55,9 +55,7 @@ describe('DashboardPageComponent', () => {
     const fixture = TestBed.createComponent(DashboardPageComponent);
     fixture.detectChanges();
 
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar'),
-    ).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar')).toBeNull();
   });
 
   it('should render the weekly calendar once occurrences are available', () => {
@@ -71,14 +69,12 @@ describe('DashboardPageComponent', () => {
   });
 
   it('should log and swallow a loading error without throwing', () => {
-    const consoleSpy = spyOn(console, 'error');
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     response$ = new Observable((subscriber) => subscriber.error(new Error('boom')));
 
     const fixture = TestBed.createComponent(DashboardPageComponent);
     expect(() => fixture.detectChanges()).not.toThrow();
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to load weekly occurrences', jasmine.any(Error));
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar'),
-    ).toBeNull();
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to load weekly occurrences', expect.any(Error));
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar')).toBeNull();
   });
 });

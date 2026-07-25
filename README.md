@@ -26,7 +26,7 @@ AgoraPilot est un outil de planification et de publication automatisée de conte
 - TypeScript 5.8 (mode strict)
 - Tailwind CSS 4
 - RxJS
-- Karma / Jasmine pour les tests
+- Vitest (jsdom) pour les tests
 
 ### Infrastructure
 - PostgreSQL 16 via Docker Compose
