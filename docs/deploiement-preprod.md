@@ -31,15 +31,21 @@ C'est un middleware Traefik `ipwhitelist` porté par le conteneur `front`, dont 
 plage vient de `PREPROD_ALLOWED_CIDRS`. Trois points à retenir :
 
 - **Le nom du middleware est `ipwhitelist`, pas `ipallowlist`.** Le second
-  n'existe qu'à partir de Traefik v2.11 ; le VPS tourne en v2.10. Un nom inconnu
-  ne provoque pas d'erreur visible côté client : Traefik met le routeur en échec
-  et le site répond 404. À vérifier si Traefik est mis à niveau un jour, le
-  renommage étant l'inverse (`ipwhitelist` est déprécié en v3).
+  n'existe qu'à partir de Traefik v2.11 ; le VPS tourne en v2.10, et
+  `ipwhitelist` y a été vérifié fonctionnel. À reprendre si Traefik est mis à
+  niveau, le renommage étant l'inverse (`ipwhitelist` disparaît en v3).
 - **Le port 443 reste joignable publiquement**, et c'est délibéré : le challenge
   TLS-ALPN de Let's Encrypt est traité pendant la poignée de main TLS, avant tout
-  routage HTTP, donc le filtre ne le bloque pas et le certificat continue de se
-  renouveler seul. Un observateur externe peut en déduire que le domaine existe,
-  mais n'obtient aucun contenu.
+  routage HTTP, donc le filtre ne devrait pas le bloquer. Un observateur externe
+  peut en déduire que le domaine existe, mais n'obtient aucun contenu.
+  ⚠️ **Point non encore vérifié en pratique** : le certificat courant a été émis
+  *avant* la mise en place du filtre et n'expire que le 23 octobre 2026, donc le
+  premier renouvellement sous filtre aura lieu vers fin septembre. Ce qui est
+  vérifié, c'est que la poignée de main TLS aboutit toujours pour un client
+  externe (le certificat est bien servi avant le 403), ce qui est la couche sur
+  laquelle opère le challenge. Si le renouvellement échouait malgré tout, la
+  solution est de basculer le resolver sur un challenge **DNS-01**, qui ne
+  requiert aucune joignabilité publique.
 - **Les clients doivent être en tunnel complet** (`AllowedIPs = 0.0.0.0/0`).
   En tunnel partagé, le trafic vers l'IP publique du VPS sortirait hors du tunnel
   et serait rejeté. Attention : ajouter simplement l'IP publique du VPS aux
@@ -61,6 +67,18 @@ curl -sS -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
 ```
 
 Attendu : **403**. Connecté au VPN, la même commande doit renvoyer **200**.
+
+Le filtrage peut aussi être testé depuis le VPS lui-même, sans client VPN, en
+choisissant l'interface source — `10.8.0.1` étant dans la plage autorisée :
+
+```bash
+curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+```
+
+**Un 404 juste après un déploiement est normal et transitoire** : pendant la
+recréation du conteneur `front`, Traefik n'a momentanément plus de routeur pour
+cet hôte et répond 404. Attendre quelques secondes et refaire le test — un 404
+persistant, lui, signale un problème de découverte (labels, réseau `web`).
 
 ## Prérequis
 

@@ -20,4 +20,5 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-20 | [Règles de fonctionnement persistantes (CLAUDE.md)](./changelog/2026-07-20-persistent-rules-claude-md.md) | _voir PR_ |
 | 2026-07-20 | [Lien vers la maquette Figma dans CLAUDE.md](./changelog/2026-07-20-lien-maquette-figma.md) | _voir PR_ |
 | 2026-07-25 | [Socle de préproduction : Dockerfiles, compose dédié et variables d'environnement](./changelog/2026-07-25-preprod-docker-compose.md) | [`d060f7e`](https://github.com/lpzkjdoi/agorapilot/commit/d060f7e) |
-| 2026-07-25 | [Corrections issues de la première mise en service de la préproduction](./changelog/2026-07-25-corrections-post-mise-en-service.md) | _voir PR_ |
+| 2026-07-25 | [Corrections issues de la première mise en service de la préproduction](./changelog/2026-07-25-corrections-post-mise-en-service.md) | [`4d7d4ec`](https://github.com/lpzkjdoi/agorapilot/commit/4d7d4ec) |
+| 2026-07-25 | [Accès à la préproduction restreint au réseau WireGuard](./changelog/2026-07-25-preprod-acces-vpn.md) | _voir PR_ |
