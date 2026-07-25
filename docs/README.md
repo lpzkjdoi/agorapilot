@@ -24,4 +24,5 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-25 | [Accès à la préproduction restreint au réseau WireGuard](./changelog/2026-07-25-preprod-acces-vpn.md) | _voir PR_ |
 | 2026-07-25 | [Développer le front en local contre le back de préproduction](./changelog/2026-07-25-front-local-vers-back-preprod.md) | _voir PR_ |
 | 2026-07-25 | [Migration des tests front de Karma/Jasmine vers Vitest](./changelog/2026-07-25-migration-vitest.md) | _voir PR_ |
+| 2026-07-25 | [CI : porte d'entrée des PR et déploiement automatique de la préproduction](./changelog/2026-07-25-ci-pr-gate-deploiement-preprod.md) | _voir PR_ |
 | 2026-07-25 | [Header : reprise du style de la maquette Figma](./changelog/2026-07-25-header-maquette-figma.md) | _voir PR_ |

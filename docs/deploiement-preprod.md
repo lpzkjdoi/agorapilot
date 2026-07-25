@@ -1,8 +1,9 @@
 # Déploiement de la préproduction (VPS)
 
-Runbook du déploiement manuel de la préproduction. Il décrit l'état actuel :
-le déploiement automatique par la CI GitHub est l'étape suivante et réutilisera
-exactement ce montage (cf. [Bascule vers la CI/CD](#bascule-vers-la-cicd)).
+Runbook de la préproduction. Le déploiement est **automatique à chaque fusion sur
+`develop`** (cf. [Déploiement automatique](#déploiement-automatique)) ; la
+procédure manuelle décrite ici reste le mode de secours et la référence pour
+comprendre le montage, que la CI reprend à l'identique.
 
 ## Vue d'ensemble
 
@@ -158,6 +159,11 @@ docker logs traefik 2>&1 | grep -i agorapilot
 
 ## Mises à jour
 
+> Depuis la mise en place de [`deploy-preprod.yml`](#déploiement-automatique),
+> les mises à jour sont automatiques à chaque fusion sur `develop`. Ce qui suit
+> reste le mode de secours, quand GitHub est indisponible ou qu'il faut
+> déployer une branche non fusionnée.
+
 ```bash
 cd /opt/agorapilot/preprod/repo && git pull && docker compose -f docker-compose.preprod.yaml up -d --build
 ```
@@ -251,20 +257,79 @@ Le renouvellement ultérieur est automatique (`FacebookTokenScheduler`, cron
 `0 0 3 * * *`). C'est la raison de la variable `TZ` : sans elle, le conteneur
 serait en UTC et le renouvellement aurait lieu à une autre heure locale.
 
-## Bascule vers la CI/CD
+## Déploiement automatique
 
-Le format du `.env` ne changera pas ; seule son origine évoluera. GitHub
-deviendra la source de vérité, via un Environment `preprod` :
+Depuis [`deploy-preprod.yml`](../.github/workflows/deploy-preprod.yml), toute
+poussée sur `develop` touchant `apps/**` ou le compose de préproduction déploie
+la préproduction. Le workflow est aussi lançable à la main
+(*Actions → Deploy preprod → Run workflow*) pour redéployer sans nouveau commit.
 
-| Type GitHub | Variables |
+Déroulé :
+
+1. **Build & push** des deux images sur GHCR, en parallèle, taguées au SHA du
+   commit **et** en `latest`. Le cache de build est celui d'Actions : une
+   modification du seul front ne reconstruit pas les couches Maven.
+2. **Régénération du `.env`** sur le VPS depuis l'environnement GitHub, avec
+   `IMAGE_TAG` = SHA du commit. L'ancien fichier est sauvegardé en `.env.bak`.
+3. **`docker compose pull` puis `up -d --no-build --remove-orphans`.**
+   `--no-build` est délibéré : si une image manquait, on veut un échec net
+   plutôt qu'un build Maven + Angular improvisé sur un VPS à 1 vCPU.
+4. **Vérification** : `/actuator/health` sur la boucle locale (jusqu'à 3 min, le
+   temps du `start_period`), puis `https://$PREPROD_HOST` **depuis le VPS**, en
+   sortant par `--interface 10.8.0.1`. Ce détour est nécessaire : le runner
+   GitHub est hors du réseau WireGuard et recevrait 403
+   (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)). Les 404 transitoires
+   qui suivent un `up -d` sont absorbés par les tentatives successives.
+
+### Configuration attendue
+
+Le format du `.env` n'a pas changé ; seule son origine a évolué. GitHub en est
+désormais la source de vérité, via un Environment `preprod`
+(*Settings → Environments → preprod*) :
+
+| Type GitHub | Clés |
 |---|---|
-| **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_PAGE_ID`, `FACEBOOK_API_VERSION`, `TZ` |
+| **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `PREPROD_ALLOWED_CIDRS`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_API_VERSION`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_PAGE_ID`, `TZ` |
+| **Variables** (accès au VPS) | `PREPROD_SSH_HOST`, `PREPROD_SSH_USER`, `PREPROD_SSH_KNOWN_HOSTS`, `PREPROD_PATH` |
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
 
-Le workflow de déploiement, déclenché à chaque merge sur `develop`, régénérera le
-`.env` sur le VPS depuis ces valeurs avec `IMAGE_TAG` = SHA du commit, puis
-`docker compose pull && up -d`. Restent à créer : le workflow de publication sur
-GHCR (avec `permissions: packages: write`) et celui de déploiement.
+`PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
+`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`
+et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
+et leur absence fait échouer le déploiement avec un message nommant la clé.
+
+`PREPROD_SSH_KNOWN_HOSTS` contient l'empreinte du serveur, obtenue par :
+
+```bash
+ssh-keyscan -H <ip-du-vps>
+```
+
+Elle est épinglée plutôt que découverte à la volée : sans elle, n'importe quelle
+machine répondant à cette adresse recevrait la clé de déploiement.
+
+> ⚠️ **`POSTGRES_PASSWORD` doit reprendre le mot de passe déjà en place.**
+> PostgreSQL conserve celui fixé à l'initialisation du volume `db-data` : une
+> valeur différente ne le change pas, elle fait seulement échouer la connexion
+> du back. Le relire sur le VPS avant de créer le secret :
+> `grep POSTGRES_PASSWORD /opt/agorapilot/preprod/repo/.env`.
+
+### Authentification GHCR du VPS
+
+Aucune. Le jeton du workflow (`GITHUB_TOKEN`) est transmis au VPS le temps du
+`docker login`, puis le workflow fait `docker logout` — le jeton expire de toute
+façon à la fin du run. Le VPS ne stocke donc aucun identifiant GHCR durable, et
+les images peuvent rester privées.
+
+### Première exécution
+
+Le VPS est aujourd'hui un clone du dépôt ; le workflow y dépose simplement le
+compose et le `.env` à jour, sans y toucher autrement. Le clone peut être réduit
+plus tard à ces deux fichiers, mais le garder ne coûte rien : `--no-build`
+interdit d'utiliser les sources qui s'y trouvent.
+
+En cas d'échec du premier déploiement, le retour arrière est celui du runbook
+manuel : restaurer `.env.bak`, et redéployer un tag antérieur en fixant
+`IMAGE_TAG` à la main dans le `.env` avant `docker compose up -d`.
 
 ## Dette connue
 

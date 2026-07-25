@@ -1,16 +1,15 @@
 name: Front CI
 
 on:
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'apps/front/**'
-      - '.github/workflows/front-ci.yml'
   push:
     branches: [ main, develop ]
     paths:
       - 'apps/front/**'
       - '.github/workflows/front-ci.yml'
+  # Sur les pull requests, ce workflow n'est plus déclenché directement : il est
+  # appelé par « PR checks » (.github/workflows/pr-checks.yml), qui décide s'il
+  # y a lieu de vérifier le front et agrège les résultats dans un statut unique.
+  workflow_call:
 
 permissions:
   contents: read
