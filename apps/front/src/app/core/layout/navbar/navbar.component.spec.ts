@@ -18,10 +18,15 @@ describe('NavbarComponent', () => {
   it('should render the AgoraPilot logo (badge + wordmark)', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
 
-    expect(compiled.querySelector('.navbar-logo-badge')?.textContent?.trim()).toBe('AP');
-    expect(compiled.querySelector('.navbar-logo-text')?.textContent?.trim()).toBe('AgoraPilot');
+    const compiled = fixture.nativeElement as HTMLElement;
+    const logoBadge = compiled.querySelector('app-logo.navbar-logo-badge');
+    const logoSvg = logoBadge?.querySelector('svg');
+    const wordmark = compiled.querySelector('.navbar-logo-text');
+
+    expect(logoBadge).not.toBeNull();
+    expect(logoSvg).not.toBeNull();
+    expect(wordmark?.textContent?.trim()).toBe('AgoraPilot');
   });
 
   it('should render the Dashboard navigation entry linking to /dashboard', () => {
