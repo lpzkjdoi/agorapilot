@@ -23,15 +23,24 @@ Reprise de la maquette :
 
 | Élément | Rendu |
 |---|---|
-| En-tête | titre + sous-titre « Gérez et organisez vos publications », bouton primaire « Créer une publication » (`#1E3A8A`, comme le bandeau) |
+| En-tête | titre (`h1` global) + sous-titre « Gérez et organisez vos publications », bouton primaire « Créer une publication » (`#1E3A8A`, comme le bandeau) |
 | Filtres | carte blanche : recherche plein texte, sélecteur de statut, sélecteur de campagne |
 | Compteurs | bandeau clair : Total / Vérifiées / Brouillons / Dans campagnes, pastilles bleue, verte, orange, violette |
 | Séparateur | « N PUBLICATIONS » centré entre deux filets |
 | Grille | 3 colonnes sur écran large (`auto-fill` / `minmax(min(100%, 22rem), 1fr)`), puis 2 et 1 |
 
-Le titre reste noir (`h1` global) plutôt que bleu comme sur l'aperçu : la
-dernière version de la maquette (v33) demande explicitement un titre « identique
-au Dashboard », et le Dashboard du front utilise le `h1` global.
+Le titre reste noir (`h1` global) plutôt que bleu comme sur l'aperçu de la page
+Publications : le Dashboard de la maquette affiche bien un titre noir surmontant
+un sous-titre gris, et la v33 demande explicitement un titre « identique au
+Dashboard ».
+
+Le `h1` global de `styles.css` passe au passage de 28px/36px à **24px/32px**, le
+`text-2xl` de la maquette. Le changement est global et vaut donc aussi pour le
+Dashboard, qui utilise la même règle — les deux pages partagent désormais le
+gabarit de titre de la maquette. Ce point n'est pas couvert par un test : sous
+jsdom, seuls les styles de composant (injectés par Angular) sont appliqués, la
+feuille globale ne l'est pas — `getComputedStyle(h1).fontSize` y renvoie le `2em`
+de la feuille par défaut. La vérification a été faite dans le navigateur.
 
 États de la liste : chargement, erreur de chargement, **« Aucune publication
 disponible »** quand l'API renvoie une liste vide, et « Aucune publication ne
