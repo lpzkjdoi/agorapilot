@@ -1,0 +1,91 @@
+.publications-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.publications-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.publications-subtitle {
+  margin-top: 0.125rem;
+  color: var(--color-ui-text-secondary);
+}
+
+.publications-create {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.publications-create:hover {
+  background-color: #1B327A;
+}
+
+/* Séparateur « N publications » : libellé centré entre deux filets. */
+.publications-count {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--color-ui-text-muted);
+}
+
+.publications-count::before,
+.publications-count::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-ui-border);
+}
+
+/* Trois colonnes sur un écran large comme dans la maquette, puis deux et une
+   au fur et à mesure que la place manque. */
+.publications-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1.5rem;
+}
+
+.publications-placeholder {
+  padding: 3rem 1rem;
+  border: 1px dashed var(--color-ui-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-ui-text-secondary);
+}
+
+.publications-notice,
+.publications-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+}
+
+.publications-notice {
+  border-color: #BFDBFE;
+  background-color: #EFF6FF;
+  color: #1E40AF;
+}
+
+.publications-error {
+  border-color: #FECACA;
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}

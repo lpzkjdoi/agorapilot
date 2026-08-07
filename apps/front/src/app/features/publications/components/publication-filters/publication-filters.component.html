@@ -1,0 +1,45 @@
+<section class="filters">
+  <div class="filters-row">
+    <div class="filters-search">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="18px"
+           viewBox="0 -960 960 960"
+           width="18px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
+      </svg>
+      <label class="filters-hidden-label" for="publications-search">Rechercher une publication</label>
+      <input id="publications-search"
+             type="search"
+             placeholder="Rechercher une publication..."
+             (input)="onSearch($event)"
+      >
+    </div>
+
+    <label class="filters-hidden-label" for="publications-status">Filtrer par statut</label>
+    <select id="publications-status" class="filters-select" (change)="onStatus($event)">
+      <option value="ALL">Tous les statuts</option>
+      <option value="VERIFIED">Vérifiées</option>
+      <option value="DRAFT">Brouillons</option>
+    </select>
+
+    <label class="filters-hidden-label" for="publications-campaign">Filtrer par campagne</label>
+    <select id="publications-campaign" class="filters-select" (change)="onCampaign($event)">
+      <option value="ALL">Toutes les campagnes</option>
+      <option value="NONE">Sans campagne</option>
+      @for (campaign of campaigns(); track campaign.id) {
+        <option [value]="campaign.id">{{ campaign.name }}</option>
+      }
+    </select>
+  </div>
+
+  <ul class="filters-stats">
+    <li><span class="filters-dot filters-dot-total"></span>Total : <strong>{{ stats().total }}</strong></li>
+    <li><span class="filters-dot filters-dot-verified"></span>Vérifiées : <strong>{{ stats().verified }}</strong></li>
+    <li><span class="filters-dot filters-dot-draft"></span>Brouillons : <strong>{{ stats().drafts }}</strong></li>
+    <li><span class="filters-dot filters-dot-campaign"></span>Dans campagnes : <strong>{{ stats().inCampaigns }}</strong></li>
+  </ul>
+</section>

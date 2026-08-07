@@ -93,9 +93,11 @@ html, body {
   height: 100%;
 }
 
+/* `text-2xl font-bold text-foreground` de la maquette : c'est le gabarit de
+   titre de page, commun au Dashboard et à Publications. */
 h1 {
-  font-size: 28px;
-  line-height: 36px;
+  font-size: 24px;
+  line-height: 32px;
   font-weight: 700;
   color: var(--color-ui-text-primary);
 }

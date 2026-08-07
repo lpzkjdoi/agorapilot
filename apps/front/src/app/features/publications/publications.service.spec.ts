@@ -64,6 +64,20 @@ describe('PublicationsService', () => {
     httpTesting.expectNone('/api/publications');
   });
 
+  // Les trois actions de la carte n'ont pas encore d'endpoint côté back : elles
+  // doivent échouer explicitement, et surtout n'émettre aucune requête HTTP.
+  it.each([
+    ['generateXlsx', () => service.generateXlsx(1)],
+    ['publishOnFacebook', () => service.publishOnFacebook(1)],
+    ['assignToCampaign', () => service.assignToCampaign(1, 7)],
+  ] as const)('should fail `%s` without issuing a request while the endpoint is missing', (_name, call) => {
+    let error: unknown;
+    call().subscribe({ error: (err) => (error = err) });
+
+    expect(error).toBeInstanceOf(Error);
+    httpTesting.expectNone(() => true);
+  });
+
   it('should surface a creation error to the subscriber', () => {
     let error: unknown;
     service

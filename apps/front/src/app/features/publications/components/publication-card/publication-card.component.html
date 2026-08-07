@@ -1,0 +1,98 @@
+<article class="card">
+  <!-- Aperçu média : la médiathèque n'existe pas encore côté domaine, la
+       maquette prévoit une vignette. On affiche donc systématiquement l'état
+       « sans média » tant qu'aucun média n'est rattaché aux publications. -->
+  <div class="media">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         height="40px"
+         viewBox="0 -960 960 960"
+         width="40px"
+         fill="currentColor"
+         aria-hidden="true"
+    >
+      <path
+        d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
+    </svg>
+    <span class="status"
+          [class.status-verified]="verified()"
+          [class.status-draft]="!verified()"
+    >{{ verified() ? 'Vérifié' : 'Brouillon' }}</span>
+  </div>
+
+  <div class="body">
+    @if (publication().createdAt; as createdAt) {
+      <p class="date">
+        {{ createdAt | date: 'd MMMM y' : undefined : 'fr-FR' }}
+        •
+        {{ createdAt | date: 'HH:mm' : undefined : 'fr-FR' }}
+      </p>
+    }
+
+    <p class="content">{{ publication().content }}</p>
+
+    <p class="campaign" [class.campaign-none]="!campaignName()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="14px"
+           viewBox="0 -960 960 960"
+           width="14px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="M856-390 570-104q-12 12-27 18t-30 6q-15 0-30-6t-27-18L103-457q-11-11-17-25.5T80-513v-287q0-33 23.5-56.5T160-880h287q16 0 30.5 6t25.5 17l353 354q12 12 17.5 27t5.5 30q0 15-5.5 29.5T856-390ZM513-160l286-286-353-354H160v286l353 354ZM260-640q25 0 42.5-17.5T320-700q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm220 160Z" />
+      </svg>
+      {{ campaignName() ?? 'Sans campagne' }}
+    </p>
+
+    <div class="actions">
+      <button type="button" class="action action-xlsx" (click)="generateXlsx.emit(publication())">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 -960 960 960"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path
+            d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+        </svg>
+        Générer XLSX
+      </button>
+
+      <button type="button"
+              class="action action-facebook"
+              (click)="publishOnFacebook.emit(publication())"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 0 24 24"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path
+            d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
+        </svg>
+        Publier sur Facebook
+      </button>
+
+      <button type="button"
+              class="action action-campaign"
+              [class.action-campaign-empty]="!campaignName()"
+              (click)="assignCampaign.emit(publication())"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 -960 960 960"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path
+            d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm240-182v-196l-98 58H160v80h182l98 58Zm120 36v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346ZM300-480Z" />
+        </svg>
+        {{ campaignName() ? 'Changer de campagne' : 'Ajouter à une campagne' }}
+      </button>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,155 @@
+/* Styles encapsulés par Angular : les classes sont volontairement courtes,
+   elles n'existent que dans le gabarit de ce composant. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-ui-card);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* Vignette : aplat clair frappé du badge de statut, comme dans la maquette.
+   La médiathèque n'existant pas encore, seul l'état « sans média » est rendu. */
+.media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 11rem;
+  background-color: #EEF2FF;
+  color: #C7D2FE;
+}
+
+/* Mentions secondaires de la carte : même échelle typographique. */
+.status,
+.campaign,
+.date {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Les deux pastilles (statut, campagne) partagent en plus leur gabarit. */
+.status,
+.campaign {
+  padding: 0.25rem 0.625rem;
+  border-radius: 99px;
+  font-weight: 500;
+}
+
+.status {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  color: #FFF;
+  font-weight: 600;
+}
+
+.status-verified {
+  background-color: #22C55E;
+}
+
+.status-draft {
+  background-color: #F97316;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.date {
+  color: var(--color-ui-text-secondary);
+}
+
+/* Extrait limité à trois lignes : les cartes d'une même rangée gardent la
+   même hauteur quelle que soit la longueur du contenu. */
+.content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  color: var(--color-ui-text-primary);
+}
+
+.campaign {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.375rem;
+  background-color: #F3E8FF;
+  color: #7E22CE;
+}
+
+.campaign-none {
+  background-color: #F3F4F6;
+  color: var(--color-ui-text-muted);
+}
+
+.actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-ui-border);
+}
+
+/* Les trois actions partagent la même forme ; seule la teinte change. */
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-ui-text-secondary);
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-xlsx:hover {
+  background-color: #EFF6FF;
+  color: var(--color-brand-blue);
+}
+
+/* Bleu Facebook de la charte (#1877F2), fond teinté et bordure assortie. */
+.action-facebook {
+  border-color: #BBD3FB;
+  background-color: #EAF2FE;
+  color: #1877F2;
+}
+
+.action-facebook:hover {
+  background-color: #DCE9FD;
+}
+
+.action-campaign {
+  border-color: #E9D5FF;
+  background-color: #FAF5FF;
+  color: #7E22CE;
+}
+
+.action-campaign:hover {
+  background-color: #F3E8FF;
+}
+
+/* Publication sans campagne : contour en pointillés, plus discret. */
+.action-campaign-empty {
+  border-style: dashed;
+  border-color: #D8B4FE;
+  background-color: transparent;
+}
