@@ -1,13 +1,32 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <label for="content">
-    Contenu :
-    <textarea id="content" formControlName="content"></textarea>
+<form class="publication-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="publication-form-field">
+    <label for="content">Contenu de la publication</label>
+    <textarea id="content"
+              formControlName="content"
+              rows="6"
+              maxlength="2000"
+              placeholder="Rédigez le message qui sera diffusé sur vos canaux…"
+    ></textarea>
 
-    @if (form.controls.content.touched && form.controls.content.invalid) {
-      <p>Le contenu est obligatoire.</p>
-    }
+    <div class="publication-form-hint">
+      @if (form.controls.content.touched && form.controls.content.invalid) {
+        <p class="publication-form-error">Le contenu est obligatoire (2000 caractères maximum).</p>
+      }
+      <p class="publication-form-counter">{{ form.controls.content.value.length }} / 2000</p>
+    </div>
+  </div>
+
+  <label class="publication-form-checkbox" for="status">
+    <input id="status" formControlName="status" type="checkbox">
+    Marquer la publication comme vérifiée
   </label>
-  <label for="status">Vérifier directement ?</label>
-  <input id="status" formControlName="status" type="checkbox">
-  <button>Valider</button>
+
+  <div class="publication-form-actions">
+    <button type="button" class="publication-form-cancel" (click)="cancelled.emit()">
+      Annuler
+    </button>
+    <button type="submit" class="publication-form-submit">
+      Créer la publication
+    </button>
+  </div>
 </form>

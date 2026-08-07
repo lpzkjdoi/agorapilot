@@ -51,6 +51,38 @@ describe('PublicationFormComponent', () => {
     expect(component.form.controls.status.value).toBe(true);
   });
 
+  it('should emit `cancelled` from the cancel button without touching the form', () => {
+    const fixture = TestBed.createComponent(PublicationFormComponent);
+    fixture.detectChanges();
+
+    const cancelled = vi.fn();
+    fixture.componentInstance.cancelled.subscribe(cancelled);
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('.publication-form-cancel')
+      ?.click();
+
+    expect(cancelled).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.form.controls.content.touched).toBe(false);
+  });
+
+  it('should show the character counter and the error message once touched', () => {
+    const fixture = TestBed.createComponent(PublicationFormComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.publication-form-counter')?.textContent).toContain('0 / 2000');
+    expect(compiled.querySelector('.publication-form-error')).toBeNull();
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.publication-form-error')?.textContent).toContain(
+      'Le contenu est obligatoire',
+    );
+  });
+
   it('should reject content longer than 2000 characters', () => {
     const fixture = TestBed.createComponent(PublicationFormComponent);
     const component = fixture.componentInstance;

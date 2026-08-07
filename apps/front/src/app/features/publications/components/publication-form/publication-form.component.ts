@@ -19,6 +19,7 @@ import { CreatePublicationFormValue } from "../../publication.model";
 })
 export class PublicationFormComponent {
   readonly submitted = output<CreatePublicationFormValue>();
+  readonly cancelled = output<void>();
 
   readonly form = new FormGroup({
     content: new FormControl('', {
@@ -33,7 +34,6 @@ export class PublicationFormComponent {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      console.log("ERROR DANS LE EMIT")
       return;
     }
 

@@ -42,6 +42,19 @@ describe('NavbarComponent', () => {
     expect(button?.getAttribute('routerlink')).toBe('/dashboard');
   });
 
+  it('should render the Publications navigation entry linking to /publications', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const buttons = compiled.querySelectorAll('.navbar-nav-button');
+    expect(buttons.length).toBe(2);
+
+    const publications = buttons[1];
+    expect(publications.textContent).toContain('Publications');
+    expect(publications.getAttribute('routerlink')).toBe('/publications');
+  });
+
   it('should paint the header with the dark blue bar of the maquette', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();

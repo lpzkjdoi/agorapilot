@@ -6,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page';
+import { PublicationsPageComponent } from './features/publications/pages/publications-page/publications-page.component';
 import { routes } from './app.routes';
 
 registerLocaleData(localeFr, 'fr-FR');
@@ -21,8 +22,8 @@ describe('routes', () => {
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  it('should declare a single `dashboard` route', () => {
-    expect(routes.map((route) => route.path)).toEqual(['dashboard']);
+  it('should declare the `dashboard` and `publications` routes', () => {
+    expect(routes.map((route) => route.path)).toEqual(['dashboard', 'publications']);
   });
 
   it('should render the dashboard page on /dashboard and set its title', async () => {
@@ -35,6 +36,20 @@ describe('routes', () => {
     // La page charge les occurrences de la semaine dès son initialisation ;
     // la requête est consommée ici pour que `verify()` reste vert.
     httpTesting.expectOne('/api/occurrences/weekly');
+    httpTesting.verify();
+  });
+
+  it('should render the publications page on /publications and set its title', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/publications', PublicationsPageComponent);
+
+    expect(component).toBeInstanceOf(PublicationsPageComponent);
+    expect(document.title).toBe('Publications');
+
+    // La page charge la liste et les campagnes dès son initialisation ; les
+    // requêtes sont consommées ici pour que `verify()` reste vert.
+    httpTesting.expectOne('/api/publications');
+    httpTesting.expectOne('/api/campaigns');
     httpTesting.verify();
   });
 

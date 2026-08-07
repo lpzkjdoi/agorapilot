@@ -1,0 +1,69 @@
+<div class="publications-page">
+  <header class="publications-header">
+    <div>
+      <h1>Publications</h1>
+      <p class="publications-subtitle">Gérez et organisez vos publications</p>
+    </div>
+    <button type="button" class="publications-create" (click)="createModalOpen.set(true)">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+      </svg>
+      Créer une publication
+    </button>
+  </header>
+
+  <app-publication-filters
+    [campaigns]="campaigns()"
+    [stats]="stats()"
+    (searchChanged)="search.set($event)"
+    (statusChanged)="statusFilter.set($event)"
+    (campaignChanged)="campaignFilter.set($event)"
+  />
+
+  @if (notice(); as message) {
+    <p class="publications-notice" role="status">{{ message }}</p>
+  }
+
+  @if (error(); as message) {
+    <p class="publications-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <p class="publications-placeholder">Chargement des publications…</p>
+  } @else if (publications().length === 0) {
+    <p class="publications-placeholder">Aucune publication disponible</p>
+  } @else {
+    <p class="publications-count">
+      {{ filteredPublications().length }}
+      {{ filteredPublications().length > 1 ? 'publications' : 'publication' }}
+    </p>
+
+    @if (filteredPublications().length === 0) {
+      <p class="publications-placeholder">Aucune publication ne correspond à ces filtres</p>
+    } @else {
+      <ul class="publications-grid">
+        @for (publication of filteredPublications(); track publication.id) {
+          <li>
+            <app-publication-card
+              [publication]="publication"
+              (generateXlsx)="onGenerateXlsx($event)"
+              (publishOnFacebook)="onPublishOnFacebook($event)"
+              (assignCampaign)="onAssignCampaign($event)"
+            />
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>
+
+@if (createModalOpen()) {
+  <app-create-publication-modal
+    (closed)="createModalOpen.set(false)"
+    (submitted)="onCreate($event)"
+  />
+}
