@@ -35,7 +35,16 @@ export interface AppNotification {
 export const DEFAULT_NOTIFICATION_DURATION_MS = 5_000;
 
 /** Doit rester synchronisée avec l'animation `notification-leave` du toast. */
-export const NOTIFICATION_EXIT_DURATION_MS = 200;
+export const NOTIFICATION_EXIT_DURATION_MS = 220;
 
-/** Au-delà, les plus anciennes se ferment pour ne pas couvrir la page. */
-export const MAX_STACKED_NOTIFICATIONS = 4;
+/** Au-delà, les plus anciennes se ferment — le `visibleToasts` de sonner. */
+export const MAX_STACKED_NOTIFICATIONS = 3;
+
+/** Écart entre deux notifications dépliées, et décalage du dépassement replié. */
+export const NOTIFICATION_STACK_GAP_PX = 14;
+
+/** Réduction appliquée à chaque cran de profondeur quand la pile est repliée. */
+export const NOTIFICATION_STACK_SCALE_STEP = 0.05;
+
+/** Durée du repli / dépliage de la pile. */
+export const NOTIFICATION_STACK_TRANSITION_MS = 400;

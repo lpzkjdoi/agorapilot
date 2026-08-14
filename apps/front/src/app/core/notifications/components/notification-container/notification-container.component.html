@@ -1,3 +1,8 @@
-@for (notification of notifications(); track notification.id) {
-  <app-notification-toast [notification]="notification" (closed)="close($event)" />
+@for (notification of notifications(); track notification.id; let index = $index) {
+  <app-notification-toast
+    #toastHost
+    [notification]="notification"
+    [style]="toastStyle(index)"
+    (closed)="close($event)"
+  />
 }

@@ -119,10 +119,10 @@ describe('NotificationService', () => {
     const id = service.sendNotification({ level: 'info', message: 'Présente' });
 
     service.closeNotification(id);
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(NOTIFICATION_EXIT_DURATION_MS - 20);
     // Ne doit pas relancer une minuterie et retarder le retrait.
     service.closeNotification(id);
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(20);
 
     expect(service.notifications()).toEqual([]);
   });
@@ -147,12 +147,10 @@ describe('NotificationService', () => {
     expect(service.count()).toBe(MAX_STACKED_NOTIFICATIONS);
     vi.advanceTimersByTime(NOTIFICATION_EXIT_DURATION_MS);
 
-    expect(service.notifications().map((notification) => notification.message)).toEqual([
-      'Notification 2',
-      'Notification 3',
-      'Notification 4',
-      'Notification 5',
-    ]);
+    // La première est partie, les suivantes sont restées dans l'ordre.
+    expect(service.notifications().map((notification) => notification.message)).toEqual(
+      Array.from({ length: MAX_STACKED_NOTIFICATIONS }, (_, i) => `Notification ${i + 2}`),
+    );
   });
 
   it('should carry the title and the dismissible flag', () => {

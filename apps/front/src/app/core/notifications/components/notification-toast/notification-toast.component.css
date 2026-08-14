@@ -1,99 +1,97 @@
-/* Le conteneur ne capte pas les clics ; le toast, si. */
-:host { display: block; pointer-events: auto; }
+/* L'hôte porte la place dans la pile — décalage, réduction, hauteur — posée par
+   le conteneur ; le `.toast` intérieur porte l'entrée et la sortie. Deux
+   éléments, donc deux `transform` qui se composent sans se marcher dessus. */
+:host {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transform-origin: top center;
+  transition:
+    transform 400ms cubic-bezier(0.21, 1.02, 0.73, 1),
+    height 400ms cubic-bezier(0.21, 1.02, 0.73, 1);
+}
 
 .toast {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background-color: var(--color-ui-card);
-  border: 1px solid var(--color-ui-border);
-  border-left: 3px solid var(--notification-accent);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-hover);
-  animation: notification-enter 260ms cubic-bezier(0.21, 1.02, 0.73, 1) both;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  overflow: hidden;
+  /* Marge à droite pour que le texte ne passe pas sous la croix. */
+  padding: 1rem 2.25rem 1rem 1rem;
+  border: 1px solid var(--level-border);
+  border-radius: 8px;
+  background-color: var(--level-bg);
+  color: var(--level-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: notification-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Durée alignée sur `NOTIFICATION_EXIT_DURATION_MS`. */
-.toast.is-closing {
-  animation: notification-leave 200ms cubic-bezier(0.06, 0.71, 0.55, 1) both;
-}
+.toast.is-closing { animation: notification-leave 220ms ease-in forwards; }
 
-.toast-success { --notification-accent: var(--color-status-success); }
-.toast-info { --notification-accent: var(--color-brand-blue); }
-.toast-warning { --notification-accent: var(--color-status-pending); }
-.toast-error { --notification-accent: var(--color-status-danger); }
+/* Palette `richColors` de sonner, celle de la maquette. */
+.toast-success { --level-bg: #ECFDF3; --level-border: #D3FDE4; --level-text: #008A2E; }
+.toast-info { --level-bg: #EFF8FF; --level-border: #D3E0FD; --level-text: #0973DC; }
+.toast-warning { --level-bg: #FFFCEF; --level-border: #FDF5D3; --level-text: #DC7609; }
+.toast-error { --level-bg: #FFEFF0; --level-border: #FFE0E1; --level-text: #E60000; }
 
-.toast-icon,
-.toast-close {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-}
-
-.toast-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  background-color: color-mix(in srgb, var(--notification-accent) 12%, #FFFFFF);
-  color: var(--notification-accent);
-}
+.toast-icon { display: flex; flex: none; }
 
 .toast-body {
   display: flex;
   flex: 1;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
 .toast-title,
 .toast-message {
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--color-ui-text-primary);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
   overflow-wrap: anywhere;
 }
 
-.toast-title { font-weight: 600; }
-.toast-message { font-weight: 500; }
-
 /* Sous un titre, le message passe au second plan. */
-.toast-title + .toast-message {
-  font-weight: 400;
-  color: var(--color-ui-text-secondary);
-}
+.toast-title + .toast-message { font-weight: 400; opacity: 0.8; }
 
 .toast-close {
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-top: 0.125rem;
-  background: none;
-  color: var(--color-ui-text-muted);
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--level-border);
+  border-radius: 50%;
+  background-color: var(--color-ui-card);
+  color: inherit;
   cursor: pointer;
-  transition: background-color 150ms, color 150ms;
+  opacity: 0.75;
+  transition: opacity 150ms;
 }
 
-.toast-close:hover {
-  background-color: var(--color-ui-bg);
-  color: var(--color-ui-text-primary);
-}
+.toast-close:hover { opacity: 1; }
 
-.toast-close:focus-visible {
-  outline: 2px solid var(--color-brand-blue);
-  outline-offset: 1px;
-}
+.toast-close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 
 @keyframes notification-enter {
-  from { opacity: 0; transform: translateY(0.75rem) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateX(calc(100% + 1.5rem)); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes notification-leave {
-  from { opacity: 1; transform: translateX(0) scale(1); }
-  to { opacity: 0; transform: translateX(1rem) scale(0.95); }
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(calc(100% + 1.5rem)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :host { transition: none; }
   .toast, .toast.is-closing { animation-duration: 1ms; }
 }
