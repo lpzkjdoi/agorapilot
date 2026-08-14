@@ -71,21 +71,10 @@
   color: var(--color-ui-text-secondary);
 }
 
-.publications-notice,
 .publications-error {
   padding: 0.75rem 1rem;
-  border: 1px solid;
+  border: 1px solid #FECACA;
   border-radius: var(--radius-sm);
-}
-
-.publications-notice {
-  border-color: #BFDBFE;
-  background-color: #EFF6FF;
-  color: #1E40AF;
-}
-
-.publications-error {
-  border-color: #FECACA;
   background-color: #FEF2F2;
   color: #B91C1C;
 }

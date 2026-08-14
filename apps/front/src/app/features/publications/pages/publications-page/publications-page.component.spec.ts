@@ -3,6 +3,7 @@ import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Campaign } from '../../../campaigns/campaign.model';
 import { Publication } from '../../publication.model';
 import { PublicationsPageComponent } from './publications-page.component';
@@ -29,6 +30,7 @@ const campaigns: Campaign[] = [
 
 describe('PublicationsPageComponent', () => {
   let httpTesting: HttpTestingController;
+  let notifications: NotificationService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -37,6 +39,9 @@ describe('PublicationsPageComponent', () => {
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
+    // Les messages transitoires passent par le portal de notifications, monté
+    // hors de la page : on les vérifie sur le service plutôt que dans le DOM.
+    notifications = TestBed.inject(NotificationService);
   });
 
   /** Crée la page et répond aux deux requêtes émises à l'initialisation. */
@@ -183,9 +188,9 @@ describe('PublicationsPageComponent', () => {
 
     expect(compiled.querySelector('app-create-publication-modal')).toBeNull();
     expect(compiled.querySelectorAll('app-publication-card').length).toBe(4);
-    expect(compiled.querySelector('.publications-notice')?.textContent).toContain(
-      'Publication créée.',
-    );
+    expect(notifications.notifications()).toEqual([
+      expect.objectContaining({ level: 'success', message: 'Publication créée.' }),
+    ]);
   });
 
   it('should close the modal without any request when it is dismissed', () => {
@@ -213,9 +218,12 @@ describe('PublicationsPageComponent', () => {
     compiled.querySelector<HTMLButtonElement>(selector)?.click();
     fixture.detectChanges();
 
-    expect(compiled.querySelector('.publications-notice')?.textContent).toContain(
-      'Cette action n’est pas encore disponible.',
-    );
+    expect(notifications.notifications()).toEqual([
+      expect.objectContaining({
+        level: 'warning',
+        message: 'Cette action n’est pas encore disponible.',
+      }),
+    ]);
     // Aucune requête n'est émise : les endpoints n'existent pas encore.
     httpTesting.expectNone('/api/publications');
   });

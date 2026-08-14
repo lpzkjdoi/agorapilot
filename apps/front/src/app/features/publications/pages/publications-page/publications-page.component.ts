@@ -6,6 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { Observable } from "rxjs";
+import { NotificationService } from "../../../../core/notifications/notification.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
 import {
@@ -41,12 +42,12 @@ import { PublicationsService } from "../../publications.service";
 export class PublicationsPageComponent {
   private readonly publicationsService = inject(PublicationsService);
   private readonly campaignsService = inject(CampaignsService);
+  private readonly notifications = inject(NotificationService);
 
   protected readonly publications = signal<Publication[]>([]);
   protected readonly campaigns = signal<Campaign[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly notice = signal<string | null>(null);
   protected readonly createModalOpen = signal(false);
 
   protected readonly search = signal('');
@@ -110,11 +111,11 @@ export class PublicationsPageComponent {
           next: (publication) => {
             this.publications.update((publications) => [publication, ...publications]);
             this.createModalOpen.set(false);
-            this.notice.set('Publication créée.');
+            this.notifications.success('Publication créée.');
           },
           error: (err) => {
             console.error('Création de la publication impossible', err);
-            this.notice.set('La publication n’a pas pu être créée.');
+            this.notifications.error('La publication n’a pas pu être créée.');
           },
         });
   }
@@ -157,7 +158,7 @@ export class PublicationsPageComponent {
     action.subscribe({
       error: (err: Error) => {
         console.warn(err.message);
-        this.notice.set('Cette action n’est pas encore disponible.');
+        this.notifications.warning('Cette action n’est pas encore disponible.');
       },
     });
   }

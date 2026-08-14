@@ -26,10 +26,6 @@
     (campaignChanged)="campaignFilter.set($event)"
   />
 
-  @if (notice(); as message) {
-    <p class="publications-notice" role="status">{{ message }}</p>
-  }
-
   @if (error(); as message) {
     <p class="publications-error" role="alert">{{ message }}</p>
   } @else if (loading()) {

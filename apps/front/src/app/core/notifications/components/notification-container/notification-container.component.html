@@ -1,0 +1,3 @@
+@for (notification of notifications(); track notification.id) {
+  <app-notification-toast [notification]="notification" (closed)="close($event)" />
+}
