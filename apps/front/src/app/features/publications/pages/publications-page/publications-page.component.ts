@@ -6,6 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { Observable } from "rxjs";
+import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
@@ -33,6 +34,7 @@ import { PublicationsService } from "../../publications.service";
     PublicationCardComponent,
     PublicationFiltersComponent,
     CreatePublicationModalComponent,
+    LoaderComponent,
   ],
   templateUrl: './publications-page.component.html',
   styleUrl: './publications-page.component.css',
@@ -49,6 +51,7 @@ export class PublicationsPageComponent {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly createModalOpen = signal(false);
+  protected readonly creating = signal(false);
 
   protected readonly search = signal('');
   protected readonly statusFilter = signal<PublicationStatusFilter>('ALL');
@@ -102,6 +105,8 @@ export class PublicationsPageComponent {
   }
 
   protected onCreate(value: CreatePublicationFormValue): void {
+    this.creating.set(true);
+
     this.publicationsService
         .createPublication({
           content: value.content,
@@ -110,11 +115,13 @@ export class PublicationsPageComponent {
         .subscribe({
           next: (publication) => {
             this.publications.update((publications) => [publication, ...publications]);
+            this.creating.set(false);
             this.createModalOpen.set(false);
             this.notifications.success('Publication créée.');
           },
           error: (err) => {
             console.error('Création de la publication impossible', err);
+            this.creating.set(false);
             this.notifications.error('La publication n’a pas pu être créée.');
           },
         });

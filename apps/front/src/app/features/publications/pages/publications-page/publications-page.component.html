@@ -29,7 +29,9 @@
   @if (error(); as message) {
     <p class="publications-error" role="alert">{{ message }}</p>
   } @else if (loading()) {
-    <p class="publications-placeholder">Chargement des publications…</p>
+    <div class="publications-loading">
+      <app-loader size="lg" label="Chargement des publications…" />
+    </div>
   } @else if (publications().length === 0) {
     <p class="publications-placeholder">Aucune publication disponible</p>
   } @else {
@@ -59,6 +61,7 @@
 
 @if (createModalOpen()) {
   <app-create-publication-modal
+    [creating]="creating()"
     (closed)="createModalOpen.set(false)"
     (submitted)="onCreate($event)"
   />

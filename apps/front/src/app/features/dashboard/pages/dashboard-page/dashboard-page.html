@@ -30,7 +30,11 @@
       </div>
       <app-upcoming-posts />
     </div>
-    @if (weeklyOccurrences()) {
+    @if (loading()) {
+      <div class="dashboard-loading">
+        <app-loader size="lg" label="Chargement de la semaine…" />
+      </div>
+    } @else if (weeklyOccurrences()) {
       <app-weekly-calendar [weeklyOccurrences]="weeklyOccurrences()" />
     }
   </div>

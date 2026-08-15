@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, HostListener, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  input,
+  output,
+} from '@angular/core';
 import { CreatePublicationFormValue } from "../../publication.model";
 import {
   PublicationFormComponent,
@@ -13,6 +19,9 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreatePublicationModalComponent {
+  /** Vrai tant que la requête de création est en vol. */
+  readonly creating = input(false);
+
   readonly closed = output<void>();
   readonly submitted = output<CreatePublicationFormValue>();
 

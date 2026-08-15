@@ -55,6 +55,19 @@ describe('CreatePublicationModalComponent', () => {
     expect(closed).toHaveBeenCalledTimes(1);
   });
 
+  it('should hand `creating` down to the form as its submitting state', () => {
+    const fixture = TestBed.createComponent(CreatePublicationModalComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.publication-form-submit app-loader')).toBeNull();
+
+    fixture.componentRef.setInput('creating', true);
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.publication-form-submit app-loader')).not.toBeNull();
+  });
+
   it('should forward the form value on submit', () => {
     const fixture = TestBed.createComponent(CreatePublicationModalComponent);
     fixture.detectChanges();

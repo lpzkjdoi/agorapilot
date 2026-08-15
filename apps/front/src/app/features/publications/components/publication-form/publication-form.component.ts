@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
+import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { CreatePublicationFormValue } from "../../publication.model";
 
 @Component({
   selector: 'app-publication-form',
   imports: [
     ReactiveFormsModule,
+    LoaderComponent,
   ],
   templateUrl: './publication-form.component.html',
   styleUrl: './publication-form.component.css',
@@ -18,6 +20,9 @@ import { CreatePublicationFormValue } from "../../publication.model";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicationFormComponent {
+  /** Vrai tant que la création est en cours : le formulaire attend la réponse. */
+  readonly submitting = input(false);
+
   readonly submitted = output<CreatePublicationFormValue>();
   readonly cancelled = output<void>();
 
@@ -32,6 +37,11 @@ export class PublicationFormComponent {
   });
 
   onSubmit(): void {
+    // Un double envoi créerait deux publications : on ignore le second.
+    if (this.submitting()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

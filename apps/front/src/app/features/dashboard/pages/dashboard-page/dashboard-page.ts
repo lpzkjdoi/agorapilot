@@ -5,7 +5,8 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from "@angular/core/rxjs-interop";
-import { catchError, EMPTY, tap } from "rxjs";
+import { catchError, EMPTY, finalize } from "rxjs";
+import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { OccurrencesService } from "../../../occurrences/occurrences.service";
 import {
   DashboardKpiComponent,
@@ -24,6 +25,7 @@ import {
     DashboardKpiComponent,
     UpcomingPostsComponent,
     WeeklyCalendarComponent,
+    LoaderComponent,
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.css',
@@ -34,12 +36,13 @@ export class DashboardPageComponent {
 
   protected readonly loading = signal(true)
 
+  // `finalize` plutôt que `tap` : le loader s'arrête aussi quand le flux se
+  // termine sans rien émettre, pas seulement sur une réponse ou une erreur.
   protected readonly weeklyOccurrences = toSignal(this.occurrencesService.getWeeklyOccurrences()
                                                       .pipe(
-                                                        tap(() => this.loading.set(false)),
                                                         catchError((err) => {
-                                                          this.loading.set(false);
                                                           console.error('Failed to load weekly occurrences', err);
                                                           return EMPTY;
-                                                        })))
+                                                        }),
+                                                        finalize(() => this.loading.set(false))))
 }

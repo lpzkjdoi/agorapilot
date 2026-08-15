@@ -58,6 +58,17 @@ describe('DashboardPageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar')).toBeNull();
   });
 
+  it('should show the loader in place of the weekly calendar while it loads', () => {
+    // Un flux qui n'émet ni ne se termine : la requête est encore en vol.
+    response$ = new Observable(() => undefined);
+    const fixture = TestBed.createComponent(DashboardPageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.dashboard-loading app-loader')).not.toBeNull();
+    expect(compiled.querySelector('app-weekly-calendar')).toBeNull();
+  });
+
   it('should render the weekly calendar once occurrences are available', () => {
     response$ = of(week);
     const fixture = TestBed.createComponent(DashboardPageComponent);
@@ -75,6 +86,10 @@ describe('DashboardPageComponent', () => {
     const fixture = TestBed.createComponent(DashboardPageComponent);
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(consoleSpy).toHaveBeenCalledWith('Failed to load weekly occurrences', expect.any(Error));
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-weekly-calendar')).toBeNull();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-weekly-calendar')).toBeNull();
+    // L'erreur arrête le loader : rien ne tourne dans le vide.
+    expect(compiled.querySelector('.dashboard-loading')).toBeNull();
   });
 });

@@ -83,6 +83,44 @@ describe('PublicationFormComponent', () => {
     );
   });
 
+  it('should show the dark loader and lock both buttons while submitting', () => {
+    const fixture = TestBed.createComponent(PublicationFormComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('app-loader')).toBeNull();
+
+    fixture.componentRef.setInput('submitting', true);
+    fixture.detectChanges();
+
+    const loader = compiled.querySelector('.publication-form-submit app-loader');
+    expect(loader).not.toBeNull();
+    // Bouton bleu nuit : c'est la variante `dark`, en petite taille.
+    expect(loader?.classList.contains('loader-dark')).toBe(true);
+    expect(loader?.classList.contains('loader-sm')).toBe(true);
+
+    expect(compiled.querySelector<HTMLButtonElement>('.publication-form-submit')?.disabled)
+      .toBe(true);
+    expect(compiled.querySelector<HTMLButtonElement>('.publication-form-cancel')?.disabled)
+      .toBe(true);
+  });
+
+  it('should ignore a second submit while the first one is in flight', () => {
+    const fixture = TestBed.createComponent(PublicationFormComponent);
+    const component = fixture.componentInstance;
+
+    const submitted = vi.fn();
+    component.submitted.subscribe(submitted);
+
+    component.form.setValue({ content: 'Nouvelle annonce', status: true });
+    fixture.componentRef.setInput('submitting', true);
+    fixture.detectChanges();
+
+    component.onSubmit();
+
+    expect(submitted).not.toHaveBeenCalled();
+  });
+
   it('should reject content longer than 2000 characters', () => {
     const fixture = TestBed.createComponent(PublicationFormComponent);
     const component = fixture.componentInstance;
