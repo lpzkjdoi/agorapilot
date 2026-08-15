@@ -16,6 +16,14 @@
   gap: 1rem;
 }
 
+/* Le loader tient la place de la colonne « This Week » le temps de l'appel. */
+.dashboard-loading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
 .dashboard-lower-row {
   display: flex;
   flex-direction: column;

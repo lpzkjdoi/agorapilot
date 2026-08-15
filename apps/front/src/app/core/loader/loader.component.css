@@ -1,0 +1,66 @@
+/* Le loader de la maquette : un anneau SVG scalable dont le `stroke-width` est
+   exprimé en unités du `viewBox`, donc proportionnel à la taille rendue. Seul
+   `--loader-size` change d'une taille à l'autre. */
+:host {
+  display: inline-flex;
+  flex: none;
+  line-height: 0;
+}
+
+.loader {
+  width: var(--loader-size);
+  height: var(--loader-size);
+  /* Rotation 360° en 0.9s, linéaire et infinie — CSS pur, pas de JS. */
+  animation: loader-spin 0.9s linear infinite;
+}
+
+.loader-track,
+.loader-arc {
+  fill: none;
+  stroke-width: 4;
+}
+
+.loader-track { stroke: var(--loader-track); }
+
+.loader-arc {
+  stroke: var(--loader-arc);
+  stroke-linecap: round;
+  /* `pathLength="100"` : 72 unités de trait, 28 de vide. */
+  stroke-dasharray: 72 28;
+}
+
+/* Tailles */
+:host(.loader-sm) { --loader-size: 20px; }
+:host(.loader-md) { --loader-size: 36px; }
+:host(.loader-lg) { --loader-size: 56px; }
+
+/* Variantes */
+:host(.loader-light) {
+  --loader-arc: #1E3A8A;
+  --loader-track: rgba(30, 58, 138, 0.12);
+}
+
+:host(.loader-dark) {
+  --loader-arc: #FFFFFF;
+  --loader-track: rgba(255, 255, 255, 0.2);
+}
+
+/* Le libellé n'est là que pour les lecteurs d'écran. */
+.loader-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Une rotation perpétuelle est exactement ce que « réduire les animations »
+   vise : on la ralentit sans la supprimer, l'attente reste lisible. */
+@media (prefers-reduced-motion: reduce) {
+  .loader { animation-duration: 2.4s; }
+}

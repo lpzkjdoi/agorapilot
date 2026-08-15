@@ -228,6 +228,79 @@ describe('PublicationsPageComponent', () => {
     httpTesting.expectNone('/api/publications');
   });
 
+  it('should show the loader while the publications are being fetched', () => {
+    const fixture = TestBed.createComponent(PublicationsPageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.publications-loading app-loader')).not.toBeNull();
+    expect(compiled.querySelector('app-publication-card')).toBeNull();
+
+    httpTesting.expectOne('/api/publications').flush(publications);
+    httpTesting.expectOne('/api/campaigns').flush(campaigns);
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.publications-loading')).toBeNull();
+    expect(compiled.querySelectorAll('app-publication-card').length).toBe(3);
+  });
+
+  it('should show the loader in the submit button while the creation is in flight', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    compiled.querySelector<HTMLButtonElement>('.publications-create')?.click();
+    fixture.detectChanges();
+
+    const textarea = compiled.querySelector<HTMLTextAreaElement>('#content') as HTMLTextAreaElement;
+    textarea.value = 'Nouvelle annonce';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const submit = compiled.querySelector<HTMLButtonElement>('.publication-form-submit');
+    submit?.click();
+    fixture.detectChanges();
+
+    expect(submit?.querySelector('app-loader')).not.toBeNull();
+    expect(submit?.disabled).toBe(true);
+    expect(
+      compiled.querySelector<HTMLButtonElement>('.publication-form-cancel')?.disabled,
+    ).toBe(true);
+
+    httpTesting
+      .expectOne('/api/publications')
+      .flush({ id: 9, content: 'Nouvelle annonce', status: 'VERIFIED' });
+    fixture.detectChanges();
+
+    // La modale part avec le loader une fois la publication créée.
+    expect(compiled.querySelector('app-create-publication-modal')).toBeNull();
+  });
+
+  it('should release the submit button when the creation fails', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    compiled.querySelector<HTMLButtonElement>('.publications-create')?.click();
+    fixture.detectChanges();
+
+    const textarea = compiled.querySelector<HTMLTextAreaElement>('#content') as HTMLTextAreaElement;
+    textarea.value = 'Nouvelle annonce';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    compiled.querySelector<HTMLButtonElement>('.publication-form-submit')?.click();
+    fixture.detectChanges();
+
+    httpTesting.expectOne('/api/publications').flush('boom', {
+      status: 500,
+      statusText: 'Server Error',
+    });
+    fixture.detectChanges();
+
+    const submit = compiled.querySelector<HTMLButtonElement>('.publication-form-submit');
+    expect(submit?.disabled).toBe(false);
+    expect(submit?.querySelector('app-loader')).toBeNull();
+  });
+
   it('should surface a loading error instead of the list', () => {
     const fixture = TestBed.createComponent(PublicationsPageComponent);
 

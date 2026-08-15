@@ -70,11 +70,21 @@
 
 .publication-form-cancel,
 .publication-form-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.5rem 1rem;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pendant l'appel, les deux boutons restent lisibles mais inertes. */
+.publication-form-cancel:disabled,
+.publication-form-submit:disabled {
+  cursor: progress;
+  opacity: 0.75;
 }
 
 .publication-form-cancel {
@@ -83,7 +93,7 @@
   color: var(--color-ui-text-secondary);
 }
 
-.publication-form-cancel:hover {
+.publication-form-cancel:hover:not(:disabled) {
   background-color: #F3F4F6;
   color: var(--color-ui-text-primary);
 }
@@ -93,6 +103,6 @@
   color: #FFFFFF;
 }
 
-.publication-form-submit:hover {
+.publication-form-submit:hover:not(:disabled) {
   background-color: #1B327A;
 }

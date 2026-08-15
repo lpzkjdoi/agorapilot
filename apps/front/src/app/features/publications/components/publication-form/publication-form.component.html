@@ -22,10 +22,18 @@
   </label>
 
   <div class="publication-form-actions">
-    <button type="button" class="publication-form-cancel" (click)="cancelled.emit()">
+    <button type="button"
+            class="publication-form-cancel"
+            [disabled]="submitting()"
+            (click)="cancelled.emit()"
+    >
       Annuler
     </button>
-    <button type="submit" class="publication-form-submit">
+    <button type="submit" class="publication-form-submit" [disabled]="submitting()">
+      @if (submitting()) {
+        <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+        <app-loader size="sm" variant="dark" label="Création en cours…" />
+      }
       Créer la publication
     </button>
   </div>

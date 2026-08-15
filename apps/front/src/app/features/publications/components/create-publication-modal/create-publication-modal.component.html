@@ -27,6 +27,7 @@
   </header>
 
   <app-publication-form
+    [submitting]="creating()"
     (submitted)="submitted.emit($event)"
     (cancelled)="closed.emit()"
   />
