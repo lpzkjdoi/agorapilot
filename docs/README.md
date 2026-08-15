@@ -27,3 +27,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-07-25 | [CI : porte d'entrée des PR et déploiement automatique de la préproduction](./changelog/2026-07-25-ci-pr-gate-deploiement-preprod.md) | _voir PR_ |
 | 2026-07-25 | [Header : reprise du style de la maquette Figma](./changelog/2026-07-25-header-maquette-figma.md) | _voir PR_ |
 | 2026-08-07 | [Page Publications](./changelog/2026-08-07-page-publications.md) | _voir PR_ |
+| 2026-08-15 | [GitHub CLI et règle des Pull Requests en draft](./changelog/2026-08-15-gh-cli-pr-draft.md) | _voir PR_ |

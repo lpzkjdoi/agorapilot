@@ -31,8 +31,27 @@ develop ───●───●───●───●───●────
 
 1. Brancher depuis `develop` : `feature/xxx`, `fix/xxx` (ou `claude/xxx`).
 2. Pousser la branche → la CI tourne (back et/ou front selon les chemins modifiés).
-3. Merger dans `develop` en `--no-ff` (via Pull Request quand une revue est souhaitée) → déploie la **preprod**.
-4. Quand la preprod est validée : merger `develop` → `main`, puis **taguer** `vX.Y.Z` → déploie la **prod** (approbation manuelle).
+3. **Ouvrir une Pull Request en draft vers `develop`** (voir [Pull Requests en draft](#pull-requests-en-draft)).
+4. Quand le travail est prêt et la CI verte : passer la PR en « ready for review », puis merger dans `develop` en `--no-ff` → déploie la **preprod**.
+5. Quand la preprod est validée : merger `develop` → `main`, puis **taguer** `vX.Y.Z` → déploie la **prod** (approbation manuelle).
+
+### Pull Requests en draft
+
+Toute PR est **créée en draft**, sans exception. Le draft signale que le travail est en
+cours : la CI tourne et le diff est relisable, mais la PR ne réclame pas encore de revue et
+ne peut pas être mergée par inadvertance. Le passage en « ready for review » est une action
+délibérée, faite quand la branche est réellement finie et la CI verte.
+
+```bash
+gh pr create --draft --base develop --title "..." --body "..."
+```
+
+Convertir une PR existante dans un sens ou dans l'autre :
+
+```bash
+gh pr ready --undo <numéro>   # repasse en draft
+gh pr ready <numéro>          # marque prête pour la revue
+```
 
 ### Cycle hotfix
 
@@ -123,4 +142,27 @@ Prérequis avant le premier déploiement prod :
 ## Recommandations d'outillage GitHub
 
 - **Protection de branches** sur `main` et `develop` : CI verte requise avant merge (à activer côté GitHub).
-- Pull Requests recommandées pour toute contribution destinée à `develop` / `main` afin de conserver la trace et la revue.
+- Pull Requests **obligatoires en draft** pour toute contribution destinée à `develop` / `main`,
+  afin de conserver la trace et la revue.
+
+### GitHub CLI (`gh`)
+
+`gh` est l'outil de référence du projet pour tout ce qui relève de la plateforme (PR, CI,
+issues), là où `git` ne couvre que le dépôt. Installation et connexion, une seule fois par
+poste :
+
+```bash
+brew install gh
+gh auth login --hostname github.com --git-protocol ssh --web
+```
+
+`gh auth login` est interactif (code à coller sur github.com) : il doit être lancé
+manuellement. Vérifier ensuite avec `gh auth status` que le compte actif est bien celui qui
+a les droits d'écriture sur le dépôt. Commandes courantes une fois connecté :
+
+| Besoin | Commande |
+|---|---|
+| Créer la PR draft | `gh pr create --draft --base develop` |
+| Voir l'état d'une PR | `gh pr view <numéro>` |
+| Suivre la CI en cours | `gh run watch` |
+| Lire les logs d'un job en échec | `gh run view --log-failed` |
