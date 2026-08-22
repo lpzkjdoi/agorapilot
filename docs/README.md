@@ -32,3 +32,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-08-15 | [Loader de la maquette et états de chargement](./changelog/2026-08-15-loader-maquette.md) | _voir PR_ |
 | 2026-08-22 | [Favicon AgoraPilot](./changelog/2026-08-22-favicon-agorapilot.md) | _voir PR_ |
 | 2026-08-22 | [Diffusion immédiate d'une publication sur Facebook](./changelog/2026-08-22-publication-facebook-immediate.md) | _voir PR_ |
+| 2026-08-22 | [Indicateur d'environnement dans le bandeau](./changelog/2026-08-22-indicateur-environnement.md) | _voir PR_ |
