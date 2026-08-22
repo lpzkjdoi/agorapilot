@@ -138,6 +138,22 @@ Reste à faire :
 Prérequis avant le premier déploiement prod :
 - Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.
 - Authentification applicative : la chaîne de filtres actuelle est permissive.
+- **Une image par environnement, assumée comme telle.** C'est déjà le cas de fait
+  depuis le badge d'environnement : `build-info.ts` fige l'environnement servi
+  dans le bundle front. Ce qu'il reste à en tirer relève de la **surface
+  exposée**, pas du poids — l'image prod ne sera pas plus légère, l'image
+  preprod a le droit d'être plus grasse. Concrètement : un `nginx.prod.conf`
+  sans le proxy Swagger (`/swagger-ui/`, `/v3/api-docs`), conservé en preprod
+  parce que c'est un environnement de test.
+- **Des tags d'image porteurs de l'environnement** : `agorapilot-front:preprod-<sha>`
+  et `agorapilot-front:prod-<version>`, au lieu de l'`IMAGE_TAG` commun actuel.
+  Une image dont l'environnement est figé dedans mais pas dans son nom se déploie
+  un jour au mauvais endroit, et le badge affichera « preprod » en production.
+- **Des images de base épinglées par digest.** C'est le prix de l'image par
+  environnement : l'artefact validé en preprod n'est plus celui qui tourne en
+  prod, donc tout ce qui bouge entre deux builds du même arbre git devient une
+  source de « ça marchait en preprod ». Le lockfile couvre npm ; le digest couvre
+  `nginx:1.27-alpine` et `maven`/`node`, dont les tags glissent.
 
 ## Recommandations d'outillage GitHub
 

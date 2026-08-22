@@ -18,8 +18,10 @@ Trois conteneurs, décrits par [`docker-compose.preprod.yaml`](../docker-compose
 Deux conséquences de ce montage :
 
 - **Une seule origine.** Le front appelle `/api` en relatif, nginx relaie vers le
-  back. Aucun CORS à configurer, et la même image tourne en preprod comme en
-  prod sans reconstruction.
+  back. Aucun CORS à configurer, et aucune URL d'API à substituer d'un
+  environnement à l'autre. L'image, elle, est propre à son environnement depuis
+  le badge du bandeau (`build-info.ts`, figé au build) : la prod aura son propre
+  build du front, ce que fera de toute façon un workflow déclenché sur tag.
 - **Un seul point d'entrée public.** Seul `front` est attaché au réseau Traefik.
   La base n'est joignable par personne d'autre que le back.
 
