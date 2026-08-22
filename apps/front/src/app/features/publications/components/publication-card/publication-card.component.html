@@ -61,19 +61,24 @@
 
       <button type="button"
               class="action action-facebook"
+              [disabled]="publishing()"
               (click)="publishOnFacebook.emit(publication())"
       >
-        <svg xmlns="http://www.w3.org/2000/svg"
-             height="16px"
-             viewBox="0 0 24 24"
-             width="16px"
-             fill="currentColor"
-             aria-hidden="true"
-        >
-          <path
-            d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
-        </svg>
-        Publier sur Facebook
+        @if (publishing()) {
+          <app-loader size="sm" label="Publication en cours…" />
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg"
+               height="16px"
+               viewBox="0 0 24 24"
+               width="16px"
+               fill="currentColor"
+               aria-hidden="true"
+          >
+            <path
+              d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
+          </svg>
+        }
+        {{ publishing() ? 'Publication…' : 'Publier sur Facebook' }}
       </button>
 
       <button type="button"

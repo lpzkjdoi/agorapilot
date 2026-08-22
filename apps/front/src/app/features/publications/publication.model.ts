@@ -26,6 +26,32 @@ export interface CreatePublicationFormValue {
   status: boolean
 }
 
+/** Canaux de diffusion connus du back (`DeliveryChannel`). */
+export type DeliveryChannel = 'FACEBOOK' | 'INTRAMUROS';
+
+/** Statut d'une livraison (`DeliveryStatus`). */
+export type DeliveryStatus = 'PENDING' | 'PUBLISHED' | 'FAILED';
+
+/**
+ * Livraison renvoyée par `POST /api/publications/{id}/deliveries`.
+ *
+ * Le back trace toute diffusion — y compris une diffusion immédiate — sous la
+ * forme d'une occurrence datée de l'instant présent portant cette livraison.
+ */
+export interface PublicationDelivery {
+  id: number
+  occurrenceId: number
+  channel: DeliveryChannel
+  status: DeliveryStatus
+  publishedAt: string | null
+  externalId: string | null
+}
+
+/** Corps de `POST /api/publications/{id}/deliveries`. */
+export interface CreatePublicationDeliveryRequest {
+  channel: DeliveryChannel
+}
+
 /** Valeurs du filtre « statut » de la page Publications. */
 export type PublicationStatusFilter = 'ALL' | PublicationStatus;
 

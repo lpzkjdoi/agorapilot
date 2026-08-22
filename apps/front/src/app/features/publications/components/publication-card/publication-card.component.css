@@ -133,8 +133,14 @@
   color: #1877F2;
 }
 
-.action-facebook:hover {
+.action-facebook:hover:not(:disabled) {
   background-color: #DCE9FD;
+}
+
+/* Diffusion en cours. */
+.action:disabled {
+  cursor: progress;
+  opacity: 0.7;
 }
 
 .action-campaign {
