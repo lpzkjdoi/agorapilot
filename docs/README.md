@@ -34,3 +34,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-08-22 | [Diffusion immédiate d'une publication sur Facebook](./changelog/2026-08-22-publication-facebook-immediate.md) | _voir PR_ |
 | 2026-08-22 | [Indicateur d'environnement dans le bandeau](./changelog/2026-08-22-indicateur-environnement.md) | _voir PR_ |
 | 2026-08-22 | [Une image par environnement : prérequis prod et commentaires](./changelog/2026-08-22-image-par-environnement.md) | _voir PR_ |
+| 2026-08-22 | [Correctif : `GET /api/occurrences/weekly` renvoyait un JSON tronqué](./changelog/2026-08-22-fix-recursion-occurrences-weekly.md) | _voir PR_ |
