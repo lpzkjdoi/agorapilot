@@ -207,9 +207,89 @@ describe('PublicationsPageComponent', () => {
     httpTesting.expectNone('/api/publications');
   });
 
+  it('should publish on Facebook and confirm it', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
+    fixture.detectChanges();
+
+    // Le bouton de la carte concernée se verrouille le temps de la diffusion.
+    const button = compiled.querySelector<HTMLButtonElement>('.action-facebook');
+    expect(button?.disabled).toBe(true);
+    expect(button?.textContent).toContain('Publication…');
+
+    const request = httpTesting.expectOne('/api/publications/1/deliveries');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ channel: 'FACEBOOK' });
+
+    request.flush({
+      id: 99,
+      occurrenceId: 42,
+      channel: 'FACEBOOK',
+      status: 'PUBLISHED',
+      publishedAt: '2026-08-22T10:00:00',
+      externalId: '123_456',
+    });
+    fixture.detectChanges();
+
+    expect(notifications.notifications()).toEqual([
+      expect.objectContaining({
+        level: 'success',
+        message: 'Publication diffusée sur Facebook.',
+      }),
+    ]);
+    expect(
+      compiled.querySelector<HTMLButtonElement>('.action-facebook')?.disabled,
+    ).toBe(false);
+  });
+
+  it('should relay the reason returned with the 502 when Facebook refuses the post', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
+    fixture.detectChanges();
+
+    httpTesting.expectOne('/api/publications/1/deliveries').flush(
+      { message: 'No token available', code: 502 },
+      { status: 502, statusText: 'Bad Gateway' },
+    );
+    fixture.detectChanges();
+
+    expect(notifications.notifications()).toEqual([
+      expect.objectContaining({
+        level: 'error',
+        message: 'La publication n’a pas pu être diffusée sur Facebook : No token available',
+      }),
+    ]);
+    // L'échec débloque la carte : l'utilisateur peut réessayer.
+    expect(
+      compiled.querySelector<HTMLButtonElement>('.action-facebook')?.disabled,
+    ).toBe(false);
+  });
+
+  it('should not fire a second request while a publication is already in flight', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
+    fixture.detectChanges();
+    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
+    fixture.detectChanges();
+
+    httpTesting.expectOne('/api/publications/1/deliveries').flush({
+      id: 99,
+      occurrenceId: 42,
+      channel: 'FACEBOOK',
+      status: 'PUBLISHED',
+      publishedAt: '2026-08-22T10:00:00',
+      externalId: '123_456',
+    });
+  });
+
   it.each([
     ['.action-xlsx'],
-    ['.action-facebook'],
     ['.action-campaign'],
   ])('should warn that the action %s has no endpoint yet', (selector) => {
     const fixture = render();

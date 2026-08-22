@@ -12,9 +12,13 @@ const draft: Publication = {
   status: 'DRAFT',
 };
 
-async function render(publication: Publication): Promise<ComponentFixture<PublicationCardComponent>> {
+async function render(
+  publication: Publication,
+  publishing = false,
+): Promise<ComponentFixture<PublicationCardComponent>> {
   const fixture = TestBed.createComponent(PublicationCardComponent);
   fixture.componentRef.setInput('publication', publication);
+  fixture.componentRef.setInput('publishing', publishing);
   fixture.detectChanges();
   return fixture;
 }
@@ -103,6 +107,29 @@ describe('PublicationCardComponent', () => {
     expect(xlsx).toHaveBeenCalledWith(draft);
     expect(facebook).toHaveBeenCalledWith(draft);
     expect(campaign).toHaveBeenCalledWith(draft);
+  });
+
+  it('should show the loader and lock the Facebook button while publishing', async () => {
+    const fixture = await render(draft, true);
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.action-facebook',
+    );
+
+    expect(button?.disabled).toBe(true);
+    expect(button?.textContent).toContain('Publication…');
+    expect(button?.querySelector('app-loader')).not.toBeNull();
+  });
+
+  it('should not emit the Facebook action while a publication is already in flight', async () => {
+    const fixture = await render(draft, true);
+    const facebook = vi.fn();
+    fixture.componentInstance.publishOnFacebook.subscribe(facebook);
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('.action-facebook')
+      ?.click();
+
+    expect(facebook).not.toHaveBeenCalled();
   });
 
   it('should label the campaign action as an assignment when there is no campaign', async () => {

@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -52,6 +53,9 @@ export class PublicationsPageComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly createModalOpen = signal(false);
   protected readonly creating = signal(false);
+
+  /** Ids des publications dont la diffusion Facebook est en cours. */
+  protected readonly publishing = signal<ReadonlySet<number>>(new Set());
 
   protected readonly search = signal('');
   protected readonly statusFilter = signal<PublicationStatusFilter>('ALL');
@@ -132,7 +136,23 @@ export class PublicationsPageComponent {
   }
 
   protected onPublishOnFacebook(publication: Publication): void {
-    this.runUnavailableAction(this.publicationsService.publishOnFacebook(publication.id));
+    if (this.publishing().has(publication.id)) {
+      return;
+    }
+
+    this.setPublishing(publication.id, true);
+
+    this.publicationsService.publishOnFacebook(publication.id).subscribe({
+      next: () => {
+        this.setPublishing(publication.id, false);
+        this.notifications.success('Publication diffusée sur Facebook.');
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Diffusion Facebook impossible', err);
+        this.setPublishing(publication.id, false);
+        this.notifications.error(this.deliveryErrorMessage(err));
+      },
+    });
   }
 
   protected onAssignCampaign(publication: Publication): void {
@@ -158,6 +178,37 @@ export class PublicationsPageComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  private setPublishing(publicationId: number, active: boolean): void {
+    this.publishing.update((ids) => {
+      const next = new Set(ids);
+
+      if (active) {
+        next.add(publicationId);
+      } else {
+        next.delete(publicationId);
+      }
+
+      return next;
+    });
+  }
+
+  /**
+   * Le back renvoie 502 avec le message du canal distant quand Facebook refuse
+   * la publication : c'est l'information utile, on la préfère au message
+   * générique quand elle est présente.
+   */
+  private deliveryErrorMessage(err: HttpErrorResponse): string {
+    const reason = typeof err.error?.message === 'string' ? err.error.message : null;
+
+    if (err.status === 501) {
+      return 'Ce canal de diffusion n’est pas encore disponible.';
+    }
+
+    return reason
+      ? `La publication n’a pas pu être diffusée sur Facebook : ${ reason }`
+      : 'La publication n’a pas pu être diffusée sur Facebook.';
   }
 
   /** Relaie à l'utilisateur l'erreur des actions dont l'endpoint n'existe pas encore. */

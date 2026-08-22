@@ -6,11 +6,12 @@ import {
   input,
   output,
 } from '@angular/core';
+import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { Publication } from "../../publication.model";
 
 @Component({
   selector: 'app-publication-card',
-  imports: [DatePipe],
+  imports: [DatePipe, LoaderComponent],
   templateUrl: './publication-card.component.html',
   styleUrl: './publication-card.component.css',
   standalone: true,
@@ -18,6 +19,9 @@ import { Publication } from "../../publication.model";
 })
 export class PublicationCardComponent {
   readonly publication = input.required<Publication>();
+
+  /** Diffusion Facebook en cours : le bouton passe en attente et se verrouille. */
+  readonly publishing = input(false);
 
   readonly generateXlsx = output<Publication>();
   readonly publishOnFacebook = output<Publication>();

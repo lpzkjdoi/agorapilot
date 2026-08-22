@@ -48,6 +48,7 @@
           <li>
             <app-publication-card
               [publication]="publication"
+              [publishing]="publishing().has(publication.id)"
               (generateXlsx)="onGenerateXlsx($event)"
               (publishOnFacebook)="onPublishOnFacebook($event)"
               (assignCampaign)="onAssignCampaign($event)"

@@ -2,7 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { environment } from "../../../environments/environment";
-import { CreatePublicationRequest, Publication } from "./publication.model";
+import {
+  CreatePublicationDeliveryRequest,
+  CreatePublicationRequest,
+  Publication,
+  PublicationDelivery,
+} from "./publication.model";
 
 @Injectable({
   providedIn: 'root',
@@ -19,15 +24,26 @@ export class PublicationsService {
     return this.http.post<Publication>(this.url, request)
   }
 
+  /**
+   * Diffuse immédiatement une publication sur la page Facebook.
+   *
+   * Le back crée une occurrence datée de l'instant présent pour tracer la
+   * diffusion, puis renvoie la livraison correspondante (201). En cas de refus
+   * du canal distant il répond 502 : la livraison est tout de même enregistrée
+   * en base au statut `FAILED`, avec le message d'erreur de Facebook.
+   */
+  publishOnFacebook(publicationId: number): Observable<PublicationDelivery> {
+    const body: CreatePublicationDeliveryRequest = { channel: 'FACEBOOK' };
+    return this.http.post<PublicationDelivery>(`${ this.url }/${ publicationId }/deliveries`, body);
+  }
+
   // ---------------------------------------------------------------------------
-  // Actions de la carte publication.
+  // Actions de la carte publication encore sans endpoint.
   //
-  // Le back n'expose (pour l'instant) que `GET` et `POST /api/publications` :
-  // les trois actions ci-dessous n'ont pas encore d'endpoint. Elles sont
-  // déclarées ici pour que la page soit complète et que le branchement se
-  // résume, le jour venu, à remplacer le corps de la méthode par l'appel HTTP
-  // décrit en commentaire. En attendant, elles échouent explicitement plutôt
-  // que de faire croire à un succès.
+  // Elles sont déclarées ici pour que la page soit complète et que le
+  // branchement se résume, le jour venu, à remplacer le corps de la méthode par
+  // l'appel HTTP décrit en commentaire. En attendant, elles échouent
+  // explicitement plutôt que de faire croire à un succès.
   // ---------------------------------------------------------------------------
 
   /**
@@ -39,22 +55,6 @@ export class PublicationsService {
   generateXlsx(publicationId: number): Observable<never> {
     return throwError(() => new Error(
       `Génération XLSX indisponible : aucun endpoint back pour la publication ${publicationId}.`,
-    ));
-  }
-
-  /**
-   * Publie immédiatement une publication sur la page Facebook.
-   *
-   * Le back sait déjà publier (`FacebookPublisher`), mais uniquement au fil de
-   * l'eau depuis une occurrence programmée — aucun endpoint ne permet de
-   * déclencher la publication à la demande.
-   *
-   * TODO(back) : `POST /api/publications/{id}/deliveries` avec
-   * `{ channel: 'FACEBOOK' }`.
-   */
-  publishOnFacebook(publicationId: number): Observable<never> {
-    return throwError(() => new Error(
-      `Publication Facebook indisponible : aucun endpoint back pour la publication ${publicationId}.`,
     ));
   }
 
