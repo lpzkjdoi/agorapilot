@@ -30,3 +30,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-08-14 | [Système de notifications côté front](./changelog/2026-08-14-notifications-front.md) | _voir PR_ |
 | 2026-08-15 | [GitHub CLI et règle des Pull Requests en draft](./changelog/2026-08-15-gh-cli-pr-draft.md) | _voir PR_ |
 | 2026-08-15 | [Loader de la maquette et états de chargement](./changelog/2026-08-15-loader-maquette.md) | _voir PR_ |
+| 2026-08-22 | [Favicon AgoraPilot](./changelog/2026-08-22-favicon-agorapilot.md) | _voir PR_ |
