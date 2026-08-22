@@ -63,6 +63,18 @@ describe('NavbarComponent', () => {
     expect(getComputedStyle(header).backgroundColor).toBe('rgb(30, 58, 138)');
   });
 
+  it('should render the environment badge at the far right of the bar', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('.navbar') as HTMLElement;
+
+    // Dernier enfant du bandeau : `.navbar-nav` porte `flex: 1`, le badge est
+    // donc poussé contre le bord droit, comme dans la maquette.
+    const badge = header.lastElementChild as HTMLElement;
+    expect(badge.tagName.toLowerCase()).toBe('app-environment-badge');
+    expect(badge.textContent?.trim()).toBe('dev');
+  });
+
   it('should render the navigation icon at the 16px size of the maquette', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();

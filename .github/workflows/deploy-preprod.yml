@@ -69,6 +69,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Le badge d'environnement du bandeau lit `build-info.ts`, dont les
+      # valeurs par défaut sont celles du développement local. On les remplace
+      # ici, avant le build de l'image : l'artefact porte l'environnement qu'il
+      # sert, sans variable à fournir au démarrage du conteneur.
+      #
+      # Ce workflow ne déploie que la préproduction, où le badge affiche
+      # « preprod » ; `version` n'y sert qu'à tracer l'image. Un futur workflow
+      # de production écrira le même fichier avec `prod` et le tag SemVer posé
+      # sur `main` (`${GITHUB_REF_NAME#v}`), que le badge affichera à la place
+      # du nom de l'environnement.
+      - name: Renseigne l'identité du build
+        if: matrix.service == 'front'
+        run: |
+          set -euo pipefail
+          cat > apps/front/src/environments/build-info.ts <<EOF
+          // Généré par .github/workflows/deploy-preprod.yml — ne pas modifier.
+          export type AppEnvironmentName = 'dev' | 'preprod' | 'prod';
+
+          export interface BuildInfo {
+            environment: AppEnvironmentName;
+            version: string;
+          }
+
+          export const buildInfo: BuildInfo = {
+            environment: 'preprod',
+            version: '${GITHUB_SHA:0:7}',
+          };
+          EOF
+
       # Deux tags : le SHA du commit, seule référence réellement déployée
       # (traçable et immuable), et `latest` pour dépanner à la main depuis le
       # VPS sans avoir à retrouver un SHA.
