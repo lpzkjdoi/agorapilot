@@ -61,11 +61,20 @@ services:
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
       FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
+      # Racine de la médiathèque, sur le volume `media-data` ci-dessous. Chemin
+      # figé plutôt que variabilisé : il n'a pas à changer d'un environnement à
+      # l'autre, et toute nouvelle variable devrait être propagée jusqu'à
+      # l'Environment GitHub `preprod`.
+      MEDIA_ROOT: /var/lib/agorapilot/media
       # Pas de token de page ici : il est obtenu par POST /admin/facebook/bootstrap
       # et stocké en base (table facebook_tokens), puis renouvelé par
       # FacebookTokenScheduler. Voir docs/deploiement-preprod.md.
       # FacebookTokenScheduler tourne en cron "0 0 3 * * *" sans zone explicite.
       TZ: ${TZ:-Europe/Paris}
+    volumes:
+      # Les affiches déposées ne sont pas reconstructibles : ce volume est à
+      # sauvegarder au même titre que `db-data`.
+      - media-data:/var/lib/agorapilot/media
     # Publié sur la boucle locale uniquement : permet d'atteindre les endpoints
     # /admin/facebook/** (non authentifiés, donc non exposés par le front) depuis
     # le VPS ou via un tunnel SSH.
@@ -126,6 +135,7 @@ services:
 
 volumes:
   db-data:
+  media-data:
 
 networks:
   internal:

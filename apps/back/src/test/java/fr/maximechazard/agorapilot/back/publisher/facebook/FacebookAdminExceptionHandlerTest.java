@@ -31,7 +31,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        // Racine de médiathèque jetable : sans elle le contexte de test écrirait
+        // dans l'arbre de travail (apps/back/data/media).
+        "agorapilot.media.root=${java.io.tmpdir}/agorapilot-media-test"
 })
 @ActiveProfiles("preprod")
 @AutoConfigureMockMvc
