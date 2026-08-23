@@ -1,0 +1,48 @@
+<article class="media-card" [class.busy]="busy()">
+  <div class="media-preview">
+    @if (isImage()) {
+      <img [src]="fileUrl()" [alt]="alt()" loading="lazy" decoding="async" />
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="48px"
+           viewBox="0 -960 960 960"
+           width="48px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+      </svg>
+      <span class="media-kind">PDF</span>
+    }
+
+    @if (media().archived) {
+      <span class="media-badge">Archivé</span>
+    }
+  </div>
+
+  <div class="media-body">
+    <h3 class="media-title" [title]="label()">{{ label() }}</h3>
+    <p class="media-meta">
+      {{ size() }}
+      @if (dimensions(); as dimensions) {
+        <span aria-hidden="true"> · </span>{{ dimensions }}
+      }
+      <span aria-hidden="true"> · </span>{{ media().createdAt | date: 'd MMM y' : undefined : 'fr-FR' }}
+    </p>
+  </div>
+
+  <div class="media-actions">
+    @if (confirmingDelete()) {
+      <p class="media-confirm" role="alert">Supprimer&nbsp;?</p>
+      <button type="button" (click)="confirmingDelete.set(false)">Annuler</button>
+      <button type="button" class="danger" [disabled]="busy()" (click)="confirmDelete()">Confirmer</button>
+    } @else {
+      <button type="button" [disabled]="busy()" (click)="renamed.emit(media())">Modifier</button>
+      <button type="button" [disabled]="busy()" (click)="archiveToggled.emit(media())">
+        {{ media().archived ? 'Désarchiver' : 'Archiver' }}
+      </button>
+      <button type="button" class="danger" [disabled]="busy()" (click)="confirmingDelete.set(true)">Supprimer</button>
+    }
+  </div>
+</article>

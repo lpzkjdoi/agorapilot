@@ -1,0 +1,44 @@
+<div class="upload-zone"
+     [class.dragging]="dragging()"
+     [class.uploading]="uploading()"
+     (dragover)="onDragOver($event)"
+     (dragleave)="onDragLeave()"
+     (drop)="onDrop($event)"
+>
+  <svg xmlns="http://www.w3.org/2000/svg"
+       height="32px"
+       viewBox="0 -960 960 960"
+       width="32px"
+       fill="currentColor"
+       aria-hidden="true"
+  >
+    <path
+      d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+  </svg>
+
+  @if (uploading()) {
+    <p class="upload-title">Envoi en cours…</p>
+    <div class="upload-progress">
+      <div class="upload-progress-bar"
+           role="progressbar"
+           [attr.aria-valuenow]="progress()"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           [style.width.%]="progress() ?? 0"
+      ></div>
+    </div>
+  } @else {
+    <p class="upload-title">Glissez vos affiches ici</p>
+    <p class="upload-hint">JPEG, PNG, WebP ou PDF — {{ maxSize }} maximum</p>
+
+    <label class="upload-button">
+      Parcourir…
+      <input type="file"
+             class="upload-input"
+             multiple
+             [accept]="accept"
+             (change)="onInputChange($event)"
+      />
+    </label>
+  }
+</div>
