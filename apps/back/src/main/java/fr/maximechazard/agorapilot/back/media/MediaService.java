@@ -2,10 +2,12 @@ package fr.maximechazard.agorapilot.back.media;
 
 import fr.maximechazard.agorapilot.back.media.dtos.MediaContent;
 import fr.maximechazard.agorapilot.back.media.dtos.MediaDTO;
+import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.UnsupportedMediaFileTypeException;
 import fr.maximechazard.agorapilot.back.media.requests.UpdateMediaRequest;
 import fr.maximechazard.agorapilot.back.media.storage.MediaStorageService;
+import fr.maximechazard.agorapilot.back.publication.repositories.PublicationMediaRepository;
 import fr.maximechazard.agorapilot.back.media.storage.StoredFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import java.util.Optional;
 public class MediaService {
 
     private final MediaRepository mediaRepository;
+    private final PublicationMediaRepository publicationMediaRepository;
     private final MediaStorageService storage;
     private final MediaTypeDetector typeDetector;
     private final MediaMapper mapper;
@@ -119,12 +122,24 @@ public class MediaService {
     /**
      * Supprime le média, ligne et fichier.
      * <p>
+     * Refusé tant qu'une publication s'en sert : effacer le visuel viderait
+     * silencieusement des publications existantes, y compris déjà diffusées.
+     * Archiver reste possible pour retirer un média de la sélection.
+     * <p>
      * Le fichier n'est effacé qu'après le commit : l'inverse détruirait le binaire
      * d'un média encore présent en base si la transaction venait à échouer.
      */
     @Transactional
     public void delete(Long id) {
         Media media = findOrThrow(id);
+
+        long usages = publicationMediaRepository.countByMediaId(id);
+        if (usages > 0) {
+            throw new MediaInUseException(usages > 1
+                    ? "Ce média est utilisé par " + usages + " publications"
+                    : "Ce média est utilisé par une publication");
+        }
+
         String storageKey = media.getStorageKey();
 
         mediaRepository.delete(media);

@@ -5,6 +5,7 @@ import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
 import fr.maximechazard.agorapilot.back.publication.DeliveryStatus;
 import fr.maximechazard.agorapilot.back.publication.Publication;
 import fr.maximechazard.agorapilot.back.publication.PublicationDelivery;
+import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrence;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
@@ -25,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PublicationOccurrenceMapperTest {
 
     private final PublicationOccurrenceMapper mapper =
-            new PublicationOccurrenceMapper(new PublicationMapper(), new PublicationDeliveryMapper());
+            new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper());
 
     private static PublicationOccurrence occurrenceWithOneDelivery() {
         Publication publication = new Publication();

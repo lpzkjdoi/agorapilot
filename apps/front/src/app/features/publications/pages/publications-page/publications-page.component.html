@@ -50,6 +50,7 @@
               [publication]="publication"
               [publishing]="publishing().has(publication.id)"
               (generateXlsx)="onGenerateXlsx($event)"
+              (manageMedias)="onManageMedias($event)"
               (publishOnFacebook)="onPublishOnFacebook($event)"
               (assignCampaign)="onAssignCampaign($event)"
             />
@@ -65,5 +66,16 @@
     [creating]="creating()"
     (closed)="createModalOpen.set(false)"
     (submitted)="onCreate($event)"
+  />
+}
+
+@if (pickingFor()) {
+  <app-media-picker-modal
+    [medias]="medias()"
+    [selectedIds]="pickingSelection()"
+    [loading]="mediasLoading()"
+    [saving]="savingMedias()"
+    (closed)="pickingFor.set(null)"
+    (submitted)="onMediasSubmitted($event)"
   />
 }

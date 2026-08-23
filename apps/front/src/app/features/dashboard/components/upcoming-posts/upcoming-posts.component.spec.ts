@@ -7,7 +7,7 @@ function makeOccurrence(id: number, content: string): Occurrence {
     id,
     scheduledAt: '2026-07-20T09:00:00Z',
     status: 'SCHEDULED',
-    publication: { id, content, status: 'VERIFIED' },
+    publication: { id, content, status: 'VERIFIED', medias: [] },
     deliveries: [],
   };
 }

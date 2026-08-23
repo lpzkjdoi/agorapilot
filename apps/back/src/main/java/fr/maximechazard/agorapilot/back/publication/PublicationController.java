@@ -4,6 +4,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationDeliveryRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.SetPublicationMediasRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -43,5 +44,21 @@ public class PublicationController {
                 publicationDeliveryService.publishNow(id, request.getChannel()),
                 HttpStatus.CREATED
         );
+    }
+
+    // -------------------------------- PUT --------------------------------
+
+    /**
+     * Remplace la liste ordonnée des visuels rattachés à la publication.
+     * <p>
+     * L'ordre du corps fait foi : le premier média sert de vignette et de
+     * première photo à la diffusion.
+     */
+    @PutMapping("/{id}/medias")
+    public ResponseEntity<PublicationDTO> setMedias(
+            @PathVariable Long id,
+            @RequestBody @Valid SetPublicationMediasRequest request
+    ) {
+        return new ResponseEntity<>(publicationService.setMedias(id, request.getMediaIds()), HttpStatus.OK);
     }
 }

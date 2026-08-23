@@ -9,6 +9,11 @@ import {
 import { Observable } from "rxjs";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
+import {
+  MediaPickerModalComponent,
+} from "../../../medias/components/media-picker-modal/media-picker-modal.component";
+import { Media } from "../../../medias/media.model";
+import { MediasService } from "../../../medias/medias.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
 import {
@@ -35,6 +40,7 @@ import { PublicationsService } from "../../publications.service";
     PublicationCardComponent,
     PublicationFiltersComponent,
     CreatePublicationModalComponent,
+    MediaPickerModalComponent,
     LoaderComponent,
   ],
   templateUrl: './publications-page.component.html',
@@ -45,6 +51,7 @@ import { PublicationsService } from "../../publications.service";
 export class PublicationsPageComponent {
   private readonly publicationsService = inject(PublicationsService);
   private readonly campaignsService = inject(CampaignsService);
+  private readonly mediasService = inject(MediasService);
   private readonly notifications = inject(NotificationService);
 
   protected readonly publications = signal<Publication[]>([]);
@@ -56,6 +63,15 @@ export class PublicationsPageComponent {
 
   /** Ids des publications dont la diffusion Facebook est en cours. */
   protected readonly publishing = signal<ReadonlySet<number>>(new Set());
+
+  /** Médiathèque, chargée à la demande la première fois qu'on ouvre le sélecteur. */
+  protected readonly medias = signal<Media[]>([]);
+  protected readonly mediasLoading = signal(false);
+  private mediasLoaded = false;
+
+  /** Publication dont on modifie les visuels, `null` quand le sélecteur est fermé. */
+  protected readonly pickingFor = signal<Publication | null>(null);
+  protected readonly savingMedias = signal(false);
 
   protected readonly search = signal('');
   protected readonly statusFilter = signal<PublicationStatusFilter>('ALL');
@@ -130,6 +146,73 @@ export class PublicationsPageComponent {
           },
         });
   }
+
+  // ------------------------------- Visuels -------------------------------
+
+  protected onManageMedias(publication: Publication): void {
+    this.pickingFor.set(publication);
+
+    // Chargée une seule fois : la médiathèque ne change pas pendant qu'on
+    // parcourt la page Publications.
+    if (this.mediasLoaded || this.mediasLoading()) {
+      return;
+    }
+
+    this.mediasLoading.set(true);
+
+    this.mediasService.getMedias(false).subscribe({
+      next: (medias) => {
+        this.medias.set(medias);
+        this.mediasLoaded = true;
+        this.mediasLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Chargement de la médiathèque impossible', err);
+        this.mediasLoading.set(false);
+        this.notifications.error('La médiathèque n’a pas pu être chargée.');
+      },
+    });
+  }
+
+  protected onMediasSubmitted(mediaIds: number[]): void {
+    const publication = this.pickingFor();
+
+    if (!publication) {
+      return;
+    }
+
+    this.savingMedias.set(true);
+
+    this.publicationsService.setMedias(publication.id, mediaIds).subscribe({
+      next: (updated) => {
+        this.publications.update((publications) =>
+          publications.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        this.savingMedias.set(false);
+        this.pickingFor.set(null);
+        this.notifications.success(
+          mediaIds.length === 0 ? 'Visuels détachés.' : 'Visuels enregistrés.',
+        );
+      },
+      error: (err) => {
+        console.error('Rattachement des visuels impossible', err);
+        this.savingMedias.set(false);
+        this.notifications.error('Les visuels n’ont pas pu être enregistrés.');
+      },
+    });
+  }
+
+  /**
+   * Sélection de départ du sélecteur.
+   *
+   * Un `computed` et non une méthode appelée depuis le gabarit : une méthode
+   * renverrait un tableau neuf à chaque détection de changement, et le
+   * `linkedSignal` du sélecteur, qui suit cette entrée, effacerait la sélection
+   * en cours d'édition à chaque cycle.
+   */
+  protected readonly pickingSelection = computed(
+    () => (this.pickingFor()?.medias ?? []).map((media) => media.id),
+  );
 
   protected onGenerateXlsx(publication: Publication): void {
     this.runUnavailableAction(this.publicationsService.generateXlsx(publication.id));

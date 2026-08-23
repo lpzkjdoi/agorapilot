@@ -11,9 +11,9 @@ import { PublicationsPageComponent } from './publications-page.component';
 registerLocaleData(localeFr, 'fr-FR');
 
 const publications: Publication[] = [
-  { id: 1, content: 'Marché de producteurs samedi', status: 'VERIFIED', campaign: { id: 7, name: 'Parcs & Loisirs' } },
-  { id: 2, content: 'Conseil municipal reporté', status: 'DRAFT' },
-  { id: 3, content: 'Inscriptions au centre de loisirs', status: 'DRAFT' },
+  { id: 1, content: 'Marché de producteurs samedi', status: 'VERIFIED', campaign: { id: 7, name: 'Parcs & Loisirs' }, medias: [] },
+  { id: 2, content: 'Conseil municipal reporté', status: 'DRAFT', medias: [] },
+  { id: 3, content: 'Inscriptions au centre de loisirs', status: 'DRAFT', medias: [] },
 ];
 
 const campaigns: Campaign[] = [
@@ -183,7 +183,7 @@ describe('PublicationsPageComponent', () => {
     const request = httpTesting.expectOne('/api/publications');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ content: 'Nouvelle annonce', status: 'VERIFIED' });
-    request.flush({ id: 9, content: 'Nouvelle annonce', status: 'VERIFIED' });
+    request.flush({ id: 9, content: 'Nouvelle annonce', status: 'VERIFIED', medias: [] });
     fixture.detectChanges();
 
     expect(compiled.querySelector('app-create-publication-modal')).toBeNull();
@@ -348,7 +348,7 @@ describe('PublicationsPageComponent', () => {
 
     httpTesting
       .expectOne('/api/publications')
-      .flush({ id: 9, content: 'Nouvelle annonce', status: 'VERIFIED' });
+      .flush({ id: 9, content: 'Nouvelle annonce', status: 'VERIFIED', medias: [] });
     fixture.detectChanges();
 
     // La modale part avec le loader une fois la publication créée.
@@ -396,5 +396,120 @@ describe('PublicationsPageComponent', () => {
       'Les publications n’ont pas pu être chargées.',
     );
     expect(compiled.querySelector('app-publication-card')).toBeNull();
+  });
+
+  // ------------------------------- Visuels -------------------------------
+
+  describe('media picker', () => {
+    const libraryMedia = {
+      id: 4,
+      title: 'Affiche du marché',
+      originalFilename: 'affiche.png',
+      contentType: 'image/png',
+      sizeBytes: 1024,
+      width: 1200,
+      height: 1800,
+      altText: null,
+      checksum: 'cafe',
+      archived: false,
+      createdAt: '2026-08-23T10:00:00',
+      updatedAt: '2026-08-23T10:00:00',
+    };
+
+    /** Rend la page puis ouvre le sélecteur sur la première publication. */
+    function open(): ComponentFixture<PublicationsPageComponent> {
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      (compiled.querySelectorAll('.action-medias')[0] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    function pickFirstAndSave(fixture: ComponentFixture<PublicationsPageComponent>): void {
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      (compiled.querySelector('.picker-item') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      (compiled.querySelector('.modal-actions .primary') as HTMLButtonElement).click();
+    }
+
+    it('should load the library the first time the picker is opened', () => {
+      const fixture = open();
+
+      const request = httpTesting.expectOne('/api/medias?archived=false');
+      expect(request.request.method).toBe('GET');
+      request.flush([libraryMedia]);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('app-media-picker-modal')).not.toBeNull();
+      expect(compiled.querySelectorAll('.picker-item').length).toBe(1);
+    });
+
+    it('should not reload the library on a second opening', () => {
+      const fixture = open();
+      httpTesting.expectOne('/api/medias?archived=false').flush([libraryMedia]);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      (compiled.querySelector('.modal-close') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      (compiled.querySelectorAll('.action-medias')[0] as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      // La médiathèque ne change pas pendant qu'on parcourt la page.
+      httpTesting.expectNone('/api/medias?archived=false');
+    });
+
+    it('should PUT the selection and refresh the card', () => {
+      const fixture = open();
+      httpTesting.expectOne('/api/medias?archived=false').flush([libraryMedia]);
+      fixture.detectChanges();
+
+      pickFirstAndSave(fixture);
+
+      const request = httpTesting.expectOne('/api/publications/1/medias');
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({ mediaIds: [4] });
+
+      request.flush({ ...publications[0], medias: [libraryMedia] });
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('app-media-picker-modal')).toBeNull();
+      expect(compiled.querySelector('.media-thumbnail')?.getAttribute('src')).toBe('/api/medias/4/file');
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Visuels enregistrés.' }),
+      ]);
+    });
+
+    it('should report a failed attachment without closing the picker', () => {
+      const fixture = open();
+      httpTesting.expectOne('/api/medias?archived=false').flush([libraryMedia]);
+      fixture.detectChanges();
+
+      pickFirstAndSave(fixture);
+
+      httpTesting.expectOne('/api/publications/1/medias')
+                 .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-media-picker-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'error' }),
+      ]);
+    });
+
+    it('should tell the user when the library cannot be loaded', () => {
+      const fixture = open();
+      httpTesting.expectOne('/api/medias?archived=false')
+                 .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'error', message: expect.stringContaining('médiathèque') }),
+      ]);
+    });
   });
 });

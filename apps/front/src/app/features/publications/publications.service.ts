@@ -7,6 +7,7 @@ import {
   CreatePublicationRequest,
   Publication,
   PublicationDelivery,
+  SetPublicationMediasRequest,
 } from "./publication.model";
 
 @Injectable({
@@ -35,6 +36,17 @@ export class PublicationsService {
   publishOnFacebook(publicationId: number): Observable<PublicationDelivery> {
     const body: CreatePublicationDeliveryRequest = { channel: 'FACEBOOK' };
     return this.http.post<PublicationDelivery>(`${ this.url }/${ publicationId }/deliveries`, body);
+  }
+
+  /**
+   * Remplace la liste ordonnée des visuels de la publication.
+   *
+   * L'ordre du tableau fait foi : le premier média sert de vignette et de
+   * première photo à la diffusion. Un tableau vide détache tout.
+   */
+  setMedias(publicationId: number, mediaIds: number[]): Observable<Publication> {
+    const body: SetPublicationMediasRequest = { mediaIds };
+    return this.http.put<Publication>(`${ this.url }/${ publicationId }/medias`, body);
   }
 
   // ---------------------------------------------------------------------------

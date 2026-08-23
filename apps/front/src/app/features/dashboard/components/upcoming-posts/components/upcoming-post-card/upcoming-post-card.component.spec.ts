@@ -6,7 +6,7 @@ const occurrence: Occurrence = {
   id: 7,
   scheduledAt: '2026-07-20T09:00:00Z',
   status: 'SCHEDULED',
-  publication: { id: 3, content: 'Réunion publique ce jeudi', status: 'VERIFIED' },
+  publication: { id: 3, content: 'Réunion publique ce jeudi', status: 'VERIFIED', medias: [] },
   deliveries: [],
 };
 

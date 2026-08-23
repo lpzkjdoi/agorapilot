@@ -37,3 +37,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-08-22 | [Correctif : `GET /api/occurrences/weekly` renvoyait un JSON tronqué](./changelog/2026-08-22-fix-recursion-occurrences-weekly.md) | _voir PR_ |
 | 2026-08-23 | [Médiathèque — socle back : entité, stockage et API](./changelog/2026-08-23-mediatheque-socle-back.md) | _voir PR_ |
 | 2026-08-23 | [Médiathèque — page dédiée côté front](./changelog/2026-08-23-mediatheque-page-front.md) | _voir PR_ |
+| 2026-08-23 | [Médiathèque — rattachement aux publications et diffusion Facebook](./changelog/2026-08-23-mediatheque-publications-facebook.md) | _voir PR_ |

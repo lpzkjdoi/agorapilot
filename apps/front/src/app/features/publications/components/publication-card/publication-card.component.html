@@ -1,18 +1,26 @@
 <article class="card">
-  <!-- Aperçu média : la médiathèque n'existe pas encore côté domaine, la
-       maquette prévoit une vignette. On affiche donc systématiquement l'état
-       « sans média » tant qu'aucun média n'est rattaché aux publications. -->
+  <!-- Aperçu média : la première image rattachée sert de vignette, à défaut
+       l'icône « sans média » de la maquette. -->
   <div class="media">
-    <svg xmlns="http://www.w3.org/2000/svg"
-         height="40px"
-         viewBox="0 -960 960 960"
-         width="40px"
-         fill="currentColor"
-         aria-hidden="true"
-    >
-      <path
-        d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
-    </svg>
+    @if (thumbnailUrl(); as url) {
+      <img class="media-thumbnail" [src]="url" [alt]="thumbnailAlt()" loading="lazy" decoding="async" />
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="40px"
+           viewBox="0 -960 960 960"
+           width="40px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
+      </svg>
+    }
+
+    @if (mediaCount() > 1) {
+      <span class="media-count">+{{ mediaCount() - 1 }}</span>
+    }
+
     <span class="status"
           [class.status-verified]="verified()"
           [class.status-draft]="!verified()"
@@ -79,6 +87,20 @@
           </svg>
         }
         {{ publishing() ? 'Publication…' : 'Publier sur Facebook' }}
+      </button>
+
+      <button type="button" class="action action-medias" (click)="manageMedias.emit(publication())">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 -960 960 960"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path
+            d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
+        </svg>
+        {{ mediaCount() > 0 ? 'Modifier les visuels (' + mediaCount() + ')' : 'Ajouter un visuel' }}
       </button>
 
       <button type="button"
