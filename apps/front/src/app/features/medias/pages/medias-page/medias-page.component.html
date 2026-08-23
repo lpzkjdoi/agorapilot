@@ -1,0 +1,69 @@
+<div class="medias-page">
+  <header class="medias-header">
+    <div>
+      <h1>Médiathèque</h1>
+      <p class="medias-subtitle">Vos affiches et visuels, réutilisables sur plusieurs publications</p>
+    </div>
+
+    <div class="medias-tabs" role="group" aria-label="Filtrer les médias">
+      <button type="button"
+              [class.active]="filter() === 'CURRENT'"
+              (click)="filter.set('CURRENT')"
+      >Médiathèque</button>
+      <button type="button"
+              [class.active]="filter() === 'ARCHIVED'"
+              (click)="filter.set('ARCHIVED')"
+      >Archivés ({{ archivedCount() }})</button>
+    </div>
+  </header>
+
+  <app-media-upload-zone
+    [uploading]="uploading()"
+    [progress]="uploadProgress()"
+    (filesSelected)="onFilesSelected($event)"
+  />
+
+  @if (error(); as message) {
+    <p class="medias-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <div class="medias-loading">
+      <app-loader size="lg" label="Chargement des médias…" />
+    </div>
+  } @else if (medias().length === 0) {
+    <p class="medias-placeholder">Aucun média pour le moment — déposez votre première affiche ci-dessus</p>
+  } @else {
+    <p class="medias-count">
+      {{ visibleMedias().length }}
+      {{ visibleMedias().length > 1 ? 'médias' : 'média' }}
+    </p>
+
+    @if (visibleMedias().length === 0) {
+      <p class="medias-placeholder">
+        {{ filter() === 'ARCHIVED' ? 'Aucun média archivé' : 'Tous les médias sont archivés' }}
+      </p>
+    } @else {
+      <ul class="medias-grid">
+        @for (media of visibleMedias(); track media.id) {
+          <li>
+            <app-media-card
+              [media]="media"
+              [busy]="busy().has(media.id)"
+              (renamed)="onEdit($event)"
+              (archiveToggled)="onToggleArchive($event)"
+              (deleted)="onDelete($event)"
+            />
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>
+
+@if (editing(); as media) {
+  <app-media-edit-modal
+    [media]="media"
+    [saving]="saving()"
+    (closed)="editing.set(null)"
+    (submitted)="onEditSubmitted($event)"
+  />
+}

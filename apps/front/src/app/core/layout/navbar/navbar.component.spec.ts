@@ -48,11 +48,21 @@ describe('NavbarComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     const buttons = compiled.querySelectorAll('.navbar-nav-button');
-    expect(buttons.length).toBe(2);
+    expect(buttons.length).toBe(3);
 
     const publications = buttons[1];
     expect(publications.textContent).toContain('Publications');
     expect(publications.getAttribute('routerlink')).toBe('/publications');
+  });
+
+  it('should render the Médiathèque navigation entry linking to /medias', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const medias = compiled.querySelectorAll('.navbar-nav-button')[2];
+    expect(medias.textContent).toContain('Médiathèque');
+    expect(medias.getAttribute('routerlink')).toBe('/medias');
   });
 
   it('should paint the header with the dark blue bar of the maquette', () => {

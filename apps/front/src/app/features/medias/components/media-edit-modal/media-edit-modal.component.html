@@ -1,0 +1,58 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="media-edit-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="media-edit-title">Modifier le média</h2>
+      <p class="modal-subtitle">{{ label() }}</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <form class="media-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <label class="media-field">
+      <span>Titre</span>
+      <input type="text" formControlName="title" placeholder="Affiche de la fête de la musique" />
+    </label>
+
+    <label class="media-field">
+      <span>Texte alternatif</span>
+      <textarea formControlName="altText"
+                rows="3"
+                placeholder="Décrivez le visuel pour les lecteurs d’écran"
+      ></textarea>
+      <small>Lu par les lecteurs d’écran, et repris comme description à la diffusion.</small>
+    </label>
+
+    @if (form.controls.title.touched && form.controls.title.invalid) {
+      <p class="media-form-error" role="alert">Le titre ne peut pas dépasser 255 caractères.</p>
+    }
+    @if (form.controls.altText.touched && form.controls.altText.invalid) {
+      <p class="media-form-error" role="alert">Le texte alternatif ne peut pas dépasser 1000 caractères.</p>
+    }
+
+    <div class="media-form-actions">
+      <button type="button" class="secondary" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</div>
