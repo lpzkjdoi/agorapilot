@@ -1,10 +1,12 @@
 package fr.maximechazard.agorapilot.back.config;
 
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
+import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.UnsupportedMediaFileTypeException;
 import fr.maximechazard.agorapilot.back.media.storage.MediaStorageException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DeliveryFailedException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.DuplicateMediaException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +83,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleMediaStorageException(MediaStorageException exception) {
         log.error("Stockage des médias en échec", exception);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Le stockage des médias est indisponible.");
+    }
+
+    @ExceptionHandler(MediaInUseException.class)
+    public ResponseEntity<ApiError> handleMediaInUseException(MediaInUseException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateMediaException.class)
+    public ResponseEntity<ApiError> handleDuplicateMediaException(DuplicateMediaException exception) {
+        return build(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {

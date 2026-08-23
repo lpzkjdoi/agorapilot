@@ -1,0 +1,106 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="media-picker-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="media-picker-title">Visuels de la publication</h2>
+      <p class="modal-subtitle">Le premier visuel sert de vignette et de première photo.</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  @if (selection().length > 0) {
+    <section class="picker-selection">
+      <h3>Sélection ({{ selection().length }})</h3>
+      <ol class="picker-order">
+        @for (media of selection(); track media.id; let index = $index, isFirst = $first, isLast = $last) {
+          <li>
+            <span class="picker-rank">{{ index + 1 }}</span>
+            <span class="picker-name">{{ label(media) }}</span>
+            <button type="button"
+                    [disabled]="isFirst"
+                    [attr.aria-label]="'Monter ' + label(media)"
+                    (click)="move(media, -1)"
+            >↑</button>
+            <button type="button"
+                    [disabled]="isLast"
+                    [attr.aria-label]="'Descendre ' + label(media)"
+                    (click)="move(media, 1)"
+            >↓</button>
+            <button type="button"
+                    class="picker-remove"
+                    [attr.aria-label]="'Retirer ' + label(media)"
+                    (click)="toggle(media)"
+            >✕</button>
+          </li>
+        }
+      </ol>
+
+      @if (nonPublishable().length > 0) {
+        <p class="picker-warning" role="status">
+          Non diffusable comme photo sur Facebook : {{ nonPublishable().join(', ') }}.
+          Le visuel reste rattaché à la publication.
+        </p>
+      }
+    </section>
+  }
+
+  <section class="picker-library">
+    <h3>Médiathèque</h3>
+
+    @if (loading()) {
+      <p class="picker-empty">Chargement de la médiathèque…</p>
+    } @else if (available().length === 0) {
+      <p class="picker-empty">Aucun média disponible — déposez une affiche depuis la Médiathèque.</p>
+    } @else {
+      <ul class="picker-grid">
+        @for (media of available(); track media.id) {
+          <li>
+            <button type="button"
+                    class="picker-item"
+                    [class.selected]="isSelected(media)"
+                    [attr.aria-pressed]="isSelected(media)"
+                    (click)="toggle(media)"
+            >
+              <span class="picker-thumb">
+                @if (isImage(media)) {
+                  <img [src]="fileUrl(media)" [alt]="''" loading="lazy" decoding="async" />
+                } @else {
+                  <span class="picker-kind">PDF</span>
+                }
+                @if (isSelected(media)) {
+                  <span class="picker-badge">{{ rank(media) }}</span>
+                }
+              </span>
+              <span class="picker-label">{{ label(media) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <div class="modal-actions">
+    <button type="button" class="secondary" (click)="closed.emit()">Annuler</button>
+    <button type="button" class="primary" [disabled]="saving()" (click)="onSubmit()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</div>

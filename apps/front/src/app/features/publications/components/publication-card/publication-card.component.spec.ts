@@ -1,7 +1,9 @@
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Publication } from '../../publication.model';
+import { Publication, PublicationMedia } from '../../publication.model';
 import { PublicationCardComponent } from './publication-card.component';
 
 registerLocaleData(localeFr, 'fr-FR');
@@ -10,7 +12,20 @@ const draft: Publication = {
   id: 1,
   content: 'Fermeture exceptionnelle de la mairie',
   status: 'DRAFT',
+  medias: [],
 };
+
+function image(id: number): PublicationMedia {
+  return {
+    id,
+    title: `Affiche ${ id }`,
+    originalFilename: `affiche-${ id }.png`,
+    contentType: 'image/png',
+    width: 1200,
+    height: 1800,
+    altText: null,
+  };
+}
 
 async function render(
   publication: Publication,
@@ -27,6 +42,9 @@ describe('PublicationCardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicationCardComponent],
+      // La carte dérive l'URL de sa vignette via `MediasService`, qui injecte
+      // `HttpClient` — aucune requête n'est émise pour autant.
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
 
@@ -140,5 +158,86 @@ describe('PublicationCardComponent', () => {
 
     expect(button?.textContent).toContain('Ajouter à une campagne');
     expect(button?.classList.contains('action-campaign-empty')).toBe(true);
+  });
+
+  // ------------------------------- Visuels -------------------------------
+
+  it('should keep the `no media` icon when nothing is attached', async () => {
+    const fixture = await render(draft);
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.media img')).toBeNull();
+    expect(compiled.querySelector('.media svg')).not.toBeNull();
+  });
+
+  it('should use the first attached image as the thumbnail', async () => {
+    const fixture = await render({ ...draft, medias: [image(4), image(5)] });
+    const thumbnail = (fixture.nativeElement as HTMLElement).querySelector('.media-thumbnail');
+
+    expect(thumbnail?.getAttribute('src')).toBe('/api/medias/4/file');
+    expect(thumbnail?.getAttribute('loading')).toBe('lazy');
+  });
+
+  it('should skip a leading PDF and use the first real image', async () => {
+    // Un PDF ne peut pas servir de vignette ; la carte prend l'image suivante.
+    const fixture = await render({
+      ...draft,
+      medias: [{ ...image(4), contentType: 'application/pdf' }, image(5)],
+    });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.media-thumbnail')?.getAttribute('src'))
+      .toBe('/api/medias/5/file');
+  });
+
+  it('should fall back to the icon when only a PDF is attached', async () => {
+    const fixture = await render({
+      ...draft,
+      medias: [{ ...image(4), contentType: 'application/pdf' }],
+    });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.media-thumbnail')).toBeNull();
+  });
+
+  it('should describe the thumbnail with the alt text, and leave it empty without one', async () => {
+    const described = await render({ ...draft, medias: [{ ...image(4), altText: 'Affiche du marché' }] });
+    expect((described.nativeElement as HTMLElement).querySelector('.media-thumbnail')?.getAttribute('alt'))
+      .toBe('Affiche du marché');
+
+    const plain = await render({ ...draft, medias: [image(4)] });
+    expect((plain.nativeElement as HTMLElement).querySelector('.media-thumbnail')?.getAttribute('alt'))
+      .toBe('');
+  });
+
+  it('should count the extra visuals beyond the thumbnail', async () => {
+    const fixture = await render({ ...draft, medias: [image(4), image(5), image(6)] });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.media-count')?.textContent?.trim())
+      .toBe('+2');
+  });
+
+  it('should not show a counter for a single visual', async () => {
+    const fixture = await render({ ...draft, medias: [image(4)] });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.media-count')).toBeNull();
+  });
+
+  it('should label the media action by the number attached', async () => {
+    const empty = await render(draft);
+    expect((empty.nativeElement as HTMLElement).querySelector('.action-medias')?.textContent)
+      .toContain('Ajouter un visuel');
+
+    const filled = await render({ ...draft, medias: [image(4), image(5)] });
+    expect((filled.nativeElement as HTMLElement).querySelector('.action-medias')?.textContent)
+      .toContain('Modifier les visuels (2)');
+  });
+
+  it('should emit `manageMedias` when the media action is used', async () => {
+    const fixture = await render(draft);
+    const manage = vi.fn();
+    fixture.componentInstance.manageMedias.subscribe(manage);
+
+    ((fixture.nativeElement as HTMLElement).querySelector('.action-medias') as HTMLButtonElement).click();
+
+    expect(manage).toHaveBeenCalledWith(draft);
   });
 });

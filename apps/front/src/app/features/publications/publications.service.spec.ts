@@ -9,8 +9,8 @@ import {
 import { PublicationsService } from './publications.service';
 
 const publications: Publication[] = [
-  { id: 1, content: 'Marché de producteurs', status: 'VERIFIED' },
-  { id: 2, content: 'Conseil municipal', status: 'DRAFT' },
+  { id: 1, content: 'Marché de producteurs', status: 'VERIFIED', medias: [] },
+  { id: 2, content: 'Conseil municipal', status: 'DRAFT', medias: [] },
 ];
 
 describe('PublicationsService', () => {
@@ -130,5 +130,27 @@ describe('PublicationsService', () => {
 
     expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(400);
+  });
+
+  it('should PUT the ordered media ids on /medias', () => {
+    let updated: Publication | undefined;
+    service.setMedias(7, [3, 1]).subscribe((publication) => (updated = publication));
+
+    const request = httpTesting.expectOne('/api/publications/7/medias');
+    expect(request.request.method).toBe('PUT');
+    // L'ordre est porteur de sens : le premier visuel sert de vignette.
+    expect(request.request.body).toEqual({ mediaIds: [3, 1] });
+
+    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [] });
+    expect(updated?.id).toBe(7);
+  });
+
+  it('should send an empty list to detach every media', () => {
+    service.setMedias(7, []).subscribe();
+
+    const request = httpTesting.expectOne('/api/publications/7/medias');
+    expect(request.request.body).toEqual({ mediaIds: [] });
+
+    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [] });
   });
 });

@@ -17,7 +17,9 @@ public class FacebookConfig {
     public ClientHttpRequestFactory facebookClientHttpRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(10));
+        // 10 s suffisaient pour un post texte ; le dépôt d'une affiche de
+        // plusieurs mégaoctets, lui, dépasse largement ce délai.
+        factory.setReadTimeout(Duration.ofSeconds(60));
         return factory;
     }
 

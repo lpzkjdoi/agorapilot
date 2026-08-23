@@ -1,11 +1,13 @@
 package fr.maximechazard.agorapilot.back.media;
 
 import fr.maximechazard.agorapilot.back.media.dtos.MediaDTO;
+import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.UnsupportedMediaFileTypeException;
 import fr.maximechazard.agorapilot.back.media.requests.UpdateMediaRequest;
 import fr.maximechazard.agorapilot.back.media.storage.MediaStorageService;
 import fr.maximechazard.agorapilot.back.media.storage.StoredFile;
+import fr.maximechazard.agorapilot.back.publication.repositories.PublicationMediaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +41,8 @@ class MediaServiceTest {
     private MediaRepository mediaRepository;
     @Mock
     private MediaStorageService storage;
+    @Mock
+    private PublicationMediaRepository publicationMediaRepository;
 
     private MediaService service;
 
@@ -46,6 +50,7 @@ class MediaServiceTest {
     void setUp() {
         service = new MediaService(
                 mediaRepository,
+                publicationMediaRepository,
                 storage,
                 new MediaTypeDetector(),
                 new MediaMapper(),
@@ -216,6 +221,21 @@ class MediaServiceTest {
         ReflectionTestUtils.setField(request, "title", "   ");
 
         assertThat(service.update(1L, request).title()).isNull();
+    }
+
+    @Test
+    void refuses_to_delete_a_media_a_publication_still_uses() {
+        // Effacer le visuel viderait silencieusement des publications existantes,
+        // y compris déjà diffusées : on refuse plutôt que de propager.
+        when(mediaRepository.findById(1L)).thenReturn(Optional.of(media()));
+        when(publicationMediaRepository.countByMediaId(1L)).thenReturn(2L);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(MediaInUseException.class)
+                .hasMessageContaining("2 publications");
+
+        verify(mediaRepository, never()).delete(any());
+        verifyNoInteractions(storage);
     }
 
     @Test

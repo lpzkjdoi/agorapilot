@@ -48,7 +48,7 @@
       <p class="media-form-error" role="alert">Le texte alternatif ne peut pas dépasser 1000 caractères.</p>
     }
 
-    <div class="media-form-actions">
+    <div class="modal-actions">
       <button type="button" class="secondary" (click)="closed.emit()">Annuler</button>
       <button type="submit" class="primary" [disabled]="saving()">
         {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
