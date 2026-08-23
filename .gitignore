@@ -73,3 +73,6 @@ apps/front/.history/*
 # System files
 apps/front/.DS_Store
 apps/front/Thumbs.db
+
+# Médias déposés en développement local (le stockage vit sur un volume en préprod)
+apps/back/data/

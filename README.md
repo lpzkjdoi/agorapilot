@@ -72,6 +72,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [ ] Authentification et gestion des utilisateurs (aucune restriction d'accès actuellement)
 - [ ] Déclenchement automatique des publications à l'heure planifiée (le `FacebookPublisher` existe et fonctionne, mais rien ne parcourt encore les occurrences dues pour l'appeler)
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
+- [ ] Médiathèque : page dédiée côté front, puis rattachement des visuels aux publications et diffusion des images sur Facebook (le socle back — entité, stockage sur volume, API `/api/medias` — est en place)
 - [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)
 - [ ] Connecter les KPIs et le panneau "prochaines publications" du dashboard à des données réelles
 - [ ] Intégrer le formulaire de création de publication à une route de l'application

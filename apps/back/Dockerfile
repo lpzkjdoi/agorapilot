@@ -26,6 +26,14 @@ RUN apk add --no-cache tzdata
 ENV TZ=Europe/Paris
 
 RUN addgroup -S agorapilot && adduser -S -G agorapilot agorapilot
+
+# Point de montage du volume des médias. Il doit exister et appartenir à
+# l'utilisateur applicatif AVANT le `USER` : Docker recopie les permissions du
+# chemin présent dans l'image lorsqu'il monte un volume nommé encore vide. Sans
+# ces deux lignes, le volume appartient à root et le back démarre sans droit
+# d'écriture sur la médiathèque.
+RUN mkdir -p /var/lib/agorapilot/media && chown -R agorapilot:agorapilot /var/lib/agorapilot
+
 WORKDIR /app
 
 COPY --from=build /build/target/*.jar app.jar

@@ -12,6 +12,13 @@ spring:
     restart:
       enabled: true
 
+  servlet:
+    multipart:
+      # Le défaut Spring est de 1 Mo : une affiche le dépasse presque toujours.
+      # Doit rester cohérent avec le client_max_body_size du nginx du front.
+      max-file-size: 15MB
+      max-request-size: 20MB
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -46,3 +53,12 @@ facebook:
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:4200}
+
+agorapilot:
+  media:
+    # Volume disque monté sur le conteneur back en préproduction ; répertoire
+    # local ignoré par git en développement.
+    root: ${MEDIA_ROOT:./data/media}
+    # Liste blanche. Le SVG en est délibérément absent : servi en `inline`, il
+    # exécuterait son JavaScript dans l'origine de l'application.
+    allowed-content-types: image/jpeg,image/png,image/webp,application/pdf

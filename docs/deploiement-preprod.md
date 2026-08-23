@@ -12,10 +12,10 @@ Trois conteneurs, décrits par [`docker-compose.preprod.yaml`](../docker-compose
 | Service | Rôle | Exposition |
 |---|---|---|
 | `front` | nginx : sert la SPA Angular **et** proxifie `/api` vers le back | Réseau `web` → Traefik → `https://$PREPROD_HOST`, **restreint au VPN** |
-| `back` | Spring Boot, profil `preprod` | Réseau interne + `127.0.0.1:8080` sur le VPS |
+| `back` | Spring Boot, profil `preprod`, volume `media-data` | Réseau interne + `127.0.0.1:8080` sur le VPS |
 | `db` | PostgreSQL 16, volume `db-data` | Réseau interne uniquement |
 
-Deux conséquences de ce montage :
+Trois conséquences de ce montage :
 
 - **Une seule origine.** Le front appelle `/api` en relatif, nginx relaie vers le
   back. Aucun CORS à configurer, et aucune URL d'API à substituer d'un
@@ -24,6 +24,11 @@ Deux conséquences de ce montage :
   build du front, ce que fera de toute façon un workflow déclenché sur tag.
 - **Un seul point d'entrée public.** Seul `front` est attaché au réseau Traefik.
   La base n'est joignable par personne d'autre que le back.
+- **Deux volumes à sauvegarder, pas un.** `db-data` porte la base, `media-data`
+  porte les affiches déposées dans la médiathèque (monté sur
+  `/var/lib/agorapilot/media`). Ni l'un ni l'autre n'est reconstructible à partir
+  du dépôt : une sauvegarde qui n'emporterait que la base laisserait des
+  publications référençant des visuels disparus.
 
 ## Accès restreint au VPN
 
