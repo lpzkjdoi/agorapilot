@@ -55,6 +55,12 @@ frontend:
   url: ${FRONTEND_URL:http://localhost:4200}
 
 agorapilot:
+  scheduling:
+    # Période de balayage des occurrences dues (durée ISO-8601). La granularité
+    # de la planification ne dépasse pas cette valeur : une occurrence prévue à
+    # 10h00 part entre 10h00 et 10h01.
+    occurrences-delay: ${OCCURRENCES_SCHEDULER_DELAY:PT1M}
+
   media:
     # Volume disque monté sur le conteneur back en préproduction ; répertoire
     # local ignoré par git en développement.

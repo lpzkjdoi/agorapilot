@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication.dtos;
 
+import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public record PublicationOccurrenceDTO(
         Long id,
         LocalDateTime scheduledAt,
+        PublicationOccurrenceStatus status,
         PublicationDTO publication,
         List<PublicationDeliveryDTO> deliveries
 ) {

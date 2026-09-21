@@ -8,6 +8,7 @@ import fr.maximechazard.agorapilot.back.publication.PublicationDelivery;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrence;
+import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
@@ -37,6 +38,7 @@ class PublicationOccurrenceMapperTest {
         PublicationOccurrence occurrence = new PublicationOccurrence();
         occurrence.setId(1L);
         occurrence.setScheduledAt(LocalDateTime.of(2026, 8, 22, 18, 20, 5));
+        occurrence.setStatus(PublicationOccurrenceStatus.PUBLISHED);
         occurrence.setPublication(publication);
 
         PublicationDelivery delivery = new PublicationDelivery();
@@ -58,6 +60,7 @@ class PublicationOccurrenceMapperTest {
         PublicationOccurrenceDTO dto = mapper.toDTO(occurrenceWithOneDelivery());
 
         assertThat(dto.id()).isEqualTo(1L);
+        assertThat(dto.status()).isEqualTo(PublicationOccurrenceStatus.PUBLISHED);
         assertThat(dto.publication().content()).isEqualTo("Test création publication");
         assertThat(dto.deliveries())
                 .singleElement()
