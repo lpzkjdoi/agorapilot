@@ -181,6 +181,31 @@ Une fois les images publiées sur GHCR, `IMAGE_TAG` renseigné dans le `.env` :
 docker compose -f docker-compose.preprod.yaml pull && docker compose -f docker-compose.preprod.yaml up -d
 ```
 
+### Migration ponctuelle — statut `FAILED` des occurrences
+
+Hibernate dérive une contrainte `CHECK` de chaque enum, et `ddl-auto: update` ne
+la met **pas** à jour : sur une base déjà créée, `publication_occurrences.status`
+n'accepte que `SCHEDULED` et `PUBLISHED`. Depuis l'ordonnanceur de diffusion, une
+occurrence dont un canal a échoué passe à `FAILED` — l'écriture serait rejetée.
+À passer une fois, avant le premier déploiement qui embarque l'ordonnanceur :
+
+```bash
+docker compose -f docker-compose.preprod.yaml exec -T db \
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
+ALTER TABLE publication_occurrences DROP CONSTRAINT IF EXISTS publication_occurrences_status_check;
+ALTER TABLE publication_occurrences ADD CONSTRAINT publication_occurrences_status_check
+    CHECK (status IN ('SCHEDULED', 'PUBLISHED', 'FAILED'));
+SQL
+```
+
+Si la contrainte porte un autre nom (base restaurée, renommage manuel), la
+retrouver avant de la remplacer :
+
+```sql
+SELECT conname FROM pg_constraint
+WHERE conrelid = 'publication_occurrences'::regclass AND contype = 'c';
+```
+
 ## Développer le front en local contre le back de préproduction
 
 Pour itérer sur l'interface sans faire tourner le stack Docker de développement,

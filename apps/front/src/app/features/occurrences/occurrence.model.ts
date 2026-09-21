@@ -9,7 +9,7 @@ interface Delivery {
 export interface Occurrence {
   id: number,
   scheduledAt: string,
-  status: "SCHEDULED" | "PUBLISHED"
+  status: "SCHEDULED" | "PUBLISHED" | "FAILED"
   publication: Publication
   deliveries: Delivery[]
 }

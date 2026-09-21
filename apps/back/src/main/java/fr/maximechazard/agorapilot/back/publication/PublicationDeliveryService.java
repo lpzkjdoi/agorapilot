@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Diffusion d'une publication sur un canal.
@@ -36,6 +36,7 @@ public class PublicationDeliveryService {
     private final PublicationOccurrenceRepository publicationOccurrenceRepository;
     private final PublicationDeliveryRepository publicationDeliveryRepository;
     private final PublisherRegistry publisherRegistry;
+    private final PublicationOccurrenceService publicationOccurrenceService;
     private final PublicationDeliveryMapper publicationDeliveryMapper;
 
     /**
@@ -67,15 +68,67 @@ public class PublicationDeliveryService {
                 .orElseThrow(() -> new IllegalStateException(
                         "No " + channel + " delivery on occurrence " + occurrence.getId() + "."));
 
+        publicationOccurrenceService.refreshStatus(occurrence);
+
         if (delivery.getStatus() == DeliveryStatus.FAILED) {
             log.warn("Immediate delivery of publication {} on {} failed: {}",
                     publicationId, channel, delivery.getErrorMessage());
             throw new DeliveryFailedException(delivery.getErrorMessage());
         }
 
-        markOccurrencePublishedIfComplete(occurrence);
-
         return publicationDeliveryMapper.toDTO(delivery);
+    }
+
+    /**
+     * Sert les livraisons encore en attente d'une occurrence planifiée — le geste
+     * que répète l'ordonnanceur à chaque balayage.
+     * <p>
+     * Seules les livraisons {@code PENDING} sont diffusées. Une livraison déjà
+     * {@code FAILED} n'est pas retentée : le canal distant peut avoir accepté la
+     * publication avant de rompre la connexion, et une reprise automatique
+     * publierait deux fois. La reprise reste donc un geste explicite.
+     * <p>
+     * Aucune exception n'est levée quand un canal échoue : l'échec est tracé sur
+     * la livraison, et les autres canaux de l'occurrence doivent être servis
+     * malgré tout.
+     */
+    @Transactional
+    public void publishScheduledOccurrence(Long occurrenceId) {
+        Optional<PublicationOccurrence> found = publicationOccurrenceRepository.findById(occurrenceId);
+
+        if (found.isEmpty()) {
+            // Supprimée entre le balayage et sa prise en charge : rien à diffuser.
+            log.warn("Scheduled occurrence {} no longer exists, skipped.", occurrenceId);
+            return;
+        }
+
+        PublicationOccurrence occurrence = found.get();
+
+        for (PublicationDelivery delivery : publicationDeliveryRepository.findAllByOccurrence(occurrence)) {
+            if (delivery.getStatus() != DeliveryStatus.PENDING) {
+                continue;
+            }
+
+            publisherRegistry.forChannel(delivery.getChannel()).ifPresentOrElse(
+                    publisher -> publisher.publish(occurrence),
+                    () -> markUnsupported(delivery));
+        }
+
+        publicationOccurrenceService.refreshStatus(occurrence);
+    }
+
+    /**
+     * Sans publisher, la livraison resterait {@code PENDING} et l'occurrence
+     * reviendrait à chaque balayage. L'échec est tracé pour que l'occurrence
+     * sorte de la file et que la raison soit lisible.
+     */
+    private void markUnsupported(PublicationDelivery delivery) {
+        log.warn("No publisher available for channel {} on occurrence {}.",
+                delivery.getChannel(), delivery.getOccurrence().getId());
+
+        delivery.setStatus(DeliveryStatus.FAILED);
+        delivery.setErrorMessage("No publisher available for channel " + delivery.getChannel() + ".");
+        publicationDeliveryRepository.save(delivery);
     }
 
     private PublicationOccurrence createImmediateOccurrence(Publication publication, DeliveryChannel channel) {
@@ -88,17 +141,5 @@ public class PublicationDeliveryService {
         occurrence.addDelivery(delivery);
 
         return publicationOccurrenceRepository.save(occurrence);
-    }
-
-    /** Une occurrence n'est publiée que lorsque tous ses canaux ont été servis. */
-    private void markOccurrencePublishedIfComplete(PublicationOccurrence occurrence) {
-        List<PublicationDelivery> deliveries = publicationDeliveryRepository.findAllByOccurrence(occurrence);
-        boolean allPublished = !deliveries.isEmpty() && deliveries.stream()
-                .allMatch(delivery -> delivery.getStatus() == DeliveryStatus.PUBLISHED);
-
-        if (allPublished && occurrence.getStatus() != PublicationOccurrenceStatus.PUBLISHED) {
-            occurrence.setStatus(PublicationOccurrenceStatus.PUBLISHED);
-            publicationOccurrenceRepository.save(occurrence);
-        }
     }
 }

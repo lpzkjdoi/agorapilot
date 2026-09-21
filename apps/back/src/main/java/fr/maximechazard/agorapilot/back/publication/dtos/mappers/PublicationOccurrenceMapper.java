@@ -23,6 +23,7 @@ public class PublicationOccurrenceMapper {
         return new PublicationOccurrenceDTO(
                 occurrence.getId(),
                 occurrence.getScheduledAt(),
+                occurrence.getStatus(),
                 publicationMapper.toDTO(occurrence.getPublication()),
                 deliveries
         );
