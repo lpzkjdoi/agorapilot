@@ -9,8 +9,8 @@ import {
 import { PublicationsService } from './publications.service';
 
 const publications: Publication[] = [
-  { id: 1, content: 'Marché de producteurs', status: 'VERIFIED', medias: [] },
-  { id: 2, content: 'Conseil municipal', status: 'DRAFT', medias: [] },
+  { id: 1, content: 'Marché de producteurs', status: 'VERIFIED', medias: [], campaign: null },
+  { id: 2, content: 'Conseil municipal', status: 'DRAFT', medias: [], campaign: null },
 ];
 
 describe('PublicationsService', () => {
@@ -105,17 +105,36 @@ describe('PublicationsService', () => {
     expect((error as HttpErrorResponse).error.message).toBe('No token available');
   });
 
-  // Les deux actions restantes n'ont pas encore d'endpoint côté back : elles
-  // doivent échouer explicitement, et surtout n'émettre aucune requête HTTP.
-  it.each([
-    ['generateXlsx', () => service.generateXlsx(1)],
-    ['assignToCampaign', () => service.assignToCampaign(1, 7)],
-  ] as const)('should fail `%s` without issuing a request while the endpoint is missing', (_name, call) => {
+  // `generateXlsx` n'a pas encore d'endpoint côté back : elle doit échouer
+  // explicitement, et surtout n'émettre aucune requête HTTP.
+  it('should fail `generateXlsx` without issuing a request while the endpoint is missing', () => {
     let error: unknown;
-    call().subscribe({ error: (err) => (error = err) });
+    service.generateXlsx(1).subscribe({ error: (err) => (error = err) });
 
     expect(error).toBeInstanceOf(Error);
     httpTesting.expectNone(() => true);
+  });
+
+  it('should PUT the campaign of a publication', () => {
+    let received: Publication | undefined;
+    service.assignToCampaign(7, 3).subscribe((publication) => (received = publication));
+
+    const request = httpTesting.expectOne('/api/publications/7/campaign');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ campaignId: 3 });
+
+    const updated = { ...publications[0], campaign: { id: 3, name: 'Marché de Noël' } };
+    request.flush(updated);
+    expect(received).toEqual(updated);
+  });
+
+  it('should PUT a null campaign to detach a publication', () => {
+    service.assignToCampaign(7, null).subscribe();
+
+    const request = httpTesting.expectOne('/api/publications/7/campaign');
+    expect(request.request.body).toEqual({ campaignId: null });
+
+    request.flush({ ...publications[0], campaign: null });
   });
 
   it('should surface a creation error to the subscriber', () => {
@@ -141,7 +160,7 @@ describe('PublicationsService', () => {
     // L'ordre est porteur de sens : le premier visuel sert de vignette.
     expect(request.request.body).toEqual({ mediaIds: [3, 1] });
 
-    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [] });
+    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [], campaign: null });
     expect(updated?.id).toBe(7);
   });
 
@@ -151,6 +170,6 @@ describe('PublicationsService', () => {
     const request = httpTesting.expectOne('/api/publications/7/medias');
     expect(request.request.body).toEqual({ mediaIds: [] });
 
-    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [] });
+    request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [], campaign: null });
   });
 });

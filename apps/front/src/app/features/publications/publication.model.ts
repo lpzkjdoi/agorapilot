@@ -28,15 +28,21 @@ export interface Publication {
   /** Visuels rattachés, dans l'ordre choisi ; vide s'il n'y en a aucun. */
   medias: PublicationMedia[],
 
-  // Champs présents sur l'entité back mais **pas encore exposés** par
-  // `PublicationDTO` (`id`, `content`, `status` uniquement). La maquette les
-  // affiche : ils sont donc optionnels côté front, et les cartes se replient
-  // proprement tant que l'API ne les renvoie pas.
+  /** Campagne de rattachement, `null` si la publication n'en a pas. */
+  campaign: PublicationCampaign | null,
+
+  // Présent sur l'entité back mais **pas encore exposé** par `PublicationDTO`.
+  // La maquette l'affiche : il reste optionnel côté front, et les cartes se
+  // replient proprement tant que l'API ne le renvoie pas.
   createdAt?: string,
-  campaign?: PublicationCampaign | null,
 }
 
 export type CreatePublicationRequest = Omit<Publication, 'id' | 'createdAt' | 'campaign' | 'medias'>
+
+/** Corps de `PUT /api/publications/{id}/campaign` : `null` détache la publication. */
+export interface SetPublicationCampaignRequest {
+  campaignId: number | null
+}
 
 export interface CreatePublicationFormValue {
   content: Publication['content']

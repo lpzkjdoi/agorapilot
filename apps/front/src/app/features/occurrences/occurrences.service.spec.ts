@@ -13,7 +13,7 @@ const weeklyPayload = {
       id: 1,
       scheduledAt: '2026-07-20T09:00:00',
       status: 'SCHEDULED',
-      publication: { id: 10, content: 'Marché de producteurs', status: 'VERIFIED', medias: [] },
+      publication: { id: 10, content: 'Marché de producteurs', status: 'VERIFIED', medias: [], campaign: null },
       deliveries: [{ id: 100, channel: 'FACEBOOK', status: 'PENDING' }],
     },
   ],

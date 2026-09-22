@@ -8,7 +8,7 @@ import { CampaignDetailComponent } from './campaign-detail.component';
 registerLocaleData(localeFr, 'fr-FR');
 
 function publication(id: number, content: string, status: Publication['status']): Publication {
-  return { id, content, status, medias: [] };
+  return { id, content, status, medias: [], campaign: null };
 }
 
 function campaign(overrides: Partial<Campaign> = {}): Campaign {

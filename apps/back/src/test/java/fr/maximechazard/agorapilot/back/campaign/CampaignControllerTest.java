@@ -5,6 +5,7 @@ import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableE
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationCampaignDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,13 @@ class CampaignControllerTest {
                 LocalDateTime.of(2026, 12, 1, 9, 0),
                 LocalDateTime.of(2026, 12, 24, 23, 59),
                 CampaignStatus.SCHEDULED,
-                List.of(new PublicationDTO(8L, "Rendez-vous samedi", PublicationStatus.VERIFIED, List.of()))
+                List.of(new PublicationDTO(
+                        8L,
+                        "Rendez-vous samedi",
+                        PublicationStatus.VERIFIED,
+                        List.of(),
+                        new PublicationCampaignDTO(3L, "Marché de Noël")
+                ))
         );
     }
 
@@ -71,15 +78,18 @@ class CampaignControllerTest {
 
         /**
          * L'endpoint sérialisait l'entité {@link Campaign}, dont les publications
-         * référencent en retour leur campagne : le corps ne se parsait pas.
+         * référencent en retour leur campagne : le corps ne se parsait pas. Le
+         * retour existe toujours, mais sous une forme réduite qui ne reboucle
+         * pas — la campagne d'une publication ne porte pas ses publications.
          */
         @Test
-        void neReferenceJamaisLaCampagneDepuisSesPublications() throws Exception {
+        void neRebouclePasDeLaPublicationVersSesPublications() throws Exception {
             when(campaignService.getAll()).thenReturn(List.of(campaign()));
 
             mockMvc.perform(get("/api/campaigns"))
                    .andExpect(status().isOk())
-                   .andExpect(jsonPath("$[0].publications[0].campaign").doesNotExist())
+                   .andExpect(jsonPath("$[0].publications[0].campaign.name").value("Marché de Noël"))
+                   .andExpect(jsonPath("$[0].publications[0].campaign.publications").doesNotExist())
                    .andExpect(jsonPath("$[0].archived").doesNotExist())
                    .andExpect(jsonPath("$[0].createdAt").doesNotExist());
         }

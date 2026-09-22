@@ -1,5 +1,8 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.campaign.Campaign;
+import fr.maximechazard.agorapilot.back.campaign.CampaignRepository;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.media.Media;
 import fr.maximechazard.agorapilot.back.media.MediaRepository;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class PublicationService {
     private final PublicationRepository publicationRepository;
     private final MediaRepository mediaRepository;
+    private final CampaignRepository campaignRepository;
     private final PublicationMapper mapper;
 
     public PublicationDTO create(CreatePublicationRequest request) {
@@ -85,6 +89,27 @@ public class PublicationService {
         // relecture, sinon le DTO renvoyé juste après ne serait pas dans l'ordre
         // demandé.
         attachments.sort(Comparator.comparing(PublicationMedia::getPosition));
+
+        return mapper.toDTO(publicationRepository.save(publication));
+    }
+
+    /**
+     * Rattache la publication à une campagne, ou l'en détache avec un
+     * {@code campaignId} nul.
+     * <p>
+     * Seule la publication est enregistrée : c'est elle qui porte la clé
+     * étrangère. Passer par {@code Campaign.addPublication} rendrait la campagne
+     * sale et Hibernate la revaliderait sans raison.
+     */
+    @Transactional
+    public PublicationDTO setCampaign(Long publicationId, Long campaignId) {
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new PublicationNotFoundException("Publication " + publicationId + " introuvable"));
+
+        Campaign campaign = campaignId == null ? null : campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new CampaignNotFoundException("Campagne " + campaignId + " introuvable"));
+
+        publication.setCampaign(campaign);
 
         return mapper.toDTO(publicationRepository.save(publication));
     }

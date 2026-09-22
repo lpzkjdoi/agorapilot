@@ -1,0 +1,64 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.assign-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.assign-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--color-ui-text-secondary);
+}
+
+/* Rappel de la publication concernée : deux lignes suffisent à la reconnaître. */
+.assign-publication {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background-color: #F9FAFB;
+  color: var(--color-ui-text-primary);
+}
+
+.assign-field select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-ui-card);
+  color: var(--color-ui-text-primary);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.assign-field select:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: -1px;
+}
+
+/* Le loader s'affiche à gauche du libellé pendant l'appel. */
+.modal-actions .primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-actions .primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

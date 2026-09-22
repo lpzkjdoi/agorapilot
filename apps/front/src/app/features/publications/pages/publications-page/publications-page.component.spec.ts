@@ -12,8 +12,8 @@ registerLocaleData(localeFr, 'fr-FR');
 
 const publications: Publication[] = [
   { id: 1, content: 'Marché de producteurs samedi', status: 'VERIFIED', campaign: { id: 7, name: 'Parcs & Loisirs' }, medias: [] },
-  { id: 2, content: 'Conseil municipal reporté', status: 'DRAFT', medias: [] },
-  { id: 3, content: 'Inscriptions au centre de loisirs', status: 'DRAFT', medias: [] },
+  { id: 2, content: 'Conseil municipal reporté', status: 'DRAFT', medias: [], campaign: null },
+  { id: 3, content: 'Inscriptions au centre de loisirs', status: 'DRAFT', medias: [], campaign: null },
 ];
 
 const campaigns: Campaign[] = [
@@ -288,14 +288,11 @@ describe('PublicationsPageComponent', () => {
     });
   });
 
-  it.each([
-    ['.action-xlsx'],
-    ['.action-campaign'],
-  ])('should warn that the action %s has no endpoint yet', (selector) => {
+  it('should warn that generating the XLSX has no endpoint yet', () => {
     const fixture = render();
     const compiled = fixture.nativeElement as HTMLElement;
 
-    compiled.querySelector<HTMLButtonElement>(selector)?.click();
+    compiled.querySelector<HTMLButtonElement>('.action-xlsx')?.click();
     fixture.detectChanges();
 
     expect(notifications.notifications()).toEqual([
@@ -304,8 +301,97 @@ describe('PublicationsPageComponent', () => {
         message: 'Cette action n’est pas encore disponible.',
       }),
     ]);
-    // Aucune requête n'est émise : les endpoints n'existent pas encore.
+    // Aucune requête n'est émise : l'endpoint n'existe pas encore.
     httpTesting.expectNone('/api/publications');
+  });
+
+  describe('rattachement à une campagne', () => {
+    /** Ouvre la modale sur la publication d'indice `index`. */
+    function openModal(index = 1) {
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      compiled.querySelectorAll<HTMLButtonElement>('.action-campaign')[index].click();
+      fixture.detectChanges();
+
+      return { fixture, compiled };
+    }
+
+    function chooseAndSubmit(compiled: HTMLElement, fixture: ComponentFixture<PublicationsPageComponent>, value: string) {
+      const select = compiled.querySelector('#assign-campaign') as HTMLSelectElement;
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      compiled.querySelector<HTMLButtonElement>('app-assign-campaign-modal .primary')!.click();
+      fixture.detectChanges();
+    }
+
+    it('should open the modal on the publication that was clicked', () => {
+      const { compiled } = openModal();
+
+      expect(compiled.querySelector('app-assign-campaign-modal')).not.toBeNull();
+      expect(compiled.querySelector('.assign-publication')?.textContent)
+        .toContain('Conseil municipal reporté');
+    });
+
+    it('should PUT the chosen campaign and refresh the card', () => {
+      const { fixture, compiled } = openModal();
+
+      chooseAndSubmit(compiled, fixture, '7');
+
+      const request = httpTesting.expectOne('/api/publications/2/campaign');
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({ campaignId: 7 });
+
+      request.flush({ ...publications[1], campaign: { id: 7, name: 'Parcs & Loisirs' } });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-assign-campaign-modal')).toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'success',
+          message: 'Publication rattachée à « Parcs & Loisirs ».',
+        }),
+      ]);
+      expect(compiled.querySelectorAll('app-publication-card')[1].textContent)
+        .toContain('Parcs & Loisirs');
+    });
+
+    it('should tell the publication was detached', () => {
+      const { fixture, compiled } = openModal(0);
+
+      chooseAndSubmit(compiled, fixture, 'NONE');
+
+      httpTesting.expectOne('/api/publications/1/campaign')
+                 .flush({ ...publications[0], campaign: null });
+      fixture.detectChanges();
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'success',
+          message: 'Publication détachée de sa campagne.',
+        }),
+      ]);
+    });
+
+    it('should keep the modal open and warn when the call fails', () => {
+      const { fixture, compiled } = openModal();
+
+      chooseAndSubmit(compiled, fixture, '7');
+
+      httpTesting.expectOne('/api/publications/2/campaign')
+                 .flush('boom', { status: 404, statusText: 'Not Found' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-assign-campaign-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'La campagne n’a pas pu être enregistrée.',
+        }),
+      ]);
+    });
   });
 
   it('should show the loader while the publications are being fetched', () => {

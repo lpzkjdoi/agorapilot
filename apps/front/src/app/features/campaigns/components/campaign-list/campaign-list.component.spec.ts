@@ -39,7 +39,7 @@ describe('CampaignListComponent', () => {
 
   it('should render a campaign with its status, date and publication count', () => {
     const compiled = render([
-      campaign({ publications: [{ id: 7, content: 'Rendez-vous samedi', status: 'VERIFIED', medias: [] }] }),
+      campaign({ publications: [{ id: 7, content: 'Rendez-vous samedi', status: 'VERIFIED', medias: [], campaign: null }] }),
     ]);
 
     const item = compiled.querySelector('.campaign-list-item') as HTMLElement;
@@ -51,8 +51,8 @@ describe('CampaignListComponent', () => {
 
   it('should pluralise the publication count', () => {
     const publications = [
-      { id: 7, content: 'Un', status: 'VERIFIED' as const, medias: [] },
-      { id: 8, content: 'Deux', status: 'DRAFT' as const, medias: [] },
+      { id: 7, content: 'Un', status: 'VERIFIED' as const, medias: [], campaign: null },
+      { id: 8, content: 'Deux', status: 'DRAFT' as const, medias: [], campaign: null },
     ];
 
     const compiled = render([campaign({ publications })]);

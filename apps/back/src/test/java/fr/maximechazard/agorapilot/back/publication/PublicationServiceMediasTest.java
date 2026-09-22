@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.campaign.CampaignRepository;
 import fr.maximechazard.agorapilot.back.media.Media;
 import fr.maximechazard.agorapilot.back.media.MediaFileType;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
@@ -37,13 +38,16 @@ class PublicationServiceMediasTest {
     private PublicationRepository publicationRepository;
     @Mock
     private MediaRepository mediaRepository;
+    @Mock
+    private CampaignRepository campaignRepository;
 
     private PublicationService service;
     private Publication publication;
 
     @BeforeEach
     void setUp() {
-        service = new PublicationService(publicationRepository, mediaRepository, new PublicationMapper(new MediaMapper()));
+        service = new PublicationService(
+                publicationRepository, mediaRepository, campaignRepository, new PublicationMapper(new MediaMapper()));
         publication = new Publication("Marché de producteurs", PublicationStatus.DRAFT);
         publication.setId(PUBLICATION_ID);
     }
