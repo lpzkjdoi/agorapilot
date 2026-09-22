@@ -4,6 +4,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationDeliveryRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.SetPublicationCampaignRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.SetPublicationMediasRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -60,5 +61,17 @@ public class PublicationController {
             @RequestBody @Valid SetPublicationMediasRequest request
     ) {
         return new ResponseEntity<>(publicationService.setMedias(id, request.getMediaIds()), HttpStatus.OK);
+    }
+
+    /**
+     * Rattache la publication à une campagne. Un {@code campaignId} nul l'en
+     * détache : l'appel remplace le rattachement, il ne l'ajoute pas.
+     */
+    @PutMapping("/{id}/campaign")
+    public ResponseEntity<PublicationDTO> setCampaign(
+            @PathVariable Long id,
+            @RequestBody @Valid SetPublicationCampaignRequest request
+    ) {
+        return new ResponseEntity<>(publicationService.setCampaign(id, request.getCampaignId()), HttpStatus.OK);
     }
 }

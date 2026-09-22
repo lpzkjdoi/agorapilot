@@ -41,3 +41,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-09-21 | [Diffusion planifiée — socle back (planification + ordonnanceur)](./changelog/2026-09-21-diffusion-planifiee-back.md) | _voir PR_ |
 | 2026-09-22 | [Page Campagnes](./changelog/2026-09-22-page-campagnes.md) | _voir PR_ |
 | 2026-09-22 | [Clôturer une campagne](./changelog/2026-09-22-cloture-campagne.md) | _voir PR_ |
+| 2026-09-22 | [Rattacher une publication à une campagne](./changelog/2026-09-22-rattacher-publication-campagne.md) | _voir PR_ |

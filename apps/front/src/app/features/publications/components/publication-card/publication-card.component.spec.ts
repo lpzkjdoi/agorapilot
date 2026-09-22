@@ -13,6 +13,7 @@ const draft: Publication = {
   content: 'Fermeture exceptionnelle de la mairie',
   status: 'DRAFT',
   medias: [],
+  campaign: null,
 };
 
 function image(id: number): PublicationMedia {

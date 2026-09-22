@@ -17,6 +17,9 @@ import { MediasService } from "../../../medias/medias.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
 import {
+  AssignCampaignModalComponent,
+} from "../../components/assign-campaign-modal/assign-campaign-modal.component";
+import {
   CreatePublicationModalComponent,
 } from "../../components/create-publication-modal/create-publication-modal.component";
 import {
@@ -40,6 +43,7 @@ import { PublicationsService } from "../../publications.service";
     PublicationCardComponent,
     PublicationFiltersComponent,
     CreatePublicationModalComponent,
+    AssignCampaignModalComponent,
     MediaPickerModalComponent,
     LoaderComponent,
   ],
@@ -72,6 +76,10 @@ export class PublicationsPageComponent {
   /** Publication dont on modifie les visuels, `null` quand le sélecteur est fermé. */
   protected readonly pickingFor = signal<Publication | null>(null);
   protected readonly savingMedias = signal(false);
+
+  /** Publication dont on choisit la campagne, `null` quand la modale est fermée. */
+  protected readonly assigningFor = signal<Publication | null>(null);
+  protected readonly assigning = signal(false);
 
   protected readonly search = signal('');
   protected readonly statusFilter = signal<PublicationStatusFilter>('ALL');
@@ -239,12 +247,36 @@ export class PublicationsPageComponent {
   }
 
   protected onAssignCampaign(publication: Publication): void {
-    // Le choix de la campagne se fera dans une modale dédiée, livrée en même
-    // temps que l'endpoint de rattachement. En attendant, on déclenche l'appel
-    // pour relayer l'indisponibilité plutôt que de simuler un succès.
-    this.runUnavailableAction(
-      this.publicationsService.assignToCampaign(publication.id, publication.campaign?.id ?? null),
-    );
+    this.assigningFor.set(publication);
+  }
+
+  protected onCampaignSubmitted(campaignId: number | null): void {
+    const publication = this.assigningFor();
+
+    if (!publication) {
+      return;
+    }
+
+    this.assigning.set(true);
+
+    this.publicationsService.assignToCampaign(publication.id, campaignId).subscribe({
+      next: (updated) => {
+        this.publications.update((publications) =>
+          publications.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        this.assigning.set(false);
+        this.assigningFor.set(null);
+        this.notifications.success(
+          updated.campaign ? `Publication rattachée à « ${ updated.campaign.name } ».`
+                           : 'Publication détachée de sa campagne.',
+        );
+      },
+      error: (err) => {
+        console.error('Rattachement à la campagne impossible', err);
+        this.assigning.set(false);
+        this.notifications.error('La campagne n’a pas pu être enregistrée.');
+      },
+    });
   }
 
   private loadPublications(): void {

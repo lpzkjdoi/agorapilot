@@ -1,7 +1,9 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.campaign.Campaign;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.media.dtos.MediaSummaryDTO;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationCampaignDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,11 +23,14 @@ public class PublicationMapper {
                              .map(mediaMapper::toSummaryDTO)
                              .toList();
 
+        Campaign campaign = publication.getCampaign();
+
         return new PublicationDTO(
                 publication.getId(),
                 publication.getContent(),
                 publication.getStatus(),
-                medias
+                medias,
+                campaign == null ? null : new PublicationCampaignDTO(campaign.getId(), campaign.getName())
         );
     }
 }

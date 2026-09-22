@@ -7,6 +7,7 @@ import {
   CreatePublicationRequest,
   Publication,
   PublicationDelivery,
+  SetPublicationCampaignRequest,
   SetPublicationMediasRequest,
 } from "./publication.model";
 
@@ -71,13 +72,13 @@ export class PublicationsService {
   }
 
   /**
-   * Rattache une publication à une campagne (ou l'en détache avec `null`).
+   * Rattache une publication à une campagne, ou l'en détache avec `null`.
    *
-   * TODO(back) : `PATCH /api/publications/{id}` avec `{ campaignId }`.
+   * L'appel remplace le rattachement, il ne l'ajoute pas : une publication
+   * n'appartient qu'à une seule campagne.
    */
-  assignToCampaign(publicationId: number, campaignId: number | null): Observable<never> {
-    return throwError(() => new Error(
-      `Assignation de campagne indisponible : aucun endpoint back (publication ${publicationId}, campagne ${campaignId}).`,
-    ));
+  assignToCampaign(publicationId: number, campaignId: number | null): Observable<Publication> {
+    const body: SetPublicationCampaignRequest = { campaignId };
+    return this.http.put<Publication>(`${ this.url }/${ publicationId }/campaign`, body);
   }
 }
