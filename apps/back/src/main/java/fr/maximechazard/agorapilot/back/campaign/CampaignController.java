@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequestMapping("/api/campaigns")
 @RequiredArgsConstructor
 @RestController
@@ -16,11 +18,11 @@ public class CampaignController {
 
     // -------------------------------- GET --------------------------------
     @GetMapping
-    public ResponseEntity<Iterable<Campaign>> getAll() {
+    public ResponseEntity<List<CampaignDTO>> getAll() {
         return new ResponseEntity<>(campaignService.getAll(), HttpStatus.OK);
     }
 
-    // -------------------------------- GET --------------------------------
+    // -------------------------------- POST --------------------------------
     @PostMapping
     public ResponseEntity<CampaignDTO> create(@Valid @RequestBody CreateCampaignRequest request) {
         return new ResponseEntity<>(campaignService.create(request), HttpStatus.CREATED);

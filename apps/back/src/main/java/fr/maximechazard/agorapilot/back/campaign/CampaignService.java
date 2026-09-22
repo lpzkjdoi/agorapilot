@@ -7,6 +7,8 @@ import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CampaignService {
@@ -31,7 +33,7 @@ public class CampaignService {
         return mapper.toDTO(campaignRepository.save(campaign));
     }
 
-    public Iterable<Campaign> getAll() {
-        return campaignRepository.findAll();
+    public List<CampaignDTO> getAll() {
+        return campaignRepository.findAll().stream().map(mapper::toDTO).toList();
     }
 }
