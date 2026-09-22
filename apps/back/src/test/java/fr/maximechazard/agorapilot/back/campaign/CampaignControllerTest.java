@@ -1,6 +1,8 @@
 package fr.maximechazard.agorapilot.back.campaign;
 
 import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
@@ -120,7 +122,7 @@ class CampaignControllerTest {
         }
 
         @Test
-        void refuseUneDateDeDebutPassee() throws Exception {
+        void refuseUneDateDeDebutPasseeALaCreation() throws Exception {
             mockMvc.perform(post("/api/campaigns")
                            .contentType(MediaType.APPLICATION_JSON)
                            .content("""
@@ -128,6 +130,37 @@ class CampaignControllerTest {
                    .andExpect(status().isBadRequest());
 
             verify(campaignService, never()).create(any());
+        }
+    }
+
+    @Nested
+    class Close {
+
+        @Test
+        void clotureLaCampagne() throws Exception {
+            when(campaignService.close(3L)).thenReturn(campaign());
+
+            mockMvc.perform(post("/api/campaigns/3/closure"))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$.id").value(3));
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() throws Exception {
+            when(campaignService.close(404L))
+                    .thenThrow(new CampaignNotFoundException("Campagne 404 introuvable"));
+
+            mockMvc.perform(post("/api/campaigns/404/closure"))
+                   .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void refuseUneCampagneQueSonEtatNePermetPasDeCloturer() throws Exception {
+            when(campaignService.close(3L))
+                    .thenThrow(new CampaignNotClosableException("La campagne 3 n'a pas encore commencé"));
+
+            mockMvc.perform(post("/api/campaigns/3/closure"))
+                   .andExpect(status().isConflict());
         }
     }
 }

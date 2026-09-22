@@ -2,8 +2,6 @@ package fr.maximechazard.agorapilot.back.campaign;
 
 import fr.maximechazard.agorapilot.back.publication.Publication;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -33,10 +31,17 @@ public class Campaign {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @FutureOrPresent
+    /**
+     * Les dates ne portent <strong>aucune</strong> contrainte temporelle ici :
+     * une campagne vieillit, et Hibernate revalide l'entité entière à chaque
+     * update. Un `@FutureOrPresent` rendait toute campagne déjà commencée
+     * impossible à modifier — donc à clôturer. Exiger une date future est une
+     * règle de saisie : elle vit dans {@code CreateCampaignRequest}.
+     * <p>
+     * Une campagne sans date de fin est à durée indéterminée.
+     */
     private LocalDateTime startDate;
 
-    @Future
     private LocalDateTime endDate;
 
     @NotNull
@@ -82,5 +87,25 @@ public class Campaign {
     public void addPublication(Publication publication) {
         publications.add(publication);
         publication.setCampaign(this);
+    }
+
+    /** Vrai dès lors que la date de début est atteinte ; une campagne sans date ne commence jamais. */
+    public boolean hasStarted(LocalDateTime now) {
+        return startDate != null && !startDate.isAfter(now);
+    }
+
+    /**
+     * Arrête la campagne maintenant.
+     * <p>
+     * Une date de fin déjà passée est conservée : la campagne s'est arrêtée ce
+     * jour-là, la clôture ne fait que l'acter. Une date de fin future, elle, est
+     * ramenée au présent — c'est tout le sens d'une clôture anticipée.
+     */
+    public void close(LocalDateTime now) {
+        if (endDate == null || endDate.isAfter(now)) {
+            endDate = now;
+        }
+
+        status = CampaignStatus.COMPLETED;
     }
 }

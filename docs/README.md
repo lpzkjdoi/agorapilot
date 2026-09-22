@@ -40,3 +40,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-08-23 | [Médiathèque — rattachement aux publications et diffusion Facebook](./changelog/2026-08-23-mediatheque-publications-facebook.md) | _voir PR_ |
 | 2026-09-21 | [Diffusion planifiée — socle back (planification + ordonnanceur)](./changelog/2026-09-21-diffusion-planifiee-back.md) | _voir PR_ |
 | 2026-09-22 | [Page Campagnes](./changelog/2026-09-22-page-campagnes.md) | _voir PR_ |
+| 2026-09-22 | [Clôturer une campagne](./changelog/2026-09-22-cloture-campagne.md) | _voir PR_ |
