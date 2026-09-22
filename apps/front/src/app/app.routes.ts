@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 import {
+  CampaignsPageComponent,
+} from "./features/campaigns/pages/campaigns-page/campaigns-page.component";
+import {
   DashboardPageComponent,
 } from "./features/dashboard/pages/dashboard-page/dashboard-page";
 import {
@@ -14,6 +17,11 @@ export const routes: Routes = [
     title: "Dashboard",
     path: 'dashboard',
     component: DashboardPageComponent,
+  },
+  {
+    title: "Campagnes",
+    path: 'campagnes',
+    component: CampaignsPageComponent,
   },
   {
     title: "Publications",

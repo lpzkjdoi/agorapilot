@@ -136,6 +136,41 @@ button {
   font-weight: 600;
 }
 
+/* Badge de statut d'une campagne, partagé par la liste et le détail. */
+.campaign-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.campaign-badge-active {
+  background-color: #D1FAE5;
+  color: #047857;
+}
+
+.campaign-badge-scheduled {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.campaign-badge-draft {
+  background-color: #F3F4F6;
+  color: var(--color-ui-text-secondary);
+}
+
+.campaign-badge-completed {
+  background-color: #EDE9FE;
+  color: #6D28D9;
+}
+
+.campaign-badge-canceled {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}
+
 /* Habillage commun des modales.
    Trois composants le partagent (création de publication, édition d'un média,
    sélection des visuels) : le garder dans chaque feuille de style les faisait

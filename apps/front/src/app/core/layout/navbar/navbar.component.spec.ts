@@ -42,15 +42,25 @@ describe('NavbarComponent', () => {
     expect(button?.getAttribute('routerlink')).toBe('/dashboard');
   });
 
+  it('should render the Campagnes navigation entry linking to /campagnes', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const campaigns = compiled.querySelectorAll('.navbar-nav-button')[1];
+    expect(campaigns.textContent).toContain('Campagnes');
+    expect(campaigns.getAttribute('routerlink')).toBe('/campagnes');
+  });
+
   it('should render the Publications navigation entry linking to /publications', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
 
     const buttons = compiled.querySelectorAll('.navbar-nav-button');
-    expect(buttons.length).toBe(3);
+    expect(buttons.length).toBe(4);
 
-    const publications = buttons[1];
+    const publications = buttons[2];
     expect(publications.textContent).toContain('Publications');
     expect(publications.getAttribute('routerlink')).toBe('/publications');
   });
@@ -60,7 +70,7 @@ describe('NavbarComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
 
-    const medias = compiled.querySelectorAll('.navbar-nav-button')[2];
+    const medias = compiled.querySelectorAll('.navbar-nav-button')[3];
     expect(medias.textContent).toContain('Médiathèque');
     expect(medias.getAttribute('routerlink')).toBe('/medias');
   });

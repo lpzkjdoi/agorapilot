@@ -1,0 +1,33 @@
+<div class="campaigns-page">
+  <header class="campaigns-header">
+    <h1>Campagnes</h1>
+    <p class="campaigns-subtitle">Gérez vos campagnes de communication</p>
+  </header>
+
+  @if (error(); as message) {
+    <p class="campaigns-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <div class="campaigns-loading">
+      <app-loader size="lg" label="Chargement des campagnes…" />
+    </div>
+  } @else {
+    <app-campaign-list
+      [campaigns]="campaigns()"
+      [selectedId]="selectedId()"
+      (selected)="selectedId.set($event.id)"
+      (createRequested)="createModalOpen.set(true)"
+    />
+
+    @if (selected(); as campaign) {
+      <app-campaign-detail [campaign]="campaign" />
+    }
+  }
+</div>
+
+@if (createModalOpen()) {
+  <app-create-campaign-modal
+    [creating]="creating()"
+    (closed)="createModalOpen.set(false)"
+    (submitted)="onCreate($event)"
+  />
+}
