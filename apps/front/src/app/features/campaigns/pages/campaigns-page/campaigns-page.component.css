@@ -1,0 +1,24 @@
+.campaigns-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.campaigns-subtitle {
+  margin-top: 0.125rem;
+  color: var(--color-ui-text-secondary);
+}
+
+.campaigns-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
+.campaigns-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-sm);
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}

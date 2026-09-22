@@ -53,6 +53,25 @@ describe('CampaignsService', () => {
     httpTesting.expectNone('/api/campaigns');
   });
 
+  it('should POST a new campaign on /api/campaigns', () => {
+    let received: Campaign | undefined;
+    const request = {
+      name: 'Marché de Noël',
+      description: 'Toutes les annonces du marché',
+      startDate: '2026-12-01T00:00:00',
+      endDate: '2026-12-24T00:00:00',
+    };
+
+    service.createCampaign(request).subscribe((campaign) => (received = campaign));
+
+    const pending = httpTesting.expectOne('/api/campaigns');
+    expect(pending.request.method).toBe('POST');
+    expect(pending.request.body).toEqual(request);
+
+    pending.flush(campaigns[0]);
+    expect(received).toEqual(campaigns[0]);
+  });
+
   it('should surface a loading error to the subscriber', () => {
     let error: unknown;
     service.getCampaigns().subscribe({ error: (err) => (error = err) });

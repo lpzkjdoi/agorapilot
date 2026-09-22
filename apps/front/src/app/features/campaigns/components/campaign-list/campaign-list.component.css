@@ -1,0 +1,135 @@
+.campaign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-ui-card);
+  box-shadow: var(--shadow-card);
+}
+
+.campaign-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.campaign-list-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.campaign-list-create:hover {
+  background-color: #1B327A;
+}
+
+.campaign-list-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ui-text-muted);
+}
+
+.campaign-list-search:focus-within {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: -1px;
+}
+
+.campaign-list-search input {
+  flex: 1;
+  border: 0;
+  background-color: transparent;
+  color: var(--color-ui-text-primary);
+}
+
+.campaign-list-search input:focus-visible {
+  outline: none;
+}
+
+.campaign-list-hidden-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.campaign-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  /* La barre de sélection remplace ce liseré : elle ne doit pas décaler le texte. */
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.campaign-list-item:hover {
+  background-color: #F9FAFB;
+}
+
+.campaign-list-item.selected {
+  border-left-color: #1E3A8A;
+  background-color: #EEF2FF;
+}
+
+.campaign-list-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.campaign-list-item-name {
+  font-weight: 600;
+  color: var(--color-ui-text-primary);
+}
+
+.campaign-list-item-date {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-ui-text-secondary);
+}
+
+.campaign-list-item-count {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background-color: #ECFDF5;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: #047857;
+}
+
+.campaign-list-placeholder {
+  padding: 2rem 1rem;
+  border: 1px dashed var(--color-ui-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-ui-text-secondary);
+}

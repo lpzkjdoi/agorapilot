@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { CampaignsPageComponent } from './features/campaigns/pages/campaigns-page/campaigns-page.component';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page';
 import { MediasPageComponent } from './features/medias/pages/medias-page/medias-page.component';
 import { PublicationsPageComponent } from './features/publications/pages/publications-page/publications-page.component';
@@ -23,8 +24,26 @@ describe('routes', () => {
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  it('should declare the `dashboard`, `publications` and `medias` routes', () => {
-    expect(routes.map((route) => route.path)).toEqual(['dashboard', 'publications', 'medias']);
+  it('should declare the `dashboard`, `campagnes`, `publications` and `medias` routes', () => {
+    expect(routes.map((route) => route.path)).toEqual([
+      'dashboard',
+      'campagnes',
+      'publications',
+      'medias',
+    ]);
+  });
+
+  it('should render the campaigns page on /campagnes and set its title', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/campagnes', CampaignsPageComponent);
+
+    expect(component).toBeInstanceOf(CampaignsPageComponent);
+    expect(document.title).toBe('Campagnes');
+
+    // La page charge les campagnes dès son initialisation ; la requête est
+    // consommée ici pour que `verify()` reste vert.
+    httpTesting.expectOne('/api/campaigns');
+    httpTesting.verify();
   });
 
   it('should render the medias page on /medias and set its title', async () => {
