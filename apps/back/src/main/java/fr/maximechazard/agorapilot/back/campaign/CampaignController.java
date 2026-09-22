@@ -27,4 +27,14 @@ public class CampaignController {
     public ResponseEntity<CampaignDTO> create(@Valid @RequestBody CreateCampaignRequest request) {
         return new ResponseEntity<>(campaignService.create(request), HttpStatus.CREATED);
     }
+
+    /**
+     * Clôture une campagne commencée : son statut passe à {@code COMPLETED} et
+     * sa date de fin au présent. Répond {@code 409} si la campagne n'a pas
+     * commencé ou si elle est déjà terminée.
+     */
+    @PostMapping("/{id}/closure")
+    public ResponseEntity<CampaignDTO> close(@PathVariable Long id) {
+        return new ResponseEntity<>(campaignService.close(id), HttpStatus.OK);
+    }
 }

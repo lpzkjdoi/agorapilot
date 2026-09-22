@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.config;
 
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
@@ -26,6 +27,11 @@ public class GlobalExceptionHandler {
         apiError.setMessage(exception.getMessage());
         apiError.setCode(HttpStatus.NOT_FOUND.value());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    }
+
+    @ExceptionHandler(CampaignNotClosableException.class)
+    public ResponseEntity<ApiError> handleCampaignNotClosableException(CampaignNotClosableException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(PublicationNotFoundException.class)
