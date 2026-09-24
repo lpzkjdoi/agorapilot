@@ -81,3 +81,4 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [ ] Fournir un `.env.example` pour faciliter l'onboarding
 - [ ] Étoffer la couverture de tests (seul un test de contexte Spring existe actuellement)
 - [ ] Dockerfiles de production pour le backend et le frontend
+- [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
