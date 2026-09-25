@@ -1,0 +1,72 @@
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-md);
+  overflow: visible;
+  background-color: var(--color-ui-border);
+  gap: 1px;
+}
+
+.month-weekday {
+  padding: 0.5rem;
+  background-color: #F9FAFB;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ui-text-secondary);
+}
+
+.month-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 6.5rem;
+  padding: 0.5rem;
+  background-color: var(--color-ui-card);
+  cursor: pointer;
+}
+
+.month-cell:focus {
+  outline: none;
+}
+
+.month-cell:hover,
+.month-cell-selected {
+  background-color: #F9FAFB;
+}
+
+/* Maquette : les jours hors du mois sont des cases grises, sans numéro. */
+.month-cell-outside {
+  background-color: #F3F4F6;
+  cursor: default;
+}
+
+.month-cell-drop {
+  background-color: #EFF6FF;
+  outline: 2px dashed var(--color-brand-blue);
+  outline-offset: -3px;
+}
+
+.month-day {
+  align-self: flex-start;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ui-text-primary);
+  cursor: pointer;
+}
+
+.month-day-today {
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+}
+
+.month-more {
+  font-size: 12px;
+  color: var(--color-ui-text-secondary);
+}

@@ -260,3 +260,35 @@ button {
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* Badges d'une diffusion (canal, statut) : bulle du calendrier, et à terme
+   tableau de bord. Mêmes teintes que les pastilles du calendrier. */
+.occurrence-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.occurrence-badge-facebook,
+.occurrence-badge-scheduled {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.occurrence-badge-intramuros {
+  background-color: #F3E8FF;
+  color: #7E22CE;
+}
+
+.occurrence-badge-published {
+  background-color: #D1FAE5;
+  color: #047857;
+}
+
+.occurrence-badge-failed {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}

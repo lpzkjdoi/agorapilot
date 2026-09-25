@@ -1,0 +1,26 @@
+<span class="chip"
+      [class.chip-facebook]="channel() === 'FACEBOOK'"
+      [class.chip-intramuros]="channel() === 'INTRAMUROS'"
+      [class.chip-published]="occurrence().status === 'PUBLISHED'"
+      [class.chip-failed]="occurrence().status === 'FAILED'"
+      [attr.title]="tooltip()"
+>
+  @if (occurrence().status === 'FAILED') {
+    <span class="chip-icon" aria-hidden="true">!</span>
+  } @else if (occurrence().status === 'PUBLISHED') {
+    <span class="chip-icon" aria-hidden="true">✓</span>
+  } @else if (occurrence().pinned) {
+    <svg class="chip-icon"
+         xmlns="http://www.w3.org/2000/svg"
+         height="12px"
+         viewBox="0 -960 960 960"
+         width="12px"
+         fill="currentColor"
+         aria-label="Heure fixe"
+    >
+      <path d="m640-480 80 80v80H520v240l-40 40-40-40v-240H240v-80l80-80v-280h-40v-80h400v80h-40v280Z" />
+    </svg>
+  }
+  <span class="chip-time">{{ time() }}</span>
+  <span class="chip-content">{{ occurrence().publication.content }}</span>
+</span>

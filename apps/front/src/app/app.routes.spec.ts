@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { CalendarPageComponent } from './features/calendar/pages/calendar-page/calendar-page.component';
 import { CampaignsPageComponent } from './features/campaigns/pages/campaigns-page/campaigns-page.component';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page';
 import { MediasPageComponent } from './features/medias/pages/medias-page/medias-page.component';
@@ -24,10 +25,11 @@ describe('routes', () => {
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  it('should declare the `dashboard`, `campagnes`, `publications` and `medias` routes', () => {
+  it('should declare the `dashboard`, `campagnes`, `calendrier`, `publications` and `medias` routes', () => {
     expect(routes.map((route) => route.path)).toEqual([
       'dashboard',
       'campagnes',
+      'calendrier',
       'publications',
       'medias',
     ]);
@@ -43,6 +45,18 @@ describe('routes', () => {
     // La page charge les campagnes dès son initialisation ; la requête est
     // consommée ici pour que `verify()` reste vert.
     httpTesting.expectOne('/api/campaigns');
+    httpTesting.verify();
+  });
+
+  it('should render the calendar page on /calendrier and set its title', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/calendrier', CalendarPageComponent);
+
+    expect(component).toBeInstanceOf(CalendarPageComponent);
+    expect(document.title).toBe('Calendrier');
+
+    // La page charge le mois courant dès son initialisation.
+    httpTesting.expectOne((request) => request.url === '/api/occurrences');
     httpTesting.verify();
   });
 

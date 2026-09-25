@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 import {
+  CalendarPageComponent,
+} from "./features/calendar/pages/calendar-page/calendar-page.component";
+import {
   CampaignsPageComponent,
 } from "./features/campaigns/pages/campaigns-page/campaigns-page.component";
 import {
@@ -22,6 +25,11 @@ export const routes: Routes = [
     title: "Campagnes",
     path: 'campagnes',
     component: CampaignsPageComponent,
+  },
+  {
+    title: "Calendrier",
+    path: 'calendrier',
+    component: CalendarPageComponent,
   },
   {
     title: "Publications",

@@ -1,0 +1,71 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-occurrence-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="edit-occurrence-title">Modifier la diffusion</h2>
+      <p class="modal-subtitle edit-publication">{{ occurrence().publication.content }}</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <p class="edit-current">
+    Prévue le {{ occurrence().scheduledAt | date: "EEEE d MMMM 'à' HH:mm" : '' : 'fr-FR' }}
+    ({{ occurrence().pinned ? 'heure fixe' : 'heure automatique' }}).
+  </p>
+
+  <form class="edit-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="edit-when">
+      <div class="edit-field">
+        <label for="edit-date">Jour</label>
+        <input id="edit-date" formControlName="date" type="date" [min]="minDate">
+        @if (form.controls.date.touched && form.controls.date.invalid) {
+          <p class="edit-error">Choisissez un jour.</p>
+        }
+      </div>
+
+      <div class="edit-field">
+        <label for="edit-time">Heure (facultatif)</label>
+        <input id="edit-time" formControlName="time" type="time">
+      </div>
+    </div>
+
+    <p class="edit-hint">
+      Heure vide : la diffusion est placée automatiquement dans la fenêtre de
+      publication du jour. Une heure saisie est fixée et ne bougera plus.
+    </p>
+
+    <div class="modal-actions">
+      <button type="button" class="edit-cancel" [disabled]="saving()" (click)="onCancel()">
+        {{ confirmingCancel() ? 'Confirmer l’annulation' : 'Annuler la diffusion' }}
+      </button>
+      <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">
+        Fermer
+      </button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        @if (saving()) {
+          <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+          <app-loader size="sm" variant="dark" label="Enregistrement en cours…" />
+        }
+        Enregistrer
+      </button>
+    </div>
+  </form>
+</div>
