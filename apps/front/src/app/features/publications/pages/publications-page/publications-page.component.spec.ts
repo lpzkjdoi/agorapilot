@@ -394,6 +394,106 @@ describe('PublicationsPageComponent', () => {
     });
   });
 
+  describe('programmation', () => {
+    function openModal(index = 0) {
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      compiled.querySelectorAll<HTMLButtonElement>('.action-schedule')[index].click();
+      fixture.detectChanges();
+
+      return { fixture, compiled };
+    }
+
+    function fillAndSubmit(fixture: ComponentFixture<PublicationsPageComponent>, compiled: HTMLElement, date: string, time = '') {
+      const dateInput = compiled.querySelector<HTMLInputElement>('#schedule-date')!;
+      dateInput.value = date;
+      dateInput.dispatchEvent(new Event('input'));
+      const timeInput = compiled.querySelector<HTMLInputElement>('#schedule-time')!;
+      timeInput.value = time;
+      timeInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      compiled.querySelector<HTMLButtonElement>('app-schedule-occurrence-modal .primary')!.click();
+      fixture.detectChanges();
+    }
+
+    const scheduled = {
+      id: 30,
+      scheduledAt: '2026-10-03T18:30:00',
+      pinned: false,
+      status: 'SCHEDULED',
+      publication: publications[0],
+      deliveries: [{ id: 300, channel: 'FACEBOOK', status: 'PENDING' }],
+    };
+
+    it('should open the modal on the publication that was clicked', () => {
+      const { compiled } = openModal(1);
+
+      expect(compiled.querySelector('.schedule-publication')?.textContent).toContain('Conseil municipal reporté');
+    });
+
+    it('should POST a day-only schedule and announce the time chosen by the back', () => {
+      const { fixture, compiled } = openModal();
+
+      fillAndSubmit(fixture, compiled, '2026-10-03');
+
+      const request = httpTesting.expectOne('/api/occurrences');
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ publicationId: 1, channels: ['FACEBOOK'], date: '2026-10-03' });
+
+      request.flush(scheduled);
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-schedule-occurrence-modal')).toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'success',
+          message: expect.stringMatching(/^Diffusion programmée le samedi 3 octobre à 18:30 — l’heure s’ajustera/),
+        }),
+      ]);
+    });
+
+    it('should POST a precise time as a pinned schedule', () => {
+      const { fixture, compiled } = openModal();
+
+      fillAndSubmit(fixture, compiled, '2026-10-03', '17:45');
+
+      const request = httpTesting.expectOne('/api/occurrences');
+      expect(request.request.body).toEqual({
+        publicationId: 1,
+        channels: ['FACEBOOK'],
+        scheduledAt: '2026-10-03T17:45:00',
+      });
+
+      request.flush({ ...scheduled, scheduledAt: '2026-10-03T17:45:00', pinned: true });
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Diffusion programmée le samedi 3 octobre à 17:45.' }),
+      ]);
+    });
+
+    it('should keep the modal open and relay the reason of a refusal', () => {
+      const { fixture, compiled } = openModal();
+
+      fillAndSubmit(fixture, compiled, '2026-09-25');
+
+      httpTesting.expectOne('/api/occurrences').flush(
+        { message: 'Plus aucune publication possible le 2026-09-25 : la fenêtre 15:00–22:00 est passée.', code: 400 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-schedule-occurrence-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'La diffusion n’a pas pu être programmée. Plus aucune publication possible le 2026-09-25 : la fenêtre 15:00–22:00 est passée.',
+        }),
+      ]);
+    });
+  });
+
   it('should show the loader while the publications are being fetched', () => {
     const fixture = TestBed.createComponent(PublicationsPageComponent);
     fixture.detectChanges();

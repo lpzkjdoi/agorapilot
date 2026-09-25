@@ -71,6 +71,8 @@ export interface PublicationDelivery {
   status: DeliveryStatus
   publishedAt: string | null
   externalId: string | null
+  /** Motif de l'échec quand `status` vaut `FAILED`. */
+  errorMessage: string | null
 }
 
 /** Corps de `POST /api/publications/{id}/deliveries`. */

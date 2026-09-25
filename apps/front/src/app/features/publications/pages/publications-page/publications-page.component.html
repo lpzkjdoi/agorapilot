@@ -53,6 +53,7 @@
               (manageMedias)="onManageMedias($event)"
               (publishOnFacebook)="onPublishOnFacebook($event)"
               (assignCampaign)="onAssignCampaign($event)"
+              (schedule)="onSchedule($event)"
             />
           </li>
         }
@@ -76,6 +77,15 @@
     [saving]="assigning()"
     (closed)="assigningFor.set(null)"
     (submitted)="onCampaignSubmitted($event)"
+  />
+}
+
+@if (schedulingFor(); as publication) {
+  <app-schedule-occurrence-modal
+    [publication]="publication"
+    [saving]="scheduling()"
+    (closed)="schedulingFor.set(null)"
+    (submitted)="onScheduleSubmitted($event)"
   />
 }
 

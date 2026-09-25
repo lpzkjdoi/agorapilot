@@ -159,6 +159,15 @@
   background-color: #DCE9FD;
 }
 
+.action-schedule {
+  border-color: #BFDBFE;
+  color: #1E3A8A;
+}
+
+.action-schedule:hover {
+  background-color: #EFF6FF;
+}
+
 /* Diffusion en cours. */
 .action:disabled {
   cursor: progress;
