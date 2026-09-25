@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +36,8 @@ class SchedulerAdminControllerTest {
         when(scheduler.getLastError()).thenReturn("Occurrence 4: base injoignable");
         when(schedulingProperties.occurrencesDelay()).thenReturn(Duration.ofMinutes(1));
         when(schedulingProperties.maxLateness()).thenReturn(Duration.ofHours(1));
+        when(schedulingProperties.windowStart()).thenReturn(LocalTime.of(15, 0));
+        when(schedulingProperties.windowEnd()).thenReturn(LocalTime.of(22, 0));
 
         mockMvc.perform(get("/admin/scheduler/status"))
                .andExpect(status().isOk())
@@ -42,7 +45,9 @@ class SchedulerAdminControllerTest {
                .andExpect(jsonPath("$.lastErrorAt").value("2026-09-25T09:12:00"))
                .andExpect(jsonPath("$.lastError").value("Occurrence 4: base injoignable"))
                .andExpect(jsonPath("$.occurrencesDelay").value("PT1M"))
-               .andExpect(jsonPath("$.maxLateness").value("PT1H"));
+               .andExpect(jsonPath("$.maxLateness").value("PT1H"))
+               .andExpect(jsonPath("$.windowStart").value("15:00"))
+               .andExpect(jsonPath("$.windowEnd").value("22:00"));
     }
 
     /** Avant le premier balayage : rien n'a tourné, rien n'a échoué. */
@@ -50,6 +55,8 @@ class SchedulerAdminControllerTest {
     void reports_nulls_before_the_first_run() throws Exception {
         when(schedulingProperties.occurrencesDelay()).thenReturn(Duration.ofMinutes(1));
         when(schedulingProperties.maxLateness()).thenReturn(Duration.ofHours(1));
+        when(schedulingProperties.windowStart()).thenReturn(LocalTime.of(15, 0));
+        when(schedulingProperties.windowEnd()).thenReturn(LocalTime.of(22, 0));
 
         mockMvc.perform(get("/admin/scheduler/status"))
                .andExpect(status().isOk())

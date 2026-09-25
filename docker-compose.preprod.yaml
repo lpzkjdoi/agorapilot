@@ -66,6 +66,11 @@ services:
       # l'autre, et toute nouvelle variable devrait être propagée jusqu'à
       # l'Environment GitHub `preprod`.
       MEDIA_ROOT: /var/lib/agorapilot/media
+      # Fenêtre où sont réparties les diffusions Facebook programmées pour un
+      # jour. Valeurs par défaut en place : rien à ajouter à l'Environment GitHub
+      # `preprod` tant qu'on ne veut pas les changer.
+      PUBLICATION_WINDOW_START: ${PUBLICATION_WINDOW_START:-15:00}
+      PUBLICATION_WINDOW_END: ${PUBLICATION_WINDOW_END:-22:00}
       # Pas de token de page ici : il est obtenu par POST /admin/facebook/bootstrap
       # et stocké en base (table facebook_tokens), puis renouvelé par
       # FacebookTokenScheduler. Voir docs/deploiement-preprod.md.

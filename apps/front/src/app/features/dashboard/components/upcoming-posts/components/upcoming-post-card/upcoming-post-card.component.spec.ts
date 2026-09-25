@@ -5,6 +5,7 @@ import { UpcomingPostCardComponent } from './upcoming-post-card.component';
 const occurrence: Occurrence = {
   id: 7,
   scheduledAt: '2026-07-20T09:00:00Z',
+  pinned: false,
   status: 'SCHEDULED',
   publication: { id: 3, content: 'Réunion publique ce jeudi', status: 'VERIFIED', medias: [], campaign: null },
   deliveries: [],

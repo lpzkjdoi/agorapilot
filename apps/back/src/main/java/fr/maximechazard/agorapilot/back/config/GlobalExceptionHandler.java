@@ -8,6 +8,9 @@ import fr.maximechazard.agorapilot.back.media.exceptions.UnsupportedMediaFileTyp
 import fr.maximechazard.agorapilot.back.media.storage.MediaStorageException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DeliveryFailedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DuplicateMediaException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotFoundException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import lombok.extern.slf4j.Slf4j;
@@ -99,6 +102,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateMediaException.class)
     public ResponseEntity<ApiError> handleDuplicateMediaException(DuplicateMediaException exception) {
         return build(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(OccurrenceNotFoundException.class)
+    public ResponseEntity<ApiError> handleOccurrenceNotFoundException(OccurrenceNotFoundException exception) {
+        return build(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidScheduleException.class)
+    public ResponseEntity<ApiError> handleInvalidScheduleException(InvalidScheduleException exception) {
+        return build(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(OccurrenceNotModifiableException.class)
+    public ResponseEntity<ApiError> handleOccurrenceNotModifiableException(OccurrenceNotModifiableException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {

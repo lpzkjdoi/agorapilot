@@ -32,6 +32,8 @@ public class SchedulerAdminController {
         body.put("lastError", scheduler.getLastError());
         body.put("occurrencesDelay", schedulingProperties.occurrencesDelay().toString());
         body.put("maxLateness", schedulingProperties.maxLateness().toString());
+        body.put("windowStart", schedulingProperties.windowStart().toString());
+        body.put("windowEnd", schedulingProperties.windowEnd().toString());
         return ResponseEntity.ok(body);
     }
 }

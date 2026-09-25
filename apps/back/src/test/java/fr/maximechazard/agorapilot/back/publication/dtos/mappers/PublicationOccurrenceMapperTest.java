@@ -89,6 +89,15 @@ class PublicationOccurrenceMapperTest {
     }
 
     @Test
+    void exposes_whether_the_time_is_pinned() {
+        PublicationOccurrence occurrence = occurrenceWithOneDelivery();
+        assertThat(mapper.toDTO(occurrence).pinned()).isFalse();
+
+        occurrence.setPinned(true);
+        assertThat(mapper.toDTO(occurrence).pinned()).isTrue();
+    }
+
+    @Test
     void maps_an_occurrence_without_delivery_to_an_empty_list() {
         PublicationOccurrence occurrence = occurrenceWithOneDelivery();
         occurrence.getDeliveries().clear();

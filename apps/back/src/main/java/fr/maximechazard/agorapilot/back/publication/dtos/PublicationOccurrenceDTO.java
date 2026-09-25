@@ -17,6 +17,7 @@ import java.util.List;
 public record PublicationOccurrenceDTO(
         Long id,
         LocalDateTime scheduledAt,
+        boolean pinned,
         PublicationOccurrenceStatus status,
         PublicationDTO publication,
         List<PublicationDeliveryDTO> deliveries

@@ -6,6 +6,7 @@ function makeOccurrence(id: number, content: string): Occurrence {
   return {
     id,
     scheduledAt: '2026-07-20T09:00:00Z',
+    pinned: false,
     status: 'SCHEDULED',
     publication: { id, content, status: 'VERIFIED', medias: [], campaign: null },
     deliveries: [],
