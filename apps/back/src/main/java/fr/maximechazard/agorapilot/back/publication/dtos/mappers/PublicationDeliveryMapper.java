@@ -13,7 +13,8 @@ public class PublicationDeliveryMapper {
                 delivery.getChannel(),
                 delivery.getStatus(),
                 delivery.getPublishedAt(),
-                delivery.getExternalId()
+                delivery.getExternalId(),
+                delivery.getErrorMessage()
         );
     }
 }

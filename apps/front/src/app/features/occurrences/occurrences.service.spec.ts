@@ -70,4 +70,47 @@ describe('OccurrencesService', () => {
     expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(500);
   });
+
+  it('should GET /api/occurrences with the requested range', () => {
+    let received: unknown;
+    service.getBetween('2026-10-01', '2026-11-01').subscribe((occurrences) => (received = occurrences));
+
+    const request = httpTesting.expectOne(
+      (req) => req.url === '/api/occurrences'
+        && req.params.get('from') === '2026-10-01'
+        && req.params.get('to') === '2026-11-01',
+    );
+    expect(request.request.method).toBe('GET');
+
+    request.flush([]);
+    expect(received).toEqual([]);
+  });
+
+  it('should POST a day-only schedule as is', () => {
+    service.create({ publicationId: 7, channels: ['FACEBOOK'], date: '2026-10-03' }).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrences');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ publicationId: 7, channels: ['FACEBOOK'], date: '2026-10-03' });
+    request.flush({});
+  });
+
+  it('should PUT the new day and time on /api/occurrences/{id}/schedule', () => {
+    service.reschedule(4, { date: '2026-10-04', time: null }).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrences/4/schedule');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ date: '2026-10-04', time: null });
+    request.flush({});
+  });
+
+  it('should DELETE /api/occurrences/{id} to cancel', () => {
+    let done = false;
+    service.cancel(4).subscribe({ complete: () => (done = true) });
+
+    const request = httpTesting.expectOne('/api/occurrences/4');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    expect(done).toBe(true);
+  });
 });

@@ -44,7 +44,7 @@ class PublicationControllerDeliveryTest {
         when(publicationDeliveryService.publishNow(7L, DeliveryChannel.FACEBOOK))
                 .thenReturn(new PublicationDeliveryDTO(
                         99L, 42L, DeliveryChannel.FACEBOOK, DeliveryStatus.PUBLISHED,
-                        LocalDateTime.of(2026, 8, 22, 10, 0), "123_456"));
+                        LocalDateTime.of(2026, 8, 22, 10, 0), "123_456", null));
 
         mockMvc.perform(post("/api/publications/7/deliveries")
                        .contentType(MediaType.APPLICATION_JSON)

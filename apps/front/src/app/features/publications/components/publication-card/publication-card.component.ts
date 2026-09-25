@@ -31,6 +31,7 @@ export class PublicationCardComponent {
   readonly manageMedias = output<Publication>();
   readonly publishOnFacebook = output<Publication>();
   readonly assignCampaign = output<Publication>();
+  readonly schedule = output<Publication>();
 
   readonly verified = computed(() => this.publication().status === 'VERIFIED');
   readonly campaignName = computed(() => this.publication().campaign?.name ?? null);

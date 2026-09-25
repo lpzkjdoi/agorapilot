@@ -88,6 +88,18 @@ class PublicationOccurrenceMapperTest {
                 .isEqualTo("FACEBOOK");
     }
 
+    /** Le calendrier affiche le motif d'un échec : il doit traverser l'API. */
+    @Test
+    void exposes_the_failure_reason_of_a_delivery() {
+        PublicationOccurrence occurrence = occurrenceWithOneDelivery();
+        PublicationDelivery delivery = occurrence.getDeliveries().getFirst();
+        delivery.setStatus(DeliveryStatus.FAILED);
+        delivery.setErrorMessage("Not published: more than 60 minutes late");
+
+        assertThat(mapper.toDTO(occurrence).deliveries().getFirst().errorMessage())
+                .isEqualTo("Not published: more than 60 minutes late");
+    }
+
     @Test
     void exposes_whether_the_time_is_pinned() {
         PublicationOccurrence occurrence = occurrenceWithOneDelivery();

@@ -77,6 +77,7 @@ describe('PublicationsService', () => {
       status: 'PUBLISHED',
       publishedAt: '2026-08-22T10:00:00',
       externalId: '123_456',
+      errorMessage: null,
     };
     let received: PublicationDelivery | undefined;
     service.publishOnFacebook(5).subscribe((result) => (received = result));

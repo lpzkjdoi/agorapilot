@@ -1,0 +1,45 @@
+<div class="month-grid">
+  @for (weekday of weekdays; track weekday) {
+    <div class="month-weekday">{{ weekday }}</div>
+  }
+
+  @for (day of days(); track day.date; let index = $index) {
+    <!-- Cliquer n'importe où dans la case ouvre la bulle : un raccourci à la
+         souris. Au clavier, c'est le bouton du numéro qui en tient lieu — la
+         case reste hors de l'ordre de tabulation (tabindex -1), et Entrée
+         pressée sur ce bouton remonte jusqu'ici. -->
+    <div class="month-cell"
+         tabindex="-1"
+         [class.month-cell-outside]="!day.inMonth"
+         [class.month-cell-selected]="day.date === selectedDay()"
+         [class.month-cell-drop]="day.date === dropTarget()"
+         (click)="select(day, $event)"
+         (keydown.enter)="select(day, $event)"
+         (dragover)="onDragOver($event, day)"
+         (dragleave)="onDragLeave(day)"
+         (drop)="onDrop($event, day)"
+    >
+      @if (day.inMonth) {
+        @let occurrences = occurrencesOf(day);
+
+        <button type="button"
+                class="month-day"
+                [class.month-day-today]="day.date === today()"
+                [attr.aria-label]="'Voir les diffusions du ' + day.dayOfMonth + (occurrences.length ? ' (' + occurrences.length + ')' : '')"
+        >{{ day.dayOfMonth }}</button>
+
+        @for (occurrence of occurrences.slice(0, maxVisible); track occurrence.id) {
+          <app-calendar-occurrence-chip [occurrence]="occurrence" [draggable]="movable(occurrence)" />
+        }
+
+        @if (occurrences.length > maxVisible) {
+          <p class="month-more">+{{ occurrences.length - maxVisible }} autres</p>
+        }
+
+        @if (day.date === selectedDay() && panel(); as template) {
+          <ng-container *ngTemplateOutlet="template; context: panelContext(day, index)" />
+        }
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,79 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="schedule-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="schedule-title">Programmer une diffusion</h2>
+      <p class="modal-subtitle schedule-publication">{{ publication().content }}</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <form class="schedule-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="schedule-when">
+      <div class="schedule-field">
+        <label for="schedule-date">Jour</label>
+        <input id="schedule-date" formControlName="date" type="date" [min]="minDate">
+        @if (form.controls.date.touched && form.controls.date.invalid) {
+          <p class="schedule-error">Choisissez un jour.</p>
+        }
+      </div>
+
+      <div class="schedule-field">
+        <label for="schedule-time">Heure (facultatif)</label>
+        <input id="schedule-time" formControlName="time" type="time">
+      </div>
+    </div>
+
+    <p class="schedule-hint">
+      Sans heure, la diffusion est placée automatiquement dans la fenêtre de
+      publication du jour, répartie avec les autres publications. Une heure
+      saisie est fixée et ne bougera plus.
+    </p>
+
+    <fieldset class="schedule-field">
+      <legend>Canaux</legend>
+      <label class="schedule-channel">
+        <input type="checkbox" formControlName="facebook">
+        Facebook
+      </label>
+      <label class="schedule-channel schedule-channel-soon">
+        <input type="checkbox" disabled>
+        Intramuros (bientôt)
+      </label>
+      @if (form.controls.facebook.touched && form.controls.facebook.invalid) {
+        <p class="schedule-error">Choisissez au moins un canal.</p>
+      }
+    </fieldset>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">
+        Annuler
+      </button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        @if (saving()) {
+          <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+          <app-loader size="sm" variant="dark" label="Programmation en cours…" />
+        }
+        Programmer
+      </button>
+    </div>
+  </form>
+</div>

@@ -44,3 +44,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-09-22 | [Rattacher une publication à une campagne](./changelog/2026-09-22-rattacher-publication-campagne.md) | _voir PR_ |
 | 2026-09-25 | [Fiabiliser l'ordonnanceur de diffusion](./changelog/2026-09-25-fiabiliser-ordonnanceur.md) | _voir PR_ |
 | 2026-09-25 | [Créneaux de diffusion — socle back](./changelog/2026-09-25-creneaux-diffusion-back.md) | _voir PR_ |
+| 2026-09-25 | [Écran de programmation : bouton « Programmer » et page Calendrier](./changelog/2026-09-25-ecran-programmation.md) | _voir PR_ |

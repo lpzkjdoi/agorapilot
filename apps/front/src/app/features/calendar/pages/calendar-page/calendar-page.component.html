@@ -1,0 +1,73 @@
+<div class="calendar-page">
+  <header class="calendar-header">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p class="calendar-subtitle">Planification des publications</p>
+    </div>
+    <nav class="calendar-nav" aria-label="Changer de mois">
+      <button type="button" class="calendar-nav-arrow" aria-label="Mois précédent" (click)="previous()">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"
+             fill="currentColor" aria-hidden="true">
+          <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z" />
+        </svg>
+      </button>
+      <button type="button" class="calendar-nav-today" (click)="goToToday()">Aujourd’hui</button>
+      <button type="button" class="calendar-nav-arrow" aria-label="Mois suivant" (click)="next()">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"
+             fill="currentColor" aria-hidden="true">
+          <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="calendar-legend">
+    <span class="calendar-legend-item"><span class="calendar-dot calendar-dot-facebook"></span>Facebook</span>
+    <span class="calendar-legend-item"><span class="calendar-dot calendar-dot-intramuros"></span>Intramuros</span>
+    <p class="calendar-hint">
+      Glissez une diffusion vers un autre jour pour la déplacer ; cliquez sur un jour pour fixer
+      l’heure ou annuler.
+    </p>
+  </div>
+
+  @if (error(); as message) {
+    <p class="calendar-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <div class="calendar-loading">
+      <app-loader size="lg" label="Chargement du calendrier…" />
+    </div>
+  } @else {
+    <app-calendar-month-grid
+      [days]="days()"
+      [occurrencesByDay]="occurrencesByDay()"
+      [today]="today()"
+      [now]="now()"
+      [selectedDay]="selectedDay()"
+      [panel]="dayPanel"
+      (daySelected)="selectedDay.set($event)"
+      (moved)="onMoved($event)"
+    />
+  }
+</div>
+
+<ng-template #dayPanel let-day let-end="end" let-up="up">
+  <app-calendar-day-panel
+    [class.day-panel-end]="end"
+    [class.day-panel-up]="up"
+    [date]="day"
+    [occurrences]="selectedOccurrences()"
+    [now]="now()"
+    (closed)="selectedDay.set(null)"
+    (edit)="openEdit($event)"
+  />
+</ng-template>
+
+@if (editing(); as occurrence) {
+  <app-edit-occurrence-modal
+    [occurrence]="occurrence"
+    [saving]="busyId() === occurrence.id"
+    (closed)="editing.set(null)"
+    (rescheduled)="reschedule($event)"
+    (cancelled)="cancel($event)"
+  />
+}

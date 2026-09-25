@@ -52,15 +52,25 @@ describe('NavbarComponent', () => {
     expect(campaigns.getAttribute('routerlink')).toBe('/campagnes');
   });
 
+  it('should render the Calendrier navigation entry linking to /calendrier, after Campagnes as in the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const calendar = compiled.querySelectorAll('.navbar-nav-button')[2];
+    expect(calendar.textContent).toContain('Calendrier');
+    expect(calendar.getAttribute('routerlink')).toBe('/calendrier');
+  });
+
   it('should render the Publications navigation entry linking to /publications', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
 
     const buttons = compiled.querySelectorAll('.navbar-nav-button');
-    expect(buttons.length).toBe(4);
+    expect(buttons.length).toBe(5);
 
-    const publications = buttons[2];
+    const publications = buttons[3];
     expect(publications.textContent).toContain('Publications');
     expect(publications.getAttribute('routerlink')).toBe('/publications');
   });
@@ -70,7 +80,7 @@ describe('NavbarComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
 
-    const medias = compiled.querySelectorAll('.navbar-nav-button')[3];
+    const medias = compiled.querySelectorAll('.navbar-nav-button')[4];
     expect(medias.textContent).toContain('Médiathèque');
     expect(medias.getAttribute('routerlink')).toBe('/medias');
   });

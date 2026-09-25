@@ -128,6 +128,18 @@ describe('PublicationCardComponent', () => {
     expect(campaign).toHaveBeenCalledWith(draft);
   });
 
+  it('should emit the publication when asked to schedule it', async () => {
+    const fixture = await render(draft);
+    const schedule = vi.fn();
+    fixture.componentInstance.schedule.subscribe(schedule);
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.action-schedule');
+    expect(button?.textContent).toContain('Programmer');
+    button?.click();
+
+    expect(schedule).toHaveBeenCalledWith(draft);
+  });
+
   it('should show the loader and lock the Facebook button while publishing', async () => {
     const fixture = await render(draft, true);
     const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
