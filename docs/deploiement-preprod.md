@@ -324,6 +324,7 @@ curl -s http://127.0.0.1:8080/admin/scheduler/status
 | `lastErrorAt` / `lastError` | dernière erreur inattendue du balayage, conservée jusqu'à la suivante |
 | `occurrencesDelay` | période de balayage (`OCCURRENCES_SCHEDULER_DELAY`, défaut `PT1M`) |
 | `maxLateness` | retard au-delà duquel une livraison n'est plus diffusée (`OCCURRENCES_MAX_LATENESS`, défaut `PT1H`) |
+| `windowStart` / `windowEnd` | fenêtre de publication Facebook où sont réparties les diffusions programmées pour un jour (`PUBLICATION_WINDOW_START` / `PUBLICATION_WINDOW_END`, défaut `15:00` / `22:00`) |
 
 Un refus de Facebook n'apparaît **pas** dans `lastError` : il est tracé sur la
 livraison elle-même (`FAILED` + `errorMessage`). `lastError` ne capte que les

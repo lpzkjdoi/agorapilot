@@ -71,6 +71,8 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 - [ ] Authentification et gestion des utilisateurs (aucune restriction d'accès actuellement)
 - [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute ; reste l'écran de planification côté front)
+- [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
+- [ ] Écran de programmation (bouton « Programmer » sur la carte, calendrier avec glisser-déposer) — l'API des créneaux est en place
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
 - [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)

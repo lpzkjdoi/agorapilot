@@ -22,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,7 +70,7 @@ class PublicationDeliveryServiceTest {
                 publisherRegistry,
                 publicationOccurrenceService,
                 new PublicationDeliveryMapper(),
-                new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1)),
+                new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
                 transactionManager
         );
     }

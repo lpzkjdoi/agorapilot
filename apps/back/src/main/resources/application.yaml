@@ -64,6 +64,11 @@ agorapilot:
     # redémarrage après une panne — la livraison passe en échec au lieu d'être
     # diffusée : une annonce d'événement déjà passé ne doit pas partir.
     max-lateness: ${OCCURRENCES_MAX_LATENESS:PT1H}
+    # Fenêtre de publication Facebook (heures locales, TZ du conteneur). Une
+    # diffusion programmée « pour un jour », sans heure, est placée dans cette
+    # fenêtre, répartie uniformément avec les autres diffusions du même jour.
+    window-start: ${PUBLICATION_WINDOW_START:15:00}
+    window-end: ${PUBLICATION_WINDOW_END:22:00}
 
   media:
     # Volume disque monté sur le conteneur back en préproduction ; répertoire

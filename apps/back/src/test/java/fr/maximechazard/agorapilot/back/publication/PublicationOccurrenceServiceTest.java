@@ -4,6 +4,7 @@ import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationDeliveryMapper;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationOccurrenceMapper;
+import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
@@ -21,8 +22,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +51,10 @@ class PublicationOccurrenceServiceTest {
     private static final long PUBLICATION_ID = 7L;
     private static final LocalDateTime SCHEDULED_AT = LocalDateTime.of(2026, 10, 1, 10, 0);
 
+    /** Le 25/09/2026 à 22:30 : la fenêtre de publication du jour est close. */
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 25, 22, 30);
+    private static final Clock CLOCK = Clock.fixed(NOW.atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+
     @Mock
     private PublicationRepository publicationRepository;
     @Mock
@@ -66,7 +75,9 @@ class PublicationOccurrenceServiceTest {
                 publicationOccurrenceRepository,
                 publicationDeliveryRepository,
                 publisherRegistry,
-                new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper())
+                new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper()),
+                new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
+                CLOCK
         );
     }
 
@@ -82,6 +93,14 @@ class PublicationOccurrenceServiceTest {
         set(request, "publicationId", PUBLICATION_ID);
         set(request, "scheduledAt", scheduledAt);
         set(request, "channels", channels);
+        return request;
+    }
+
+    private static CreatePublicationOccurrenceRequest dayRequest(LocalDate date) {
+        CreatePublicationOccurrenceRequest request = new CreatePublicationOccurrenceRequest();
+        set(request, "publicationId", PUBLICATION_ID);
+        set(request, "date", date);
+        set(request, "channels", Set.of(DeliveryChannel.FACEBOOK));
         return request;
     }
 
@@ -120,6 +139,8 @@ class PublicationOccurrenceServiceTest {
 
             PublicationOccurrence saved = captor.getValue();
             assertThat(saved.getScheduledAt()).isEqualTo(SCHEDULED_AT);
+            // Une heure précise est une heure fixée à la main : elle est épinglée.
+            assertThat(saved.isPinned()).isTrue();
             assertThat(saved.getStatus()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
             assertThat(saved.getPublication().getId()).isEqualTo(PUBLICATION_ID);
             assertThat(saved.getDeliveries()).singleElement().satisfies(delivery -> {
@@ -145,6 +166,28 @@ class PublicationOccurrenceServiceTest {
             service.create(request(SCHEDULED_AT, Set.of(DeliveryChannel.FACEBOOK)));
 
             verifyNoInteractions(publisher);
+        }
+
+        /** Il est 22:30 : programmer « pour aujourd'hui » ne peut plus aboutir. */
+        @Test
+        void refuses_a_day_whose_window_is_over() {
+            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+
+            assertThatThrownBy(() -> service.create(dayRequest(NOW.toLocalDate())))
+                    .isInstanceOf(InvalidScheduleException.class)
+                    .hasMessageContaining("15:00–22:00");
+
+            verify(publicationOccurrenceRepository, never()).save(any());
+        }
+
+        @Test
+        void refuses_a_past_day() {
+            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+
+            assertThatThrownBy(() -> service.create(dayRequest(NOW.toLocalDate().minusDays(1))))
+                    .isInstanceOf(InvalidScheduleException.class);
         }
 
         @Test
@@ -285,7 +328,7 @@ class PublicationOccurrenceServiceTest {
          */
         @Test
         void queries_seven_full_days_from_today() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = NOW.toLocalDate();
             when(publicationOccurrenceRepository.findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(any(), any()))
                     .thenReturn(List.of());
 
@@ -297,7 +340,7 @@ class PublicationOccurrenceServiceTest {
 
         @Test
         void files_an_occurrence_of_the_seventh_day_under_that_day() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = NOW.toLocalDate();
             LocalDateTime lastDayEvening = today.plusDays(6).atTime(18, 30);
             when(publicationOccurrenceRepository.findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(any(), any()))
                     .thenReturn(List.of(occurrenceOn(lastDayEvening)));
