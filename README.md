@@ -70,13 +70,13 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 ## Todo / Roadmap
 
 - [ ] Authentification et gestion des utilisateurs (aucune restriction d'accès actuellement)
-- [ ] Déclenchement automatique des publications à l'heure planifiée (le `FacebookPublisher` existe et fonctionne, mais rien ne parcourt encore les occurrences dues pour l'appeler)
+- [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute ; reste l'écran de planification côté front)
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
 - [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)
 - [ ] Connecter les KPIs et le panneau "prochaines publications" du dashboard à des données réelles
 - [ ] Intégrer le formulaire de création de publication à une route de l'application
-- [ ] Mettre en place une CI frontend (build, tests, lint)
+- [ ] Compléter la CI frontend d'un lint (build et tests tournent déjà dans `front-ci.yml`)
 - [ ] Ajouter un linter/formatter JS/TS (ESLint, Prettier)
 - [ ] Migrations de base de données versionnées (Flyway/Liquibase) plutôt que `ddl-auto: update`
 - [ ] Fournir un `.env.example` pour faciliter l'onboarding

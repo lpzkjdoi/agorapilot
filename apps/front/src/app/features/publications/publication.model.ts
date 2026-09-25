@@ -52,8 +52,11 @@ export interface CreatePublicationFormValue {
 /** Canaux de diffusion connus du back (`DeliveryChannel`). */
 export type DeliveryChannel = 'FACEBOOK' | 'INTRAMUROS';
 
-/** Statut d'une livraison (`DeliveryStatus`). */
-export type DeliveryStatus = 'PENDING' | 'PUBLISHED' | 'FAILED';
+/**
+ * Statut d'une livraison (`DeliveryStatus`). `IN_PROGRESS` : prise en charge
+ * par l'ordonnanceur, appel au canal en cours.
+ */
+export type DeliveryStatus = 'PENDING' | 'IN_PROGRESS' | 'PUBLISHED' | 'FAILED';
 
 /**
  * Livraison renvoyée par `POST /api/publications/{id}/deliveries`.

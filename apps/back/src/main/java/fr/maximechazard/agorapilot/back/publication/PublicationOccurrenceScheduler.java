@@ -21,6 +21,10 @@ import java.util.List;
  * {@code fixedDelay} compte à partir de la <em>fin</em> du balayage précédent :
  * deux passes ne peuvent donc pas se chevaucher et servir deux fois la même
  * livraison, même si un canal distant traîne.
+ * <p>
+ * La dernière erreur est conservée avec son heure, sans être effacée par les
+ * balayages suivants : remise à zéro chaque minute, elle ne serait jamais
+ * lisible au moment où quelqu'un la consulte ({@code GET /admin/scheduler/status}).
  */
 @Component
 @RequiredArgsConstructor
@@ -33,13 +37,13 @@ public class PublicationOccurrenceScheduler {
     private final PublicationDeliveryService publicationDeliveryService;
 
     private volatile LocalDateTime lastRunAt;
+    private volatile LocalDateTime lastErrorAt;
     private volatile String lastError;
 
     @Scheduled(fixedDelayString = DELAY, initialDelayString = DELAY)
     public void publishDueOccurrences() {
         LocalDateTime now = LocalDateTime.now();
         lastRunAt = now;
-        lastError = null;
 
         List<PublicationOccurrence> due = publicationOccurrenceRepository
                 .findAllByScheduledAtBeforeAndStatus(now, PublicationOccurrenceStatus.SCHEDULED);
@@ -56,7 +60,8 @@ public class PublicationOccurrenceScheduler {
             try {
                 publicationDeliveryService.publishScheduledOccurrence(occurrence.getId());
             } catch (Exception e) {
-                lastError = e.getMessage();
+                lastErrorAt = LocalDateTime.now();
+                lastError = "Occurrence " + occurrence.getId() + ": " + e.getMessage();
                 log.error("Delivery of scheduled occurrence {} failed:", occurrence.getId(), e);
             }
         }
@@ -64,6 +69,10 @@ public class PublicationOccurrenceScheduler {
 
     public LocalDateTime getLastRunAt() {
         return lastRunAt;
+    }
+
+    public LocalDateTime getLastErrorAt() {
+        return lastErrorAt;
     }
 
     public String getLastError() {

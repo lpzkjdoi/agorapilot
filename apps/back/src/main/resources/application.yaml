@@ -60,6 +60,10 @@ agorapilot:
     # de la planification ne dépasse pas cette valeur : une occurrence prévue à
     # 10h00 part entre 10h00 et 10h01.
     occurrences-delay: ${OCCURRENCES_SCHEDULER_DELAY:PT1M}
+    # Retard maximal toléré (durée ISO-8601). Au-delà — typiquement au
+    # redémarrage après une panne — la livraison passe en échec au lieu d'être
+    # diffusée : une annonce d'événement déjà passé ne doit pas partir.
+    max-lateness: ${OCCURRENCES_MAX_LATENESS:PT1H}
 
   media:
     # Volume disque monté sur le conteneur back en préproduction ; répertoire

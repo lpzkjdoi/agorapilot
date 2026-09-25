@@ -10,7 +10,8 @@ import java.util.List;
 
 @Repository
 public interface PublicationOccurrenceRepository extends JpaRepository<PublicationOccurrence, Long> {
-    List<PublicationOccurrence> findAllByScheduledAtBetween(LocalDateTime start, LocalDateTime end);
+    /** Intervalle semi-ouvert {@code [start, end)} : {@code Between} inclurait la borne haute. */
+    List<PublicationOccurrence> findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(LocalDateTime start, LocalDateTime end);
 
     List<PublicationOccurrence> findAllByScheduledAtBeforeAndStatus(LocalDateTime scheduledAt, PublicationOccurrenceStatus status);
 }

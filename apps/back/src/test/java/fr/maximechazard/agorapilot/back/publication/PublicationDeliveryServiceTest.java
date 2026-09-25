@@ -15,9 +15,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +29,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -49,6 +55,8 @@ class PublicationDeliveryServiceTest {
     private PublicationOccurrenceService publicationOccurrenceService;
     @Mock
     private Publisher publisher;
+    @Mock
+    private PlatformTransactionManager transactionManager;
 
     private PublicationDeliveryService service;
 
@@ -60,7 +68,9 @@ class PublicationDeliveryServiceTest {
                 publicationDeliveryRepository,
                 publisherRegistry,
                 publicationOccurrenceService,
-                new PublicationDeliveryMapper()
+                new PublicationDeliveryMapper(),
+                new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1)),
+                transactionManager
         );
     }
 
@@ -199,11 +209,24 @@ class PublicationDeliveryServiceTest {
             when(publicationDeliveryRepository.findAllByOccurrence(occurrence)).thenReturn(List.of(deliveries));
         }
 
+        /** Une livraison que la prise en charge retient, puis que la diffusion relit. */
+        private void stubServed(PublicationDelivery delivery, Publisher channelPublisher) {
+            when(publisherRegistry.forChannel(delivery.getChannel())).thenReturn(Optional.of(channelPublisher));
+            when(publicationDeliveryRepository.findById(delivery.getId())).thenReturn(Optional.of(delivery));
+        }
+
+        private PublicationOccurrence occurrenceDue(long minutesAgo) {
+            PublicationOccurrence occurrence = savedOccurrence();
+            occurrence.setScheduledAt(LocalDateTime.now().minusMinutes(minutesAgo));
+            return occurrence;
+        }
+
         @Test
         void serves_every_pending_channel_of_the_occurrence() {
-            PublicationOccurrence occurrence = savedOccurrence();
-            stub(occurrence, delivery(occurrence, DeliveryStatus.PENDING));
-            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+            PublicationOccurrence occurrence = occurrenceDue(5);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            stubServed(pending, publisher);
 
             service.publishScheduledOccurrence(OCCURRENCE_ID);
 
@@ -212,12 +235,36 @@ class PublicationDeliveryServiceTest {
         }
 
         /**
+         * Le cœur de la protection contre la double publication : la prise en
+         * charge est validée en base avant que le canal distant soit appelé. Un
+         * arrêt du back pendant l'appel laisse IN_PROGRESS, jamais PENDING.
+         */
+        @Test
+        void commits_the_claim_before_calling_the_remote_channel() {
+            PublicationOccurrence occurrence = occurrenceDue(5);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            stubServed(pending, publisher);
+            doAnswer(invocation -> {
+                assertThat(pending.getStatus()).isEqualTo(DeliveryStatus.IN_PROGRESS);
+                return null;
+            }).when(publisher).publish(occurrence);
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            InOrder order = inOrder(publicationDeliveryRepository, transactionManager, publisher);
+            order.verify(publicationDeliveryRepository).save(pending);
+            order.verify(transactionManager).commit(any());
+            order.verify(publisher).publish(occurrence);
+        }
+
+        /**
          * Le canal distant a pu accepter la publication avant de rompre : une
          * reprise automatique publierait deux fois.
          */
         @Test
         void never_retries_a_delivery_that_already_failed() {
-            PublicationOccurrence occurrence = savedOccurrence();
+            PublicationOccurrence occurrence = occurrenceDue(5);
             stub(occurrence, delivery(occurrence, DeliveryStatus.FAILED));
 
             service.publishScheduledOccurrence(OCCURRENCE_ID);
@@ -228,7 +275,7 @@ class PublicationDeliveryServiceTest {
 
         @Test
         void never_republishes_a_delivery_already_published() {
-            PublicationOccurrence occurrence = savedOccurrence();
+            PublicationOccurrence occurrence = occurrenceDue(5);
             stub(occurrence, delivery(occurrence, DeliveryStatus.PUBLISHED));
 
             service.publishScheduledOccurrence(OCCURRENCE_ID);
@@ -237,12 +284,59 @@ class PublicationDeliveryServiceTest {
         }
 
         /**
+         * Les balayages ne se chevauchent pas : une livraison encore IN_PROGRESS
+         * vient d'une diffusion interrompue. Elle est soldée sans être rejouée.
+         */
+        @Test
+        void settles_an_interrupted_delivery_as_failed_without_republishing() {
+            PublicationOccurrence occurrence = occurrenceDue(5);
+            PublicationDelivery interrupted = delivery(occurrence, DeliveryStatus.IN_PROGRESS);
+            stub(occurrence, interrupted);
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            assertThat(interrupted.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+            assertThat(interrupted.getErrorMessage()).contains("interrupted").contains("FACEBOOK");
+            verify(publicationDeliveryRepository).save(interrupted);
+            verifyNoInteractions(publisherRegistry, publisher);
+            verify(publicationOccurrenceService).refreshStatus(occurrence);
+        }
+
+        /** Après une longue panne, une annonce d'événement passé ne doit pas partir. */
+        @Test
+        void does_not_publish_a_delivery_later_than_the_maximum_lateness() {
+            PublicationOccurrence occurrence = occurrenceDue(61);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            assertThat(pending.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+            assertThat(pending.getErrorMessage()).contains("60 minutes late");
+            verifyNoInteractions(publisher);
+            verify(publicationOccurrenceService).refreshStatus(occurrence);
+        }
+
+        @Test
+        void still_publishes_a_delivery_within_the_maximum_lateness() {
+            PublicationOccurrence occurrence = occurrenceDue(59);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            stubServed(pending, publisher);
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            verify(publisher).publish(occurrence);
+        }
+
+        /**
          * Sans trace d'échec, la livraison resterait PENDING et l'occurrence
          * reviendrait à chaque balayage, indéfiniment.
          */
         @Test
         void traces_a_channel_without_publisher_as_failed() {
-            PublicationOccurrence occurrence = savedOccurrence();
+            PublicationOccurrence occurrence = occurrenceDue(5);
             PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
             pending.setChannel(DeliveryChannel.INTRAMUROS);
             stub(occurrence, pending);
@@ -256,18 +350,40 @@ class PublicationDeliveryServiceTest {
         }
 
         /**
+         * Une exception qui échappe au publisher laisserait la livraison
+         * IN_PROGRESS : elle est soldée tout de suite, avec son vrai motif, et le
+         * balayage n'en souffre pas.
+         */
+        @Test
+        void settles_a_delivery_whose_publisher_blows_up() {
+            PublicationOccurrence occurrence = occurrenceDue(5);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            stubServed(pending, publisher);
+            doThrow(new IllegalStateException("Facebook delivery not found"))
+                    .when(publisher).publish(occurrence);
+
+            assertThatCode(() -> service.publishScheduledOccurrence(OCCURRENCE_ID)).doesNotThrowAnyException();
+
+            assertThat(pending.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+            assertThat(pending.getErrorMessage()).isEqualTo("Facebook delivery not found");
+            verify(transactionManager).rollback(any());
+            verify(publicationOccurrenceService).refreshStatus(occurrence);
+        }
+
+        /**
          * Un canal en échec ne doit priver aucun autre de sa diffusion, ni faire
          * échouer le balayage : l'échec est tracé sur la livraison, pas remonté.
          */
         @Test
         void serves_the_other_channels_even_when_one_fails() {
-            PublicationOccurrence occurrence = savedOccurrence();
+            PublicationOccurrence occurrence = occurrenceDue(5);
             PublicationDelivery facebook = delivery(occurrence, DeliveryStatus.PENDING);
             PublicationDelivery intramuros = delivery(occurrence, DeliveryStatus.PENDING);
             intramuros.setId(100L);
             intramuros.setChannel(DeliveryChannel.INTRAMUROS);
             stub(occurrence, facebook, intramuros);
-            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+            stubServed(facebook, publisher);
             when(publisherRegistry.forChannel(DeliveryChannel.INTRAMUROS)).thenReturn(Optional.empty());
 
             assertThatCode(() -> service.publishScheduledOccurrence(OCCURRENCE_ID)).doesNotThrowAnyException();

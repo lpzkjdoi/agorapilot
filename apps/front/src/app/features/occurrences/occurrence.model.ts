@@ -1,9 +1,9 @@
-import { Publication } from "../publications/publication.model";
+import { DeliveryStatus, Publication } from "../publications/publication.model";
 
 interface Delivery {
   id: number,
   channel: "FACEBOOK" | "INTRAMUROS"
-  status: "PENDING" | "PUBLISHED" | "FAILED"
+  status: DeliveryStatus
 }
 
 export interface Occurrence {

@@ -21,8 +21,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -226,6 +228,22 @@ class PublicationOccurrenceServiceTest {
             verify(publicationOccurrenceRepository, never()).save(occurrence);
         }
 
+        /**
+         * Une livraison IN_PROGRESS n'est pas tranchée : l'occurrence doit rester
+         * dans la file pour que le balayage suivant la solde si elle est bloquée.
+         */
+        @Test
+        void leaves_the_occurrence_scheduled_while_a_channel_is_in_progress() {
+            PublicationOccurrence occurrence = occurrence();
+            when(publicationDeliveryRepository.findAllByOccurrence(occurrence))
+                    .thenReturn(List.of(delivery(occurrence, DeliveryStatus.IN_PROGRESS)));
+
+            service.refreshStatus(occurrence);
+
+            assertThat(occurrence.getStatus()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
+            verify(publicationOccurrenceRepository, never()).save(occurrence);
+        }
+
         @Test
         void leaves_an_occurrence_without_delivery_untouched() {
             PublicationOccurrence occurrence = occurrence();
@@ -247,6 +265,50 @@ class PublicationOccurrenceServiceTest {
             service.refreshStatus(occurrence);
 
             verify(publicationOccurrenceRepository, never()).save(occurrence);
+        }
+    }
+
+    @Nested
+    class Weekly {
+
+        private PublicationOccurrence occurrenceOn(LocalDateTime scheduledAt) {
+            PublicationOccurrence occurrence = new PublicationOccurrence();
+            occurrence.setId(42L);
+            occurrence.setScheduledAt(scheduledAt);
+            occurrence.setPublication(publication());
+            return occurrence;
+        }
+
+        /**
+         * Régression : la requête s'arrêtait à minuit du septième jour, qui
+         * restait donc toujours vide alors que la carte l'annonçait.
+         */
+        @Test
+        void queries_seven_full_days_from_today() {
+            LocalDate today = LocalDate.now();
+            when(publicationOccurrenceRepository.findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(any(), any()))
+                    .thenReturn(List.of());
+
+            service.getWeeklyOccurrences();
+
+            verify(publicationOccurrenceRepository).findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(
+                    today.atStartOfDay(), today.plusDays(7).atStartOfDay());
+        }
+
+        @Test
+        void files_an_occurrence_of_the_seventh_day_under_that_day() {
+            LocalDate today = LocalDate.now();
+            LocalDateTime lastDayEvening = today.plusDays(6).atTime(18, 30);
+            when(publicationOccurrenceRepository.findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(any(), any()))
+                    .thenReturn(List.of(occurrenceOn(lastDayEvening)));
+
+            Map<String, List<PublicationOccurrenceDTO>> week = service.getWeeklyOccurrences();
+
+            assertThat(week).hasSize(7);
+            assertThat(week.get(today.plusDays(6).atStartOfDay().toString()))
+                    .singleElement()
+                    .satisfies(dto -> assertThat(dto.scheduledAt()).isEqualTo(lastDayEvening));
+            assertThat(week.get(today.atStartOfDay().toString())).isEmpty();
         }
     }
 }
