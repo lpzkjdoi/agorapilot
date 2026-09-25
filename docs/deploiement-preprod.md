@@ -206,6 +206,26 @@ SELECT conname FROM pg_constraint
 WHERE conrelid = 'publication_occurrences'::regclass AND contype = 'c';
 ```
 
+### Migration ponctuelle — statut `IN_PROGRESS` des livraisons
+
+Même mécanisme que ci-dessus, sur `publication_deliveries.status` : l'ordonnanceur
+pose désormais `IN_PROGRESS` sur une livraison avant d'appeler le canal distant.
+Sans cette migration, **toute diffusion planifiée échoue** à la prise en charge
+(l'écriture est rejetée par la contrainte, rien n'est publié). À passer une fois,
+avant le premier déploiement qui embarque ce statut :
+
+```bash
+docker compose -f docker-compose.preprod.yaml exec -T db \
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
+ALTER TABLE publication_deliveries DROP CONSTRAINT IF EXISTS publication_deliveries_status_check;
+ALTER TABLE publication_deliveries ADD CONSTRAINT publication_deliveries_status_check
+    CHECK (status IN ('PENDING', 'IN_PROGRESS', 'PUBLISHED', 'FAILED'));
+SQL
+```
+
+Même requête sur `pg_constraint` que ci-dessus (avec `'publication_deliveries'`)
+si la contrainte porte un autre nom.
+
 ## Développer le front en local contre le back de préproduction
 
 Pour itérer sur l'interface sans faire tourner le stack Docker de développement,
@@ -288,6 +308,34 @@ HTTP (message et code), sans avoir à consulter les logs du conteneur.
 Le renouvellement ultérieur est automatique (`FacebookTokenScheduler`, cron
 `0 0 3 * * *`). C'est la raison de la variable `TZ` : sans elle, le conteneur
 serait en UTC et le renouvellement aurait lieu à une autre heure locale.
+
+## État de l'ordonnanceur de diffusion
+
+`GET /admin/scheduler/status`, comme les endpoints Facebook : non authentifié,
+non proxifié par le nginx du front, joignable seulement depuis le VPS.
+
+```bash
+curl -s http://127.0.0.1:8080/admin/scheduler/status
+```
+
+| Champ | Sens |
+|---|---|
+| `lastRunAt` | dernier balayage ; doit avoir moins de `occurrencesDelay` |
+| `lastErrorAt` / `lastError` | dernière erreur inattendue du balayage, conservée jusqu'à la suivante |
+| `occurrencesDelay` | période de balayage (`OCCURRENCES_SCHEDULER_DELAY`, défaut `PT1M`) |
+| `maxLateness` | retard au-delà duquel une livraison n'est plus diffusée (`OCCURRENCES_MAX_LATENESS`, défaut `PT1H`) |
+
+Un refus de Facebook n'apparaît **pas** dans `lastError` : il est tracé sur la
+livraison elle-même (`FAILED` + `errorMessage`). `lastError` ne capte que les
+pannes du balayage (base injoignable, bug).
+
+Une livraison peut finir `FAILED` sans avoir été tentée, avec l'un de ces motifs :
+
+- `Not published: more than 60 minutes late` : le back était arrêté à l'heure
+  prévue, et l'annonce est jugée périmée ;
+- `Delivery interrupted before its outcome was recorded` : le back s'est arrêté
+  pendant l'appel à Facebook. Le post **a pu partir** : vérifier la page avant
+  de relancer.
 
 ## Déploiement automatique
 

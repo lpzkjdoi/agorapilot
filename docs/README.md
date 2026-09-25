@@ -42,3 +42,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-09-22 | [Page Campagnes](./changelog/2026-09-22-page-campagnes.md) | _voir PR_ |
 | 2026-09-22 | [Clôturer une campagne](./changelog/2026-09-22-cloture-campagne.md) | _voir PR_ |
 | 2026-09-22 | [Rattacher une publication à une campagne](./changelog/2026-09-22-rattacher-publication-campagne.md) | _voir PR_ |
+| 2026-09-25 | [Fiabiliser l'ordonnanceur de diffusion](./changelog/2026-09-25-fiabiliser-ordonnanceur.md) | _voir PR_ |

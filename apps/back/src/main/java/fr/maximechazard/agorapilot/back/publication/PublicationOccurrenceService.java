@@ -22,6 +22,8 @@ import java.util.TreeMap;
 @Service
 @RequiredArgsConstructor
 public class PublicationOccurrenceService {
+    private static final int WEEK_LENGTH = 7;
+
     private final PublicationRepository publicationRepository;
     private final PublicationOccurrenceRepository publicationOccurrenceRepository;
     private final PublicationDeliveryRepository publicationDeliveryRepository;
@@ -65,8 +67,9 @@ public class PublicationOccurrenceService {
     /**
      * Aligne le statut de l'occurrence sur celui de ses livraisons.
      * <p>
-     * Tant qu'un canal est {@code PENDING}, l'occurrence reste {@code SCHEDULED}
-     * et l'ordonnanceur la reprendra. Une fois tous les canaux tranchés elle sort
+     * Tant qu'un canal est {@code PENDING} ou {@code IN_PROGRESS}, l'occurrence
+     * reste {@code SCHEDULED} et l'ordonnanceur la reprendra — pour servir le
+     * premier, ou solder le second s'il reste bloqué après une interruption. Une fois tous les canaux tranchés elle sort
      * de la file : {@code PUBLISHED} si tout est parti, {@code FAILED} dès qu'un
      * canal a échoué — auquel cas la reprise est un geste explicite, pas une
      * boucle automatique.
@@ -75,7 +78,7 @@ public class PublicationOccurrenceService {
     public void refreshStatus(PublicationOccurrence occurrence) {
         List<PublicationDelivery> deliveries = publicationDeliveryRepository.findAllByOccurrence(occurrence);
 
-        if (deliveries.isEmpty() || deliveries.stream().anyMatch(delivery -> delivery.getStatus() == DeliveryStatus.PENDING)) {
+        if (deliveries.isEmpty() || deliveries.stream().anyMatch(PublicationOccurrenceService::isUnresolved)) {
             return;
         }
 
@@ -89,21 +92,31 @@ public class PublicationOccurrenceService {
         }
     }
 
+    /**
+     * Les occurrences des sept jours à venir, aujourd'hui compris, rangées par
+     * jour. La borne haute est exclusive : minuit du huitième jour.
+     */
     public Map<String, List<PublicationOccurrenceDTO>> getWeeklyOccurrences() {
-        LocalDateTime firstDay = LocalDate.now().atStartOfDay();
-        LocalDateTime lastDay = LocalDate.now().plusDays(6).atStartOfDay();
-        List<PublicationOccurrence> occurrences = publicationOccurrenceRepository.findAllByScheduledAtBetween(firstDay, lastDay);
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = today.plusDays(WEEK_LENGTH).atStartOfDay();
+        List<PublicationOccurrence> occurrences = publicationOccurrenceRepository
+                .findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(start, end);
         List<PublicationOccurrenceDTO> occurrencesDto = occurrences.stream().map(publicationOccurrenceMapper::toDTO).toList();
-        return createMap(occurrencesDto);
+        return createMap(today, occurrencesDto);
     }
 
-    private Map<String, List<PublicationOccurrenceDTO>> createMap(List<PublicationOccurrenceDTO> occurrences) {
+    private static boolean isUnresolved(PublicationDelivery delivery) {
+        return delivery.getStatus() == DeliveryStatus.PENDING || delivery.getStatus() == DeliveryStatus.IN_PROGRESS;
+    }
+
+    private Map<String, List<PublicationOccurrenceDTO>> createMap(LocalDate today, List<PublicationOccurrenceDTO> occurrences) {
         Map<String, List<PublicationOccurrenceDTO>> map = new TreeMap<>();
 
-        for (int i = 0; i <= 6; i++) {
-            LocalDateTime day = LocalDate.now().atStartOfDay().plusDays(i);
-            List<PublicationOccurrenceDTO> list = occurrences.stream().filter(occurrence -> occurrence.scheduledAt().getDayOfMonth() == day.getDayOfMonth()).toList();
-            map.put(day.toString(), list);
+        for (int i = 0; i < WEEK_LENGTH; i++) {
+            LocalDate day = today.plusDays(i);
+            List<PublicationOccurrenceDTO> list = occurrences.stream().filter(occurrence -> occurrence.scheduledAt().toLocalDate().equals(day)).toList();
+            map.put(day.atStartOfDay().toString(), list);
         }
 
         return map;

@@ -85,24 +85,30 @@ class PublicationOccurrenceSchedulerTest {
         assertThatCode(() -> scheduler.publishDueOccurrences()).doesNotThrowAnyException();
 
         verify(publicationDeliveryService).publishScheduledOccurrence(2L);
-        assertThat(scheduler.getLastError()).isEqualTo("base injoignable");
+        assertThat(scheduler.getLastError()).isEqualTo("Occurrence 1: base injoignable");
+        assertThat(scheduler.getLastErrorAt()).isNotNull();
     }
 
+    /**
+     * Effacée au balayage suivant, l'erreur ne vivrait qu'une minute : personne
+     * ne la lirait jamais. Elle reste lisible, datée, jusqu'à la suivante.
+     */
     @Test
-    void clears_the_last_error_on_a_clean_run() {
+    void keeps_the_last_error_after_a_clean_run() {
         when(publicationOccurrenceRepository.findAllByScheduledAtBeforeAndStatus(any(), any()))
                 .thenReturn(List.of(occurrence(1L)));
         doThrow(new RuntimeException("base injoignable"))
                 .when(publicationDeliveryService).publishScheduledOccurrence(anyLong());
 
         scheduler.publishDueOccurrences();
-        assertThat(scheduler.getLastError()).isNotNull();
+        LocalDateTime errorAt = scheduler.getLastErrorAt();
 
         when(publicationOccurrenceRepository.findAllByScheduledAtBeforeAndStatus(any(), any()))
                 .thenReturn(List.of());
         scheduler.publishDueOccurrences();
 
-        assertThat(scheduler.getLastError()).isNull();
-        assertThat(scheduler.getLastRunAt()).isNotNull();
+        assertThat(scheduler.getLastError()).isEqualTo("Occurrence 1: base injoignable");
+        assertThat(scheduler.getLastErrorAt()).isEqualTo(errorAt);
+        assertThat(scheduler.getLastRunAt()).isAfterOrEqualTo(errorAt);
     }
 }
