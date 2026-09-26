@@ -83,4 +83,6 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [ ] Migrations de base de données versionnées (Flyway/Liquibase) plutôt que `ddl-auto: update`
 - [ ] Fournir un `.env.example` pour faciliter l'onboarding
 - [ ] Étoffer la couverture de tests (seul un test de contexte Spring existe actuellement)
+- [ ] Dockerfiles de production pour le backend et le frontend
+- [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
 - [x] Dockerfiles de production pour le backend et le frontend (cf. [`docs/deploiement-preprod.md`](./docs/deploiement-preprod.md))
