@@ -38,8 +38,9 @@ export type CreateOccurrenceRequest =
   | { publicationId: number, channels: DeliveryChannel[], scheduledAt: string };
 
 /**
- * Corps de `PUT /api/occurrences/{id}/schedule`. `time` à `null` : l'heure
- * redevient automatique ; renseignée (`HH:mm`), elle est épinglée.
+ * Corps de `PUT /api/occurrences/{id}/schedule` et de
+ * `POST /api/occurrences/{id}/retry`. `time` à `null` : l'heure est
+ * automatique ; renseignée (`HH:mm`), elle est épinglée.
  */
 export interface RescheduleOccurrenceRequest {
   date: string

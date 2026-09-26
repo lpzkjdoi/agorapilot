@@ -1,8 +1,5 @@
 import { Routes } from '@angular/router';
 import {
-  CalendarPageComponent,
-} from "./features/calendar/pages/calendar-page/calendar-page.component";
-import {
   CampaignsPageComponent,
 } from "./features/campaigns/pages/campaigns-page/campaigns-page.component";
 import {
@@ -29,7 +26,10 @@ export const routes: Routes = [
   {
     title: "Calendrier",
     path: 'calendrier',
-    component: CalendarPageComponent,
+    // Chargée à la demande : ses modales faisaient passer le bundle initial
+    // au-delà du budget de 500 kB.
+    loadComponent: () => import("./features/calendar/pages/calendar-page/calendar-page.component")
+      .then((m) => m.CalendarPageComponent),
   },
   {
     title: "Publications",

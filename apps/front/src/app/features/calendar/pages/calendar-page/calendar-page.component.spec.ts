@@ -306,4 +306,82 @@ describe('CalendarPageComponent', () => {
       expect(cell(5).querySelector('.day-panel-edit')).toBeNull();
     });
   });
+
+  describe('reprise d’une diffusion en échec', () => {
+    const REFUSAL = 'Confirmez votre identité (Facebook, code 368, sous-code 4854002)';
+    const failed = occurrence(4, '2026-10-08T17:05:00', {
+      status: 'FAILED',
+      deliveries: [{ id: 40, channel: 'FACEBOOK', status: 'FAILED', errorMessage: REFUSAL }],
+    });
+
+    function openRetry(): void {
+      render([...october, failed]);
+      cell(8).querySelector<HTMLButtonElement>('.month-day')!.click();
+      fixture.detectChanges();
+      cell(8).querySelector<HTMLButtonElement>('.day-panel-retry')!.click();
+      fixture.detectChanges();
+    }
+
+    function submit(): void {
+      element.querySelector<HTMLButtonElement>('app-retry-occurrence-modal .primary')!.click();
+      fixture.detectChanges();
+    }
+
+    it('should hand over to the retry modal, reason included', () => {
+      openRetry();
+
+      expect(element.querySelector('app-calendar-day-panel')).toBeNull();
+      expect(element.querySelector('.retry-reason')?.textContent).toContain(REFUSAL);
+    });
+
+    it('should retry today by default, then reload the month', () => {
+      openRetry();
+
+      submit();
+
+      const request = httpTesting.expectOne('/api/occurrences/4/retry');
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ date: '2026-10-10', time: null });
+      request.flush(occurrence(4, '2026-10-10T18:30:00'));
+      reloadWith(october);
+
+      expect(element.querySelector('app-retry-occurrence-modal')).toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Diffusion reprise : elle partira le samedi 10 octobre à 18:30.' }),
+      ]);
+    });
+
+    /** Fenêtre du jour close : il suffit de choisir un autre jour, la modale reste ouverte. */
+    it('should keep the modal open when the day cannot take it', () => {
+      openRetry();
+
+      submit();
+      httpTesting.expectOne('/api/occurrences/4/retry').flush(
+        { message: 'Plus aucune publication possible le 2026-10-10.', code: 400 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      fixture.detectChanges();
+
+      expect(element.querySelector('app-retry-occurrence-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'La diffusion n’a pas pu être reprise. Plus aucune publication possible le 2026-10-10.',
+        }),
+      ]);
+    });
+
+    it('should close and reload when the occurrence is no longer in failure', () => {
+      openRetry();
+
+      submit();
+      httpTesting.expectOne('/api/occurrences/4/retry').flush(
+        { message: 'La diffusion 4 n’est pas en échec.', code: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+      reloadWith(october);
+
+      expect(element.querySelector('app-retry-occurrence-modal')).toBeNull();
+    });
+  });
 });

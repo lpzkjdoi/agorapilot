@@ -14,6 +14,7 @@ import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOc
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ import java.util.TreeMap;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PublicationOccurrenceService {
     private static final int WEEK_LENGTH = 7;
     private static final int MAX_RANGE_DAYS = 93;
@@ -110,25 +112,62 @@ public class PublicationOccurrenceService {
         PublicationOccurrence occurrence = findModifiable(occurrenceId);
         LocalDate previousDay = occurrence.getScheduledAt().toLocalDate();
 
-        if (request.getTime() == null) {
-            placeLastInWindow(occurrence, request.getDate());
-        } else {
-            LocalDateTime scheduledAt = request.getDate().atTime(request.getTime());
-            if (!scheduledAt.isAfter(frozenUntil())) {
-                throw new InvalidScheduleException("L'heure demandée (" + scheduledAt
-                        + ") est passée ou trop proche : choisir une heure au-delà de "
-                        + FROZEN_HORIZON.toMinutes() + " minutes.");
-            }
-            occurrence.setScheduledAt(scheduledAt);
-            occurrence.setPinned(true);
-        }
-
-        PublicationOccurrence saved = publicationOccurrenceRepository.save(occurrence);
+        PublicationOccurrence saved = place(occurrence, request);
 
         redistribute(previousDay);
         if (!previousDay.equals(request.getDate())) {
             redistribute(request.getDate());
         }
+
+        return publicationOccurrenceMapper.toDTO(saved);
+    }
+
+    /**
+     * Reprend une diffusion en échec : ses canaux en échec repartent en attente,
+     * au jour et à l'heure demandés comme pour {@link #reschedule}. Un canal déjà
+     * publié ne l'est jamais une seconde fois.
+     * <p>
+     * La reprise reste un geste explicite, jamais une boucle automatique : un
+     * échec peut cacher une publication que Facebook a acceptée avant de rompre
+     * la connexion. C'est à l'utilisateur de le vérifier avant de reprendre.
+     * <p>
+     * Le motif de l'échec est effacé de la livraison, qui repart vierge ; il reste
+     * dans les logs. Le jour de l'échec n'est pas réparti à nouveau : la diffusion
+     * n'y occupait déjà plus de créneau.
+     *
+     * @throws OccurrenceNotFoundException         l'occurrence n'existe pas
+     * @throws OccurrenceNotModifiableException    elle n'est pas en échec
+     * @throws UnsupportedDeliveryChannelException un canal à reprendre n'a plus de publisher
+     * @throws InvalidScheduleException            jour ou heure qui ne peut plus l'accueillir
+     */
+    @Transactional
+    public PublicationOccurrenceDTO retry(Long occurrenceId, RescheduleOccurrenceRequest request) {
+        PublicationOccurrence occurrence = publicationOccurrenceRepository.findById(occurrenceId)
+                .orElseThrow(() -> new OccurrenceNotFoundException("Occurrence with id " + occurrenceId + " does not exist."));
+
+        if (occurrence.getStatus() != PublicationOccurrenceStatus.FAILED) {
+            throw new OccurrenceNotModifiableException("La diffusion " + occurrenceId
+                    + " n'est pas en échec : seule une diffusion en échec peut être reprise.");
+        }
+
+        for (PublicationDelivery delivery : occurrence.getDeliveries()) {
+            if (delivery.getStatus() != DeliveryStatus.FAILED) {
+                continue;
+            }
+
+            if (publisherRegistry.forChannel(delivery.getChannel()).isEmpty()) {
+                throw new UnsupportedDeliveryChannelException("No publisher available for channel " + delivery.getChannel() + ".");
+            }
+
+            log.info("Reprise de la livraison {} ({}) de l'occurrence {}, en échec : {}",
+                    delivery.getId(), delivery.getChannel(), occurrenceId, delivery.getErrorMessage());
+            delivery.setStatus(DeliveryStatus.PENDING);
+            delivery.setErrorMessage(null);
+        }
+
+        occurrence.setStatus(PublicationOccurrenceStatus.SCHEDULED);
+        PublicationOccurrence saved = place(occurrence, request);
+        redistribute(request.getDate());
 
         return publicationOccurrenceMapper.toDTO(saved);
     }
@@ -207,6 +246,30 @@ public class PublicationOccurrenceService {
                 publicationOccurrenceRepository.save(occurrence);
             }
         }
+    }
+
+    /**
+     * Place l'occurrence au jour demandé : en fin de fenêtre pour une heure
+     * automatique — la répartition qui suit lui attribue son créneau —, à l'heure
+     * dite et épinglée sinon.
+     *
+     * @throws InvalidScheduleException jour ou heure qui ne peut plus l'accueillir
+     */
+    private PublicationOccurrence place(PublicationOccurrence occurrence, RescheduleOccurrenceRequest request) {
+        if (request.getTime() == null) {
+            placeLastInWindow(occurrence, request.getDate());
+        } else {
+            LocalDateTime scheduledAt = request.getDate().atTime(request.getTime());
+            if (!scheduledAt.isAfter(frozenUntil())) {
+                throw new InvalidScheduleException("L'heure demandée (" + scheduledAt
+                        + ") est passée ou trop proche : choisir une heure au-delà de "
+                        + FROZEN_HORIZON.toMinutes() + " minutes.");
+            }
+            occurrence.setScheduledAt(scheduledAt);
+            occurrence.setPinned(true);
+        }
+
+        return publicationOccurrenceRepository.save(occurrence);
     }
 
     /**

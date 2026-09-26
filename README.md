@@ -73,6 +73,8 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute ; reste l'écran de planification côté front)
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
 - [x] Écran de programmation : bouton « Programmer » sur la carte, page Calendrier avec glisser-déposer, modification et annulation d'une diffusion
+- [x] Reprise d'une diffusion en échec depuis le calendrier, et motif lisible des refus de Facebook
+- [ ] Suspendre les diffusions Facebook quand le compte est bloqué (codes 368, 190) : aujourd'hui chaque diffusion suivante retente l'appel et échoue à son tour
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
 - [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)

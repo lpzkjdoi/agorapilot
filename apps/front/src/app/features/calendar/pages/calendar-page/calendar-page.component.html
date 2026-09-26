@@ -26,7 +26,7 @@
     <span class="calendar-legend-item"><span class="calendar-dot calendar-dot-intramuros"></span>Intramuros</span>
     <p class="calendar-hint">
       Glissez une diffusion vers un autre jour pour la déplacer ; cliquez sur un jour pour fixer
-      l’heure ou annuler.
+      l’heure, annuler, ou reprendre une diffusion en échec.
     </p>
   </div>
 
@@ -59,6 +59,7 @@
     [now]="now()"
     (closed)="selectedDay.set(null)"
     (edit)="openEdit($event)"
+    (retry)="openRetry($event)"
   />
 </ng-template>
 
@@ -69,5 +70,14 @@
     (closed)="editing.set(null)"
     (rescheduled)="reschedule($event)"
     (cancelled)="cancel($event)"
+  />
+}
+
+@if (retrying(); as occurrence) {
+  <app-retry-occurrence-modal
+    [occurrence]="occurrence"
+    [saving]="busyId() === occurrence.id"
+    (closed)="retrying.set(null)"
+    (retried)="retry($event)"
   />
 }

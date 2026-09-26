@@ -57,6 +57,17 @@ public class PublicationOccurrenceController {
         return new ResponseEntity<>(publicationOccurrenceService.create(request), HttpStatus.CREATED);
     }
 
+    /**
+     * Reprend une diffusion en échec, au jour (et à l'heure) demandés : ses
+     * canaux en échec repartent en attente. À l'utilisateur de vérifier avant
+     * que le post n'est pas déjà en ligne.
+     */
+    @PostMapping("/{id}/retry")
+    public ResponseEntity<PublicationOccurrenceDTO> retry(@PathVariable Long id,
+                                                          @Valid @RequestBody RescheduleOccurrenceRequest request) {
+        return ResponseEntity.ok(publicationOccurrenceService.retry(id, request));
+    }
+
     // -------------------------------- PUT --------------------------------
 
     /** Change le jour d'une diffusion, fixe son heure, ou la rend automatique. */

@@ -44,6 +44,8 @@
 
         @if (modifiable(occurrence)) {
           <button type="button" class="day-panel-edit" (click)="edit.emit(occurrence)">Modifier</button>
+        } @else if (occurrence.status === 'FAILED') {
+          <button type="button" class="day-panel-edit day-panel-retry" (click)="retry.emit(occurrence)">Reprendre</button>
         } @else if (occurrence.status === 'SCHEDULED') {
           <p class="day-panel-note">Diffusion imminente ou en cours : elle ne peut plus être modifiée.</p>
         }

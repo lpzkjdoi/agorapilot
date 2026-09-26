@@ -26,7 +26,8 @@ const CHANNEL_LABELS: Record<DeliveryChannel, string> = {
  * diffusions du jour avec leur canal, leur statut et leur heure.
  *
  * Elle reste une liste compacte, comme dans la maquette ; la modification passe
- * par « Modifier », qui ouvre une modale.
+ * par « Modifier », la reprise d'une diffusion en échec par « Reprendre » :
+ * chacun ouvre une modale.
  */
 @Component({
   selector: 'app-calendar-day-panel',
@@ -44,6 +45,7 @@ export class CalendarDayPanelComponent {
 
   readonly closed = output<void>();
   readonly edit = output<Occurrence>();
+  readonly retry = output<Occurrence>();
 
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly channelLabels = CHANNEL_LABELS;

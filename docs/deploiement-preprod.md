@@ -338,6 +338,25 @@ Une livraison peut finir `FAILED` sans avoir été tentée, avec l'un de ces mot
   pendant l'appel à Facebook. Le post **a pu partir** : vérifier la page avant
   de relancer.
 
+Un refus de Facebook est tracé avec son seul message, suivi de ses codes :
+`Confirmez votre identité… (Facebook, code 368, sous-code 4854002)`. La réponse
+complète, avec le `fbtrace_id` à fournir au support de Meta, est dans les logs :
+
+```bash
+docker compose -f docker-compose.preprod.yaml logs back | grep "Facebook a répondu"
+```
+
+Refus rencontrés :
+
+| Codes | Cause | Remède |
+|---|---|---|
+| 368 / 4854002 | Meta exige que l'administrateur de la Page confirme son identité | Ouvrir l'application Facebook sur le téléphone de l'administrateur (ou facebook.com/id/hub) et suivre les instructions. Les autres administrateurs de la Page peuvent devoir le faire aussi |
+| 190 | Jeton invalide ou expiré | Refaire le bootstrap (`POST /admin/facebook/bootstrap`) |
+
+Une livraison `FAILED` n'est jamais retentée automatiquement. Une fois la cause
+réglée, la reprendre depuis le calendrier (bouton **« Reprendre »** dans la
+bulle du jour, ou `POST /api/occurrences/{id}/retry` avec `{"date": …}`).
+
 ## Déploiement automatique
 
 Depuis [`deploy-preprod.yml`](../.github/workflows/deploy-preprod.yml), toute

@@ -37,10 +37,14 @@ import {
   CalendarMonthGridComponent,
   OccurrenceMove,
 } from "../../components/calendar-month-grid/calendar-month-grid.component";
+import {
+  RetryOccurrenceModalComponent,
+} from "../../components/retry-occurrence-modal/retry-occurrence-modal.component";
 
 /**
  * Calendrier du mois (maquette `/calendar`) : voir ce qui est programmé,
- * déplacer une diffusion d'un jour à l'autre, fixer son heure ou l'annuler.
+ * déplacer une diffusion d'un jour à l'autre, fixer son heure, l'annuler, ou la
+ * reprendre après un échec.
  *
  * Tout changement re-répartit, côté back, les autres diffusions des jours
  * touchés : la page recharge le mois après chaque modification plutôt que de
@@ -52,6 +56,7 @@ import {
     CalendarMonthGridComponent,
     CalendarDayPanelComponent,
     EditOccurrenceModalComponent,
+    RetryOccurrenceModalComponent,
     LoaderComponent,
   ],
   templateUrl: './calendar-page.component.html',
@@ -71,6 +76,8 @@ export class CalendarPageComponent {
   protected readonly selectedDay = signal<string | null>(null);
   /** Diffusion ouverte dans la modale de modification. */
   protected readonly editing = signal<Occurrence | null>(null);
+  /** Diffusion en échec ouverte dans la modale de reprise. */
+  protected readonly retrying = signal<Occurrence | null>(null);
   /** Diffusion dont la modification est en vol. */
   protected readonly busyId = signal<number | null>(null);
 
@@ -121,6 +128,11 @@ export class CalendarPageComponent {
     this.editing.set(occurrence);
   }
 
+  protected openRetry(occurrence: Occurrence): void {
+    this.selectedDay.set(null);
+    this.retrying.set(occurrence);
+  }
+
   protected onMoved({ occurrenceId, date }: OccurrenceMove): void {
     const occurrence = this.occurrences().find((candidate) => candidate.id === occurrenceId);
 
@@ -156,6 +168,35 @@ export class CalendarPageComponent {
         // entre-temps) : la modale se ferme sur un calendrier rechargé.
         this.editing.set(null);
         this.load(false);
+      },
+    });
+  }
+
+  protected retry({ occurrence, date, time }: RescheduleIntent): void {
+    if (this.busyId() !== null || occurrence.status !== 'FAILED') {
+      return;
+    }
+
+    this.busyId.set(occurrence.id);
+
+    this.occurrencesService.retry(occurrence.id, { date, time }).subscribe({
+      next: (updated) => {
+        this.busyId.set(null);
+        const when = formatDate(updated.scheduledAt, "EEEE d MMMM 'à' HH:mm", 'fr-FR');
+        this.notifications.success(`Diffusion reprise : elle partira le ${ when }.`);
+        this.retrying.set(null);
+        this.load(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Reprise impossible', err);
+        this.busyId.set(null);
+        this.notifications.error(apiErrorMessage(err, 'La diffusion n’a pas pu être reprise.'));
+        // Une fenêtre close se corrige en changeant de jour : la modale reste
+        // ouverte. Un autre refus vient d'un état qui a changé : on recharge.
+        if (err.status !== 400) {
+          this.retrying.set(null);
+          this.load(false);
+        }
       },
     });
   }

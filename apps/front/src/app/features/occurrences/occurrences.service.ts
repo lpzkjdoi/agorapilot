@@ -40,6 +40,14 @@ export class OccurrencesService {
     return this.http.put<Occurrence>(`${ this.url }/${ occurrenceId }/schedule`, request);
   }
 
+  /**
+   * Reprend une diffusion en échec au jour demandé, heure automatique
+   * (`time: null`) ou fixée : ses canaux en échec repartent en attente.
+   */
+  retry(occurrenceId: number, request: RescheduleOccurrenceRequest): Observable<Occurrence> {
+    return this.http.post<Occurrence>(`${ this.url }/${ occurrenceId }/retry`, request);
+  }
+
   /** Annule une diffusion programmée ; le jour est réparti à nouveau. */
   cancel(occurrenceId: number): Observable<void> {
     return this.http.delete<void>(`${ this.url }/${ occurrenceId }`);

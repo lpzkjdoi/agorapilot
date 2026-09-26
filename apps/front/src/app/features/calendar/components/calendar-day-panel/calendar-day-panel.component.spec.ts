@@ -59,7 +59,7 @@ describe('CalendarDayPanelComponent', () => {
     expect(element.textContent).toContain('Aucune diffusion ce jour-là.');
   });
 
-  it('should show why an occurrence failed, without offering to edit it', () => {
+  it('should show why an occurrence failed, and offer to retry it rather than edit it', () => {
     render([occurrence({
       status: 'FAILED',
       deliveries: [{ id: 100, channel: 'FACEBOOK', status: 'FAILED', errorMessage: 'Token expired' }],
@@ -67,7 +67,35 @@ describe('CalendarDayPanelComponent', () => {
 
     expect(element.querySelector('.occurrence-badge-failed')?.textContent).toContain('Échec');
     expect(element.querySelector('.day-panel-reason')?.textContent).toContain('Motif : Token expired');
+    expect(element.querySelector('.day-panel-edit')?.textContent).toContain('Reprendre');
+    expect(element.textContent).not.toContain('Modifier');
+  });
+
+  it('should ask to retry a failed occurrence', () => {
+    render([occurrence({
+      status: 'FAILED',
+      deliveries: [{ id: 100, channel: 'FACEBOOK', status: 'FAILED', errorMessage: 'Token expired' }],
+    })]);
+    const retry = vi.fn();
+    const edit = vi.fn();
+    fixture.componentInstance.retry.subscribe(retry);
+    fixture.componentInstance.edit.subscribe(edit);
+
+    element.querySelector<HTMLButtonElement>('.day-panel-retry')!.click();
+
+    expect(retry).toHaveBeenCalledWith(expect.objectContaining({ id: 12 }));
+    expect(edit).not.toHaveBeenCalled();
+  });
+
+  it('should offer nothing for a published occurrence', () => {
+    render([occurrence({
+      scheduledAt: '2026-09-30T18:30:00',
+      status: 'PUBLISHED',
+      deliveries: [{ id: 100, channel: 'FACEBOOK', status: 'PUBLISHED' }],
+    })]);
+
     expect(element.querySelector('.day-panel-edit')).toBeNull();
+    expect(element.querySelector('.day-panel-note')).toBeNull();
   });
 
   it('should explain that an imminent occurrence can no longer change', () => {

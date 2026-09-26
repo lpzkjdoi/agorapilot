@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -42,7 +46,7 @@ class FacebookPublisherTest {
 
     @BeforeEach
     void setUp() {
-        publisher = new FacebookPublisher(tokenService, facebookClient, deliveryRepository, imageFactory);
+        publisher = new FacebookPublisher(tokenService, facebookClient, deliveryRepository, imageFactory, new ObjectMapper());
 
         Publication publication = new Publication("Marché samedi", PublicationStatus.VERIFIED);
         publication.setId(1L);
@@ -121,6 +125,46 @@ class FacebookPublisherTest {
 
         assertThat(saved.getValue().getStatus()).isEqualTo(DeliveryStatus.FAILED);
         assertThat(saved.getValue().getErrorMessage()).isEqualTo("Graph a refusé");
+    }
+
+    /**
+     * Cas réel du 26/09/2026 : le calendrier affichait le corps brut de la
+     * réponse, un JSON de 1 000 caractères, au lieu de la consigne de Facebook.
+     */
+    @Test
+    void records_only_the_message_of_a_graph_api_refusal() {
+        String body = """
+                {"error":{"message":"Confirmez votre identit\\u00e9 avant de pouvoir publier au nom de cette Page.",\
+                "type":"OAuthException","code":368,"error_data":{"sentry_block_data":"AetGWG5rRV9R","is_silent":false},\
+                "error_subcode":4854002,"error_user_msg":"","fbtrace_id":"AXp8mIKChr4chy31Wrhy0Qb"}}""";
+        failWith(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null,
+                body.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
+
+        publisher.publish(occurrence);
+
+        assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+        assertThat(delivery.getErrorMessage()).isEqualTo(
+                "Confirmez votre identité avant de pouvoir publier au nom de cette Page."
+                        + " (Facebook, code 368, sous-code 4854002)");
+    }
+
+    /** Une page d'erreur d'un proxy n'a pas la forme Graph : mieux vaut le message brut que rien. */
+    @Test
+    void keeps_the_raw_message_when_the_error_body_is_not_a_graph_error() {
+        HttpServerErrorException error = HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "Bad Gateway", null,
+                "<html>502</html>".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        failWith(error);
+
+        publisher.publish(occurrence);
+
+        assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+        assertThat(delivery.getErrorMessage()).isEqualTo(error.getMessage());
+    }
+
+    private void failWith(RuntimeException error) {
+        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(imageFactory.prepare(any(), anyInt())).thenReturn(new PreparedImages(List.of(), List.of()));
+        when(facebookClient.publish(any(), any(), any())).thenThrow(error);
     }
 
     private Media media() {
