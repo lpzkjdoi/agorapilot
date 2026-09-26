@@ -9,6 +9,8 @@ import fr.maximechazard.agorapilot.back.publisher.Publisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +23,7 @@ public class FacebookPublisher implements Publisher {
     private final FacebookClient facebookClient;
     private final PublicationDeliveryRepository publicationDeliveryRepository;
     private final PublishableImageFactory publishableImageFactory;
+    private final ObjectMapper mapper;
 
     @Override
     public DeliveryChannel supports() {
@@ -56,12 +59,25 @@ public class FacebookPublisher implements Publisher {
             delivery.setExternalId(response.id());
             delivery.setErrorMessage(null);
 
+        } catch (RestClientResponseException e) {
+            // Le corps brut garde tout, fbtrace_id compris pour le support de Meta :
+            // il va aux logs. La livraison ne reçoit que le message, lu dans le calendrier.
+            log.warn("Occurrence {} : Facebook a répondu {} — {}",
+                    occurrence.getId(), e.getStatusCode(), e.getResponseBodyAsString());
+            markFailed(delivery, GraphApiError.parse(e.getResponseBodyAsString(), mapper)
+                    .map(GraphApiError::describe)
+                    .orElse(e.getMessage()));
         } catch (Exception e) {
-            delivery.setErrorMessage(e.getMessage());
-            delivery.setStatus(DeliveryStatus.FAILED);
+            log.warn("Occurrence {} : publication Facebook en échec — {}", occurrence.getId(), e.getMessage());
+            markFailed(delivery, e.getMessage());
         }
 
         publicationDeliveryRepository.save(delivery);
+    }
+
+    private static void markFailed(PublicationDelivery delivery, String errorMessage) {
+        delivery.setErrorMessage(errorMessage);
+        delivery.setStatus(DeliveryStatus.FAILED);
     }
 
     private List<Media> attachedMedias(Publication publication) {

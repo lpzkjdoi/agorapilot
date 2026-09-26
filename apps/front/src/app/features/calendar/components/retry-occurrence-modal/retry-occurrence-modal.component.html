@@ -1,0 +1,75 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="retry-occurrence-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="retry-occurrence-title">Reprendre la diffusion</h2>
+      <p class="modal-subtitle retry-publication">{{ occurrence().publication.content }}</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <p class="retry-current">
+    En échec le {{ occurrence().scheduledAt | date: "EEEE d MMMM 'à' HH:mm" : '' : 'fr-FR' }}.
+  </p>
+  @if (reason(occurrence()); as why) {
+    <p class="retry-reason">Motif : {{ why }}</p>
+  }
+
+  <p class="retry-warning" role="note">
+    Vérifiez d’abord sur la page Facebook que la publication n’y figure pas déjà : certains échecs
+    surviennent après la mise en ligne, et la reprendre la publierait deux fois.
+  </p>
+
+  <form class="retry-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="retry-when">
+      <div class="retry-field">
+        <label for="retry-date">Jour</label>
+        <input id="retry-date" formControlName="date" type="date" [min]="minDate">
+        @if (form.controls.date.touched && form.controls.date.invalid) {
+          <p class="retry-error">Choisissez un jour.</p>
+        }
+      </div>
+
+      <div class="retry-field">
+        <label for="retry-time">Heure (facultatif)</label>
+        <input id="retry-time" formControlName="time" type="time">
+      </div>
+    </div>
+
+    <p class="retry-hint">
+      Heure vide : la diffusion est placée automatiquement dans la fenêtre de
+      publication du jour. Une heure saisie est fixée et ne bougera plus.
+    </p>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">
+        Fermer
+      </button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        @if (saving()) {
+          <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+          <app-loader size="sm" variant="dark" label="Reprise en cours…" />
+        }
+        Reprendre
+      </button>
+    </div>
+  </form>
+</div>

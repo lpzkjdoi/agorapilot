@@ -104,6 +104,15 @@ describe('OccurrencesService', () => {
     request.flush({});
   });
 
+  it('should POST the day and time of a retry on /api/occurrences/{id}/retry', () => {
+    service.retry(4, { date: '2026-09-27', time: '19:00' }).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrences/4/retry');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ date: '2026-09-27', time: '19:00' });
+    request.flush({});
+  });
+
   it('should DELETE /api/occurrences/{id} to cancel', () => {
     let done = false;
     service.cancel(4).subscribe({ complete: () => (done = true) });

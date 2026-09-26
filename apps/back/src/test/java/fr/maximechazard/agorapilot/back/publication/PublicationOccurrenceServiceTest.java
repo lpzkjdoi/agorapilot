@@ -5,12 +5,14 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDT
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationDeliveryMapper;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationOccurrenceMapper;
 import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccurrenceRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -308,6 +311,79 @@ class PublicationOccurrenceServiceTest {
             service.refreshStatus(occurrence);
 
             verify(publicationOccurrenceRepository, never()).save(occurrence);
+        }
+    }
+
+    @Nested
+    class Retry {
+
+        private static final LocalDate RETRY_DAY = LocalDate.of(2026, 10, 1);
+
+        /** Échouée sur Intramuros après être partie sur Facebook. */
+        private PublicationOccurrence partlyFailed() {
+            PublicationOccurrence occurrence = new PublicationOccurrence();
+            occurrence.setId(42L);
+            occurrence.setScheduledAt(SCHEDULED_AT);
+            occurrence.setStatus(PublicationOccurrenceStatus.FAILED);
+            occurrence.setPublication(publication());
+
+            PublicationDelivery facebook = delivery(occurrence, DeliveryStatus.PUBLISHED);
+            PublicationDelivery intramuros = delivery(occurrence, DeliveryStatus.FAILED);
+            intramuros.setChannel(DeliveryChannel.INTRAMUROS);
+            intramuros.setErrorMessage("Intramuros indisponible");
+            occurrence.addDelivery(facebook);
+            occurrence.addDelivery(intramuros);
+
+            return occurrence;
+        }
+
+        private static RescheduleOccurrenceRequest at(LocalDate date, LocalTime time) {
+            RescheduleOccurrenceRequest request = new RescheduleOccurrenceRequest();
+            set(request, "date", date);
+            set(request, "time", time);
+            return request;
+        }
+
+        /** Le principe du projet : ne jamais publier deux fois. */
+        @Test
+        void never_republishes_a_channel_already_published() {
+            PublicationOccurrence occurrence = partlyFailed();
+            when(publicationOccurrenceRepository.findById(42L)).thenReturn(Optional.of(occurrence));
+            when(publisherRegistry.forChannel(DeliveryChannel.INTRAMUROS)).thenReturn(Optional.of(publisher));
+            when(publicationOccurrenceRepository.save(occurrence)).thenReturn(occurrence);
+
+            service.retry(42L, at(RETRY_DAY, LocalTime.of(19, 0)));
+
+            assertThat(occurrence.getStatus()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
+            assertThat(occurrence.getScheduledAt()).isEqualTo(RETRY_DAY.atTime(19, 0));
+            assertThat(occurrence.getDeliveries())
+                    .extracting(PublicationDelivery::getChannel, PublicationDelivery::getStatus, PublicationDelivery::getErrorMessage)
+                    .containsExactly(
+                            tuple(DeliveryChannel.FACEBOOK, DeliveryStatus.PUBLISHED, null),
+                            tuple(DeliveryChannel.INTRAMUROS, DeliveryStatus.PENDING, null));
+        }
+
+        /** Reprise vouée à l'échec : mieux vaut un 501 tout de suite. */
+        @Test
+        void refuses_a_channel_that_has_no_publisher_any_more() {
+            PublicationOccurrence occurrence = partlyFailed();
+            when(publicationOccurrenceRepository.findById(42L)).thenReturn(Optional.of(occurrence));
+            when(publisherRegistry.forChannel(DeliveryChannel.INTRAMUROS)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.retry(42L, at(RETRY_DAY, null)))
+                    .isInstanceOf(UnsupportedDeliveryChannelException.class);
+            verify(publicationOccurrenceRepository, never()).save(any());
+        }
+
+        @Test
+        void refuses_an_occurrence_that_did_not_fail() {
+            PublicationOccurrence occurrence = partlyFailed();
+            occurrence.setStatus(PublicationOccurrenceStatus.SCHEDULED);
+            when(publicationOccurrenceRepository.findById(42L)).thenReturn(Optional.of(occurrence));
+
+            assertThatThrownBy(() -> service.retry(42L, at(RETRY_DAY, null)))
+                    .isInstanceOf(OccurrenceNotModifiableException.class);
+            verifyNoInteractions(publisherRegistry);
         }
     }
 

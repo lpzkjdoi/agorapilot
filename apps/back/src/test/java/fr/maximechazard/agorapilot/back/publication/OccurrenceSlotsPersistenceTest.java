@@ -142,6 +142,23 @@ class OccurrenceSlotsPersistenceTest {
         }
     }
 
+    /** Ce que laisse l'ordonnanceur après un refus de Facebook. */
+    private void markFailed(Long occurrenceId, String reason) {
+        PublicationOccurrence occurrence = publicationOccurrenceRepository.findById(occurrenceId).orElseThrow();
+        for (PublicationDelivery delivery : publicationDeliveryRepository.findAllByOccurrence(occurrence)) {
+            delivery.setStatus(DeliveryStatus.FAILED);
+            delivery.setErrorMessage(reason);
+            publicationDeliveryRepository.save(delivery);
+        }
+        occurrence.setStatus(PublicationOccurrenceStatus.FAILED);
+        publicationOccurrenceRepository.save(occurrence);
+    }
+
+    private PublicationDelivery deliveryOf(Long occurrenceId) {
+        PublicationOccurrence occurrence = publicationOccurrenceRepository.findById(occurrenceId).orElseThrow();
+        return publicationDeliveryRepository.findAllByOccurrence(occurrence).getFirst();
+    }
+
     private LocalTime timeOf(Long occurrenceId) {
         return publicationOccurrenceRepository.findById(occurrenceId).orElseThrow().getScheduledAt().toLocalTime();
     }
@@ -313,6 +330,79 @@ class OccurrenceSlotsPersistenceTest {
 
         assertThatThrownBy(() -> service.reschedule(id, reschedule(LocalDate.of(2026, 9, 25), LocalTime.of(9, 0))))
                 .isInstanceOf(InvalidScheduleException.class);
+    }
+
+    // ------------------------------------------------------------ reprise
+
+    private static final String REFUSAL = "Confirmez votre identité (Facebook, code 368, sous-code 4854002)";
+
+    /** Reprise vers un jour qui a déjà une diffusion : elle prend le dernier créneau. */
+    @Test
+    void retrying_puts_a_failed_publication_back_in_the_queue() {
+        Long failed = scheduleOn(DAY);
+        Long alreadyThere = scheduleOn(DAY.plusDays(1));
+        markFailed(failed, REFUSAL);
+
+        PublicationOccurrenceDTO retried = service.retry(failed, reschedule(DAY.plusDays(1), null));
+
+        assertThat(retried.status()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
+        assertThat(retried.pinned()).isFalse();
+        assertThat(deliveryOf(failed).getStatus()).isEqualTo(DeliveryStatus.PENDING);
+        assertThat(deliveryOf(failed).getErrorMessage()).isNull();
+        assertThat(at(alreadyThere)).isEqualTo(DAY.plusDays(1).atTime(16, 45));
+        assertThat(at(failed)).isEqualTo(DAY.plusDays(1).atTime(20, 15));
+    }
+
+    @Test
+    void retrying_at_a_given_time_pins_it() {
+        Long failed = scheduleOn(DAY);
+        markFailed(failed, REFUSAL);
+
+        PublicationOccurrenceDTO retried = service.retry(failed, reschedule(DAY.plusDays(1), LocalTime.of(19, 5)));
+
+        assertThat(retried.pinned()).isTrue();
+        assertThat(at(failed)).isEqualTo(DAY.plusDays(1).atTime(19, 5));
+    }
+
+    /**
+     * Le jour de l'échec n'est pas réparti à nouveau : l'autre diffusion du jour
+     * garde l'horaire annoncé au lieu de glisser dans le reste de la fenêtre.
+     */
+    @Test
+    void retrying_leaves_the_day_of_the_failure_alone() {
+        Long failed = scheduleOn(DAY);
+        Long next = scheduleOn(DAY);
+        markFailed(failed, REFUSAL);
+        clock.set(DAY.atTime(17, 0));
+
+        service.retry(failed, reschedule(DAY.plusDays(1), null));
+
+        assertThat(at(next)).isEqualTo(DAY.atTime(20, 15));
+    }
+
+    @Test
+    void refuses_to_retry_a_publication_that_did_not_fail() {
+        Long scheduled = scheduleOn(DAY);
+
+        assertThatThrownBy(() -> service.retry(scheduled, reschedule(DAY.plusDays(1), null)))
+                .isInstanceOf(OccurrenceNotModifiableException.class);
+    }
+
+    /** Une reprise refusée ne doit pas laisser une diffusion à moitié remise en file. */
+    @Test
+    void a_refused_retry_leaves_the_failure_untouched() {
+        Long failed = scheduleOn(DAY);
+        markFailed(failed, REFUSAL);
+        clock.set(DAY.atTime(21, 58));
+
+        assertThatThrownBy(() -> service.retry(failed, reschedule(DAY, null)))
+                .isInstanceOf(InvalidScheduleException.class);
+
+        assertThat(publicationOccurrenceRepository.findById(failed).orElseThrow().getStatus())
+                .isEqualTo(PublicationOccurrenceStatus.FAILED);
+        assertThat(deliveryOf(failed).getStatus()).isEqualTo(DeliveryStatus.FAILED);
+        assertThat(deliveryOf(failed).getErrorMessage()).isEqualTo(REFUSAL);
+        assertThat(at(failed)).isEqualTo(DAY.atTime(18, 30));
     }
 
     @Test

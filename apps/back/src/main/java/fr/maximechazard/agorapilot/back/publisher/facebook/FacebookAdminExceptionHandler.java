@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpStatusCodeException;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -62,26 +61,14 @@ public class FacebookAdminExceptionHandler {
     }
 
     /**
-     * Extrait le message d'erreur de la réponse de Facebook, qui a la forme
-     * {@code {"error":{"message":"...","type":"...","code":1}}}. En cas de corps
-     * inattendu, on renvoie le corps brut : mieux vaut un message imparfait
-     * qu'un message perdu.
+     * Extrait le message d'erreur de la réponse de Facebook (cf.
+     * {@link GraphApiError}). En cas de corps inattendu, on renvoie le corps
+     * brut : mieux vaut un message imparfait qu'un message perdu.
      */
     private FacebookError parse(String body, int upstreamStatus) {
-        try {
-            JsonNode error = mapper.readTree(body).path("error");
-            if (error.isMissingNode()) {
-                return new FacebookError("facebook_api_error", body, null, upstreamStatus);
-            }
-            return new FacebookError(
-                    "facebook_api_error",
-                    error.path("message").asString(),
-                    error.path("code").isMissingNode() ? null : error.path("code").asInt(),
-                    upstreamStatus
-            );
-        } catch (RuntimeException e) {
-            return new FacebookError("facebook_api_error", body, null, upstreamStatus);
-        }
+        return GraphApiError.parse(body, mapper)
+                .map(error -> new FacebookError("facebook_api_error", error.message(), error.code(), upstreamStatus))
+                .orElseGet(() -> new FacebookError("facebook_api_error", body, null, upstreamStatus));
     }
 
     public record FacebookError(String error, String message, Integer facebookCode, Integer upstreamStatus) {

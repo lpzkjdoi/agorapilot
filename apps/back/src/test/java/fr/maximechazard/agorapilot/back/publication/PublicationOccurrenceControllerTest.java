@@ -278,6 +278,72 @@ class PublicationOccurrenceControllerTest {
     }
 
     @Nested
+    class Retry {
+
+        @Test
+        void returns_the_occurrence_back_in_the_queue() throws Exception {
+            when(publicationOccurrenceService.retry(eq(1L), any()))
+                    .thenReturn(occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING));
+
+            mockMvc.perform(post("/api/occurrences/1/retry")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"date":"2099-10-04"}"""))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$.status").value("SCHEDULED"))
+                   .andExpect(jsonPath("$.deliveries[0].status").value("PENDING"));
+        }
+
+        @Test
+        void requires_a_day() throws Exception {
+            mockMvc.perform(post("/api/occurrences/1/retry")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("{}"))
+                   .andExpect(status().isBadRequest());
+
+            verify(publicationOccurrenceService, never()).retry(any(), any());
+        }
+
+        @Test
+        void returns_404_for_an_unknown_occurrence() throws Exception {
+            when(publicationOccurrenceService.retry(eq(9L), any()))
+                    .thenThrow(new OccurrenceNotFoundException("Occurrence with id 9 does not exist."));
+
+            mockMvc.perform(post("/api/occurrences/9/retry")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"date":"2099-10-04"}"""))
+                   .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void returns_409_for_an_occurrence_that_did_not_fail() throws Exception {
+            when(publicationOccurrenceService.retry(eq(1L), any()))
+                    .thenThrow(new OccurrenceNotModifiableException("pas en échec"));
+
+            mockMvc.perform(post("/api/occurrences/1/retry")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"date":"2099-10-04"}"""))
+                   .andExpect(status().isConflict())
+                   .andExpect(jsonPath("$.message").value("pas en échec"));
+        }
+
+        @Test
+        void returns_400_with_the_reason_when_the_day_cannot_take_it() throws Exception {
+            when(publicationOccurrenceService.retry(eq(1L), any()))
+                    .thenThrow(new InvalidScheduleException("fenêtre passée"));
+
+            mockMvc.perform(post("/api/occurrences/1/retry")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"date":"2026-09-26"}"""))
+                   .andExpect(status().isBadRequest())
+                   .andExpect(jsonPath("$.message").value("fenêtre passée"));
+        }
+    }
+
+    @Nested
     class Cancel {
 
         @Test
