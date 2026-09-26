@@ -1,0 +1,9 @@
+<svg class="loader" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+  <!-- La piste : l'anneau complet, discret, sur lequel court l'arc. -->
+  <circle class="loader-track" cx="22" cy="22" r="18" />
+  <!-- L'arc : 72 % du cercle, extrémités arrondies, `pathLength` à 100 pour que
+       le pointillé s'exprime directement en pourcentage de la circonférence. -->
+  <circle class="loader-arc" cx="22" cy="22" r="18" pathLength="100" />
+</svg>
+
+<span class="loader-label">{{ label() }}</span>

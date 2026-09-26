@@ -1,0 +1,150 @@
+# Préproduction AgoraPilot — VPS.
+#
+# Ce fichier est distinct de docker-compose.yaml, qui reste dédié au
+# développement local (sources bind-montées, `mvn spring-boot:run`).
+#
+# Variables : lues depuis un fichier `.env` placé à côté de ce compose sur le
+# VPS (cf. .env.preprod.example et docs/deploiement-preprod.md). La syntaxe
+# `${VAR:?}` rend la variable obligatoire — un déploiement avec une variable
+# manquante échoue immédiatement au lieu de démarrer un service mal configuré.
+#
+# Réseaux : `front` est attaché au réseau externe `web` du Traefik déjà en place
+# sur le VPS ; `back` et `db` restent sur le réseau interne, inaccessibles
+# depuis l'extérieur.
+#
+# Les blocs `build:` permettent de déployer dès aujourd'hui depuis un clone du
+# dépôt (`up -d --build`). Une fois les images publiées sur GHCR par la CI, le
+# déploiement se fera en `pull` sans rien construire sur le VPS.
+
+name: agorapilot-preprod
+
+services:
+  db:
+    image: postgres:16
+    container_name: agorapilot-preprod-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB est requis}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER est requis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Aucun port publié, contrairement au compose de développement : la base
+    # n'est joignable que par le back, via le réseau interne.
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    image: ${BACK_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-back}:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/back
+    container_name: agorapilot-preprod-back
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: preprod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # Utilisé par la configuration CORS du back. Le front étant servi sur la
+      # même origine, cette valeur ne sert plus qu'aux appels hors navigateur.
+      FRONTEND_URL: https://${PREPROD_HOST:?PREPROD_HOST est requis}
+      FACEBOOK_API_VERSION: ${FACEBOOK_API_VERSION:-v25.0}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
+      FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
+      # Racine de la médiathèque, sur le volume `media-data` ci-dessous. Chemin
+      # figé plutôt que variabilisé : il n'a pas à changer d'un environnement à
+      # l'autre, et toute nouvelle variable devrait être propagée jusqu'à
+      # l'Environment GitHub `preprod`.
+      MEDIA_ROOT: /var/lib/agorapilot/media
+      # Fenêtre où sont réparties les diffusions Facebook programmées pour un
+      # jour. Valeurs par défaut en place : rien à ajouter à l'Environment GitHub
+      # `preprod` tant qu'on ne veut pas les changer.
+      PUBLICATION_WINDOW_START: ${PUBLICATION_WINDOW_START:-15:00}
+      PUBLICATION_WINDOW_END: ${PUBLICATION_WINDOW_END:-22:00}
+      # Pas de token de page ici : il est obtenu par POST /admin/facebook/bootstrap
+      # et stocké en base (table facebook_tokens), puis renouvelé par
+      # FacebookTokenScheduler. Voir docs/deploiement-preprod.md.
+      # FacebookTokenScheduler tourne en cron "0 0 3 * * *" sans zone explicite.
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      # Les affiches déposées ne sont pas reconstructibles : ce volume est à
+      # sauvegarder au même titre que `db-data`.
+      - media-data:/var/lib/agorapilot/media
+    # Publié sur la boucle locale uniquement : permet d'atteindre les endpoints
+    # /admin/facebook/** (non authentifiés, donc non exposés par le front) depuis
+    # le VPS ou via un tunnel SSH.
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  front:
+    image: ${FRONT_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-front}:${IMAGE_TAG:-latest}
+    build:
+      context: ./apps/front
+    container_name: agorapilot-preprod-front
+    restart: unless-stopped
+    # nginx résout le nom `back` au chargement de sa configuration : sans back
+    # démarré, le conteneur front refuserait de se lancer.
+    depends_on:
+      back:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+    labels:
+      - "traefik.enable=true"
+      # Obligatoire : le conteneur est sur deux réseaux, Traefik doit savoir
+      # lequel utiliser pour l'atteindre.
+      - "traefik.docker.network=web"
+      - "traefik.http.services.agorapilot-preprod.loadbalancer.server.port=80"
+      # Accès restreint au réseau WireGuard : toute autre IP source reçoit 403.
+      # Nom du middleware en `ipwhitelist` et non `ipallowlist` : le second
+      # n'existe qu'à partir de Traefik v2.11, le VPS tourne en v2.10.
+      # Le port 443 reste joignable publiquement, ce qui est délibéré : le
+      # challenge TLS-ALPN de Let's Encrypt est traité avant le routage, donc le
+      # renouvellement automatique du certificat continue de fonctionner.
+      - "traefik.http.middlewares.agorapilot-preprod-vpn.ipwhitelist.sourcerange=${PREPROD_ALLOWED_CIDRS:-10.8.0.0/24}"
+      # HTTPS
+      - "traefik.http.routers.agorapilot-preprod.rule=Host(`${PREPROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-preprod.entrypoints=websecure"
+      - "traefik.http.routers.agorapilot-preprod.tls.certresolver=myresolver"
+      - "traefik.http.routers.agorapilot-preprod.middlewares=agorapilot-preprod-vpn"
+      # HTTP → redirection vers HTTPS. Le filtre est appliqué en premier : une IP
+      # hors VPN reçoit 403 sans même apprendre qu'il existe une version HTTPS.
+      - "traefik.http.routers.agorapilot-preprod-http.rule=Host(`${PREPROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-preprod-http.entrypoints=web"
+      - "traefik.http.routers.agorapilot-preprod-http.middlewares=agorapilot-preprod-vpn,agorapilot-preprod-https"
+      - "traefik.http.middlewares.agorapilot-preprod-https.redirectscheme.scheme=https"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+  media-data:
+
+networks:
+  internal:
+  # Réseau du Traefik existant sur le VPS, créé hors de ce projet
+  # (`docker network create web`).
+  web:
+    external: true

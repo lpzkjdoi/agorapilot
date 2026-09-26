@@ -1,0 +1,103 @@
+# Porte d'entrée des pull requests.
+#
+# Ce workflow est le seul déclenché sur `pull_request`. Il détecte ce que la PR
+# touche, appelle les CI concernées, puis publie un statut unique
+# « All checks green ».
+#
+# Pourquoi cette indirection plutôt que laisser Back CI et Front CI se
+# déclencher eux-mêmes ? Parce qu'ils sont filtrés par chemin : une PR qui ne
+# touche que le front ne produit jamais le statut « Back CI ». Un tel statut,
+# déclaré obligatoire dans la protection de branche, resterait « en attente »
+# pour toujours et bloquerait la PR. Le job `all-green` ci-dessous, lui,
+# s'exécute systématiquement : c'est le seul statut à exiger côté GitHub, et il
+# reste valable même si d'autres vérifications sont ajoutées plus tard.
+
+name: PR checks
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+
+# Une nouvelle poussée sur la PR annule la vérification de la précédente :
+# inutile de payer deux fois pour un commit déjà dépassé.
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Détection des changements
+    runs-on: ubuntu-latest
+    outputs:
+      back: ${{ steps.filter.outputs.back }}
+      front: ${{ steps.filter.outputs.front }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fichiers modifiés par la PR
+        id: filter
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+
+          # Comparaison au point de divergence avec la branche cible, et non à
+          # sa tête : seuls les fichiers réellement touchés par la PR comptent,
+          # indépendamment des commits arrivés sur `develop` entre-temps.
+          base=$(git merge-base "origin/$BASE_REF" HEAD)
+          files=$(git diff --name-only "$base" HEAD)
+
+          echo "Fichiers modifiés :"
+          echo "$files"
+
+          match() { grep -qE "$1" <<< "$files" && echo true || echo false; }
+
+          {
+            echo "back=$(match '^apps/back/|^\.github/workflows/(ci|pr-checks)\.yml$')"
+            echo "front=$(match '^apps/front/|^\.github/workflows/(front-ci|pr-checks)\.yml$')"
+          } >> "$GITHUB_OUTPUT"
+
+  back:
+    name: Back
+    needs: changes
+    if: needs.changes.outputs.back == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  front:
+    name: Front
+    needs: changes
+    if: needs.changes.outputs.front == 'true'
+    uses: ./.github/workflows/front-ci.yml
+
+  all-green:
+    name: All checks green
+    # `always()` est indispensable : sans lui, le job serait ignoré dès qu'un
+    # job dont il dépend échoue ou est sauté — donc jamais rouge, jamais
+    # bloquant.
+    if: always()
+    needs: [ changes, back, front ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier le résultat des vérifications
+        env:
+          # `skipped` est un résultat normal (rien à vérifier de ce côté) ;
+          # seuls `failure` et `cancelled` doivent bloquer la fusion.
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |
+          set -euo pipefail
+          echo "Résultats : $RESULTS"
+          case "$RESULTS" in
+            *failure*|*cancelled*)
+              echo "::error::Au moins une vérification a échoué : la PR ne doit pas être fusionnée."
+              exit 1
+              ;;
+          esac
+          echo "Toutes les vérifications sont vertes."

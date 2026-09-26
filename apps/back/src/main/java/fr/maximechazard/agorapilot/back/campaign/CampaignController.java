@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequestMapping("/api/campaigns")
 @RequiredArgsConstructor
 @RestController
@@ -16,13 +18,23 @@ public class CampaignController {
 
     // -------------------------------- GET --------------------------------
     @GetMapping
-    public ResponseEntity<Iterable<Campaign>> getAll() {
+    public ResponseEntity<List<CampaignDTO>> getAll() {
         return new ResponseEntity<>(campaignService.getAll(), HttpStatus.OK);
     }
 
-    // -------------------------------- GET --------------------------------
+    // -------------------------------- POST --------------------------------
     @PostMapping
     public ResponseEntity<CampaignDTO> create(@Valid @RequestBody CreateCampaignRequest request) {
         return new ResponseEntity<>(campaignService.create(request), HttpStatus.CREATED);
+    }
+
+    /**
+     * Clôture une campagne commencée : son statut passe à {@code COMPLETED} et
+     * sa date de fin au présent. Répond {@code 409} si la campagne n'a pas
+     * commencé ou si elle est déjà terminée.
+     */
+    @PostMapping("/{id}/closure")
+    public ResponseEntity<CampaignDTO> close(@PathVariable Long id) {
+        return new ResponseEntity<>(campaignService.close(id), HttpStatus.OK);
     }
 }

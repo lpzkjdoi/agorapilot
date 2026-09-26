@@ -1,0 +1,52 @@
+name: Front CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/front/**'
+      - '.github/workflows/front-ci.yml'
+  # Sur les pull requests, ce workflow n'est plus déclenché directement : il est
+  # appelé par « PR checks » (.github/workflows/pr-checks.yml), qui décide s'il
+  # y a lieu de vérifier le front et agrège les résultats dans un statut unique.
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  front-build-test:
+    name: Front CI / build & test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/front
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/front/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Bloquant depuis que le code est aligné sur les règles (2026-07-25).
+      # La seule exception au lint est documentée sur place, dans
+      # navbar-button.component.ts.
+      - name: Lint
+        run: npm run lint
+
+      # Vitest sous jsdom : aucun navigateur à installer sur le runner. Le mode
+      # surveillance est désactivé d'office hors TTY, donc `npm test` suffit.
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build -- --configuration production

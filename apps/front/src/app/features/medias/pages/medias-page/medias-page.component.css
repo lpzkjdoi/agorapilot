@@ -1,0 +1,96 @@
+.medias-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.medias-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.medias-subtitle {
+  margin-top: 0.125rem;
+  color: var(--color-ui-text-secondary);
+}
+
+.medias-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-ui-card);
+  box-shadow: var(--shadow-card);
+}
+
+.medias-tabs button {
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-ui-text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.medias-tabs button.active {
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+}
+
+/* Séparateur « N médias » : libellé centré entre deux filets, comme la page
+   Publications. */
+.medias-count {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--color-ui-text-muted);
+}
+
+.medias-count::before,
+.medias-count::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-ui-border);
+}
+
+/* Vignettes plus étroites que les cartes de publication : un visuel se
+   reconnaît d'un coup d'œil, on en montre davantage. La largeur minimale est
+   celle qui laisse « Modifier / Désarchiver / Supprimer » tenir sur une ligne. */
+.medias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 1.5rem;
+}
+
+.medias-placeholder {
+  padding: 3rem 1rem;
+  border: 1px dashed var(--color-ui-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-ui-text-secondary);
+}
+
+.medias-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
+.medias-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-sm);
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}

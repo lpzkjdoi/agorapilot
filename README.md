@@ -26,7 +26,7 @@ AgoraPilot est un outil de planification et de publication automatisée de conte
 - TypeScript 5.8 (mode strict)
 - Tailwind CSS 4
 - RxJS
-- Karma / Jasmine pour les tests
+- Vitest (jsdom) pour les tests
 
 ### Infrastructure
 - PostgreSQL 16 via Docker Compose
@@ -70,15 +70,19 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 ## Todo / Roadmap
 
 - [ ] Authentification et gestion des utilisateurs (aucune restriction d'accès actuellement)
-- [ ] Déclenchement automatique des publications à l'heure planifiée (le `FacebookPublisher` existe et fonctionne, mais rien ne parcourt encore les occurrences dues pour l'appeler)
+- [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute ; reste l'écran de planification côté front)
+- [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
+- [x] Écran de programmation : bouton « Programmer » sur la carte, page Calendrier avec glisser-déposer, modification et annulation d'une diffusion
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
+- [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
 - [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)
 - [ ] Connecter les KPIs et le panneau "prochaines publications" du dashboard à des données réelles
 - [ ] Intégrer le formulaire de création de publication à une route de l'application
-- [ ] Mettre en place une CI frontend (build, tests, lint)
+- [ ] Compléter la CI frontend d'un lint (build et tests tournent déjà dans `front-ci.yml`)
 - [ ] Ajouter un linter/formatter JS/TS (ESLint, Prettier)
 - [ ] Migrations de base de données versionnées (Flyway/Liquibase) plutôt que `ddl-auto: update`
 - [ ] Fournir un `.env.example` pour faciliter l'onboarding
 - [ ] Étoffer la couverture de tests (seul un test de contexte Spring existe actuellement)
 - [ ] Dockerfiles de production pour le backend et le frontend
 - [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
+- [x] Dockerfiles de production pour le backend et le frontend (cf. [`docs/deploiement-preprod.md`](./docs/deploiement-preprod.md))

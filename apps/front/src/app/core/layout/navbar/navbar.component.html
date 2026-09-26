@@ -1,0 +1,89 @@
+<header class="navbar">
+  <a class="navbar-logo" routerLink="/dashboard">
+    <app-logo class="navbar-logo-badge" />
+    <span class="navbar-logo-text">AgoraPilot</span>
+  </a>
+  <nav class="navbar-nav">
+    <button appNavbarButton
+            name="Dashboard"
+            class="navbar-nav-button"
+            routerLink="/dashboard"
+            routerLinkActive="active"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+      >
+        <path
+          d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z" />
+      </svg>
+    </button>
+    <button appNavbarButton
+            name="Campagnes"
+            class="navbar-nav-button"
+            routerLink="/campagnes"
+            routerLinkActive="active"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+      >
+        <path
+          d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm240-182v-196l-98 58H160v80h182l98 58Zm120 36v-268q27 24 43.5 58.5T620-480q0 43-16.5 77.5T560-346ZM300-480Z" />
+      </svg>
+    </button>
+    <button appNavbarButton
+            name="Calendrier"
+            class="navbar-nav-button"
+            routerLink="/calendrier"
+            routerLinkActive="active"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+      >
+        <path
+          d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+      </svg>
+    </button>
+    <button appNavbarButton
+            name="Publications"
+            class="navbar-nav-button"
+            routerLink="/publications"
+            routerLinkActive="active"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+      >
+        <path
+          d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+      </svg>
+    </button>
+    <button appNavbarButton
+            name="Médiathèque"
+            class="navbar-nav-button"
+            routerLink="/medias"
+            routerLinkActive="active"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+      >
+        <path
+          d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
+      </svg>
+    </button>
+  </nav>
+  <app-environment-badge />
+</header>

@@ -1,0 +1,61 @@
+# Mises à jour de dépendances proposées automatiquement en pull request.
+#
+# Les PR ouvertes par Dependabot passent par « PR checks » comme les autres :
+# une montée de version qui casse les tests ne peut pas être fusionnée.
+#
+# Regroupement des correctifs et des versions mineures en une seule PR par
+# écosystème : le bruit hebdomadaire reste lisible, tandis que les montées
+# majeures — les seules à demander une lecture attentive — arrivent isolées.
+
+version: 2
+
+updates:
+  # Le plus important des trois : les actions sont épinglées sur des tags
+  # mutables (`@v4`, `@v6`). Sans suivi, on ne voit jamais passer ni les
+  # correctifs de sécurité ni les dépréciations de runner.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: [ "*" ]
+        update-types: [ minor, patch ]
+
+  - package-ecosystem: npm
+    directory: /apps/front
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "front"
+    groups:
+      angular:
+        # Les paquets Angular se montent ensemble : mis à jour séparément, ils
+        # se retrouvent en versions incompatibles le temps d'une PR.
+        patterns: [ "@angular/*", "@angular-devkit/*", "angular-eslint" ]
+      dev-dependencies:
+        dependency-type: development
+        update-types: [ minor, patch ]
+      production-dependencies:
+        dependency-type: production
+        update-types: [ minor, patch ]
+
+  - package-ecosystem: maven
+    directory: /apps/back
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "back"
+    groups:
+      spring:
+        patterns: [ "org.springframework*" ]
+      other:
+        update-types: [ minor, patch ]

@@ -1,0 +1,116 @@
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { NavbarComponent } from './navbar.component';
+
+describe('NavbarComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [NavbarComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  it('should create', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('should render the AgoraPilot logo (badge + wordmark)', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const logoBadge = compiled.querySelector('app-logo.navbar-logo-badge');
+    const logoSvg = logoBadge?.querySelector('svg');
+    const wordmark = compiled.querySelector('.navbar-logo-text');
+
+    expect(logoBadge).not.toBeNull();
+    expect(logoSvg).not.toBeNull();
+    expect(wordmark?.textContent?.trim()).toBe('AgoraPilot');
+  });
+
+  it('should render the Dashboard navigation entry linking to /dashboard', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const button = compiled.querySelector('.navbar-nav-button');
+    expect(button).not.toBeNull();
+    expect(button?.tagName.toLowerCase()).toBe('button');
+    expect(button?.textContent).toContain('Dashboard');
+    // The Dashboard entry is wired to the router (routerLink="/dashboard").
+    expect(button?.getAttribute('routerlink')).toBe('/dashboard');
+  });
+
+  it('should render the Campagnes navigation entry linking to /campagnes', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const campaigns = compiled.querySelectorAll('.navbar-nav-button')[1];
+    expect(campaigns.textContent).toContain('Campagnes');
+    expect(campaigns.getAttribute('routerlink')).toBe('/campagnes');
+  });
+
+  it('should render the Calendrier navigation entry linking to /calendrier, after Campagnes as in the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const calendar = compiled.querySelectorAll('.navbar-nav-button')[2];
+    expect(calendar.textContent).toContain('Calendrier');
+    expect(calendar.getAttribute('routerlink')).toBe('/calendrier');
+  });
+
+  it('should render the Publications navigation entry linking to /publications', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const buttons = compiled.querySelectorAll('.navbar-nav-button');
+    expect(buttons.length).toBe(5);
+
+    const publications = buttons[3];
+    expect(publications.textContent).toContain('Publications');
+    expect(publications.getAttribute('routerlink')).toBe('/publications');
+  });
+
+  it('should render the Médiathèque navigation entry linking to /medias', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const medias = compiled.querySelectorAll('.navbar-nav-button')[4];
+    expect(medias.textContent).toContain('Médiathèque');
+    expect(medias.getAttribute('routerlink')).toBe('/medias');
+  });
+
+  it('should paint the header with the dark blue bar of the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('.navbar') as HTMLElement;
+
+    expect(getComputedStyle(header).backgroundColor).toBe('rgb(30, 58, 138)');
+  });
+
+  it('should render the environment badge at the far right of the bar', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('.navbar') as HTMLElement;
+
+    // Dernier enfant du bandeau : `.navbar-nav` porte `flex: 1`, le badge est
+    // donc poussé contre le bord droit, comme dans la maquette.
+    const badge = header.lastElementChild as HTMLElement;
+    expect(badge.tagName.toLowerCase()).toBe('app-environment-badge');
+    expect(badge.textContent?.trim()).toBe('dev');
+  });
+
+  it('should render the navigation icon at the 16px size of the maquette', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const icon = (fixture.nativeElement as HTMLElement).querySelector('.navbar-nav-button svg');
+
+    expect(icon?.getAttribute('width')).toBe('16px');
+    expect(icon?.getAttribute('height')).toBe('16px');
+  });
+});

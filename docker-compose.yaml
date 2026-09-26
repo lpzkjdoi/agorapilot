@@ -30,6 +30,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_PROFILES_ACTIVE: dev
+      # Le back est bind-monté depuis ./apps/back : les médias déposés en local
+      # atterrissent donc dans apps/back/data/media, ignoré par git.
+      MEDIA_ROOT: /app/data/media
     ports:
       - "8080:8080"
     volumes:

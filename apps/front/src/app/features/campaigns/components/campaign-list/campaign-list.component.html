@@ -1,0 +1,86 @@
+<section class="campaign-list">
+  <header class="campaign-list-header">
+    <h2>Campagnes</h2>
+    <button type="button"
+            class="campaign-list-create"
+            aria-label="Créer une campagne"
+            (click)="createRequested.emit()"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+      </svg>
+    </button>
+  </header>
+
+  <div class="campaign-list-search">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         height="18px"
+         viewBox="0 -960 960 960"
+         width="18px"
+         fill="currentColor"
+         aria-hidden="true"
+    >
+      <path
+        d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
+    </svg>
+    <label class="campaign-list-hidden-label" for="campaigns-search">Rechercher une campagne</label>
+    <input id="campaigns-search"
+           type="search"
+           placeholder="Rechercher une campagne..."
+           (input)="onSearch($event)"
+    >
+  </div>
+
+  @if (campaigns().length === 0) {
+    <p class="campaign-list-placeholder">Aucune campagne pour le moment</p>
+  } @else if (filtered().length === 0) {
+    <p class="campaign-list-placeholder">Aucune campagne ne correspond à cette recherche</p>
+  } @else {
+    <ul>
+      @for (campaign of filtered(); track campaign.id) {
+        <li>
+          <button type="button"
+                  class="campaign-list-item"
+                  [class.selected]="campaign.id === selectedId()"
+                  [attr.aria-current]="campaign.id === selectedId() ? 'true' : null"
+                  (click)="selected.emit(campaign)"
+          >
+            <span class="campaign-list-item-head">
+              <span class="campaign-list-item-name">{{ campaign.name }}</span>
+              <span class="campaign-badge" [class]="'campaign-badge-' + campaign.status.toLowerCase()">
+                {{ statusLabels[campaign.status] }}
+              </span>
+            </span>
+
+            @if (campaign.startDate) {
+              <span class="campaign-list-item-date">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     height="14px"
+                     viewBox="0 -960 960 960"
+                     width="14px"
+                     fill="currentColor"
+                     aria-hidden="true"
+                >
+                  <path
+                    d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+                </svg>
+                {{ campaign.startDate | date: 'd MMM y' : undefined : 'fr-FR' }}
+              </span>
+            }
+
+            <span class="campaign-list-item-count">
+              {{ campaign.publications.length }}
+              {{ campaign.publications.length > 1 ? 'publications' : 'publication' }}
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -1,0 +1,108 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-ui-card);
+  box-shadow: var(--shadow-card);
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.filters-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-ui-text-muted);
+}
+
+.filters-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0;
+  border: 0;
+  background-color: transparent;
+  color: var(--color-ui-text-primary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.filters-search input::placeholder {
+  color: var(--color-ui-text-muted);
+}
+
+.filters-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-ui-card);
+  color: var(--color-ui-text-primary);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+/* Bandeau de compteurs : encart clair sous la ligne de filtres. */
+.filters-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-ui-bg);
+}
+
+.filters-stats li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ui-text-secondary);
+}
+
+.filters-stats strong {
+  color: var(--color-ui-text-primary);
+}
+
+.filters-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--dot-color);
+}
+
+.filters-dot-total {
+  --dot-color: var(--color-brand-blue);
+}
+
+.filters-dot-verified {
+  --dot-color: #22C55E;
+}
+
+.filters-dot-draft {
+  --dot-color: #F97316;
+}
+
+.filters-dot-campaign {
+  --dot-color: var(--color-brand-purple);
+}
+
+/* La maquette n'affiche que les contrôles : chaque champ reste nommé pour les
+   lecteurs d'écran, sans être visible. */
+.filters-hidden-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

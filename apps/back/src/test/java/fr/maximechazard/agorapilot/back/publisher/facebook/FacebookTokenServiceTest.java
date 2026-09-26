@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 class FacebookTokenServiceTest {
 
     private static final FacebookProperties PROPS =
-            new FacebookProperties("client-id", "client-secret", "page-id", "", "https://graph.facebook.com", "v25.0");
+            new FacebookProperties("client-id", "client-secret", "page-id", "https://graph.facebook.com", "v25.0");
 
     @Mock
     private FacebookTokenRepository tokenRepository;

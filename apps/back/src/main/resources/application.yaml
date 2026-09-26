@@ -12,6 +12,13 @@ spring:
     restart:
       enabled: true
 
+  servlet:
+    multipart:
+      # Le défaut Spring est de 1 Mo : une affiche le dépasse presque toujours.
+      # Doit rester cohérent avec le client_max_body_size du nginx du front.
+      max-file-size: 15MB
+      max-request-size: 20MB
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -41,7 +48,32 @@ facebook:
   client-secret: ${FACEBOOK_CLIENT_SECRET:}
   client-id: ${FACEBOOK_CLIENT_ID:}
   page-id: ${FACEBOOK_PAGE_ID:}
-  access-token: ${FACEBOOK_PAGE_ACCESS_TOKEN:}
+  # Pas de access-token : le token de page vit en base (table facebook_tokens),
+  # alimenté par POST /admin/facebook/bootstrap.
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:4200}
+
+agorapilot:
+  scheduling:
+    # Période de balayage des occurrences dues (durée ISO-8601). La granularité
+    # de la planification ne dépasse pas cette valeur : une occurrence prévue à
+    # 10h00 part entre 10h00 et 10h01.
+    occurrences-delay: ${OCCURRENCES_SCHEDULER_DELAY:PT1M}
+    # Retard maximal toléré (durée ISO-8601). Au-delà — typiquement au
+    # redémarrage après une panne — la livraison passe en échec au lieu d'être
+    # diffusée : une annonce d'événement déjà passé ne doit pas partir.
+    max-lateness: ${OCCURRENCES_MAX_LATENESS:PT1H}
+    # Fenêtre de publication Facebook (heures locales, TZ du conteneur). Une
+    # diffusion programmée « pour un jour », sans heure, est placée dans cette
+    # fenêtre, répartie uniformément avec les autres diffusions du même jour.
+    window-start: ${PUBLICATION_WINDOW_START:15:00}
+    window-end: ${PUBLICATION_WINDOW_END:22:00}
+
+  media:
+    # Volume disque monté sur le conteneur back en préproduction ; répertoire
+    # local ignoré par git en développement.
+    root: ${MEDIA_ROOT:./data/media}
+    # Liste blanche. Le SVG en est délibérément absent : servi en `inline`, il
+    # exécuterait son JavaScript dans l'origine de l'application.
+    allowed-content-types: image/jpeg,image/png,image/webp,application/pdf

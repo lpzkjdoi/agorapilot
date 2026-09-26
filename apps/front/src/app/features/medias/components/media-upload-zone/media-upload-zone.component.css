@@ -1,0 +1,74 @@
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 2px dashed var(--color-ui-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-ui-card);
+  color: var(--color-ui-text-muted);
+  text-align: center;
+  transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upload-zone.dragging {
+  border-color: var(--color-brand-blue);
+  background-color: #EFF4FF;
+  color: var(--color-brand-blue);
+}
+
+.upload-zone.uploading {
+  border-style: solid;
+}
+
+.upload-title {
+  font-weight: 600;
+  color: var(--color-ui-text-primary);
+}
+
+.upload-hint {
+  color: var(--color-ui-text-secondary);
+}
+
+.upload-button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-button:hover {
+  background-color: #1B327A;
+}
+
+/* Le champ reste dans le flux pour rester atteignable au clavier : c'est le
+   `<label>` qui lui donne son apparence. */
+.upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.upload-progress {
+  width: min(100%, 20rem);
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: var(--color-ui-border);
+}
+
+.upload-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background-image: var(--background-image-brand-gradient);
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}

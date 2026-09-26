@@ -1,0 +1,53 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+:host(.chip-draggable) {
+  cursor: grab;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.chip-facebook {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.chip-intramuros {
+  background-color: #F3E8FF;
+  color: #7E22CE;
+}
+
+.chip-published {
+  opacity: 0.65;
+}
+
+.chip-failed {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}
+
+.chip-icon {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.chip-time {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.chip-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

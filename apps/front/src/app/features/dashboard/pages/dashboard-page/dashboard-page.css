@@ -4,14 +4,28 @@
   gap: 1rem;
 }
 
+.dashboard-page-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 
+/* Le loader tient la place de la colonne « This Week » le temps de l'appel. */
+.dashboard-loading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
 .dashboard-lower-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }

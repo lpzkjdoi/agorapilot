@@ -1,0 +1,81 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-campaign-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="create-campaign-title">Créer une campagne</h2>
+      <p class="modal-subtitle">Regroupez vos publications sur une période donnée.</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <form class="campaign-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="campaign-form-field">
+      <label for="campaign-name">Nom de la campagne</label>
+      <input id="campaign-name"
+             formControlName="name"
+             type="text"
+             maxlength="255"
+             placeholder="ex. Marché de Noël"
+      >
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p class="campaign-form-error">Le nom est obligatoire (255 caractères maximum).</p>
+      }
+    </div>
+
+    <div class="campaign-form-field">
+      <label for="campaign-description">Description</label>
+      <textarea id="campaign-description"
+                formControlName="description"
+                rows="3"
+                placeholder="Décrivez l'objectif de la campagne et le public visé…"
+      ></textarea>
+    </div>
+
+    <div class="campaign-form-dates">
+      <div class="campaign-form-field">
+        <label for="campaign-start">Date de début</label>
+        <input id="campaign-start" formControlName="startDate" type="date" [min]="minDate">
+      </div>
+
+      <div class="campaign-form-field">
+        <label for="campaign-end">Date de fin</label>
+        <input id="campaign-end" formControlName="endDate" type="date" [min]="minDate">
+      </div>
+    </div>
+
+    <p class="campaign-form-hint">
+      Sans date de début, la campagne reste un brouillon.
+    </p>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary" [disabled]="creating()" (click)="closed.emit()">
+        Annuler
+      </button>
+      <button type="submit" class="primary" [disabled]="creating()">
+        @if (creating()) {
+          <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+          <app-loader size="sm" variant="dark" label="Création en cours…" />
+        }
+        Créer la campagne
+      </button>
+    </div>
+  </form>
+</div>

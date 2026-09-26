@@ -4,6 +4,8 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 ## Structure
 
+- [`gitflow.md`](./gitflow.md) — modèle de branches, cycle de contribution, versionnage et conventions CI/CD. Référence mise à jour quand le processus évolue.
+- [`deploiement-preprod.md`](./deploiement-preprod.md) — runbook de la préproduction sur VPS : prérequis, variables d'environnement, commandes de déploiement et vérifications.
 - [`changelog/`](./changelog) — un compte-rendu par tâche/évolution significative : contexte, changements, vérification effectuée, lien vers le commit correspondant. Une nouvelle entrée est ajoutée à chaque tâche de développement.
 - [`proposals/`](./proposals) — propositions d'architecture validées sur le principe mais pas encore mises en œuvre, à ressortir le moment venu.
 
@@ -19,3 +21,34 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | Date | Sujet | Statut |
 |---|---|---|
 | 2026-09-24 | [Fonctionnalités IA et traitement des mails](./proposals/2026-09-24-ai-features-and-email-intake.md) | En attente |
+| 2026-07-18 | [CI/CD : Front CI, durcissement Back CI et gitflow](./changelog/2026-07-18-cicd-pipelines-gitflow.md) | _(voir branche `develop`)_ |
+| 2026-07-20 | [Migration de la navbar (gauche → haut)](./changelog/2026-07-20-navbar-top-migration.md) | _(voir branche `claude/session-xfe1tv`)_ |
+| 2026-07-20 | [Tests unitaires des composants front + convention](./changelog/2026-07-20-front-unit-tests.md) | _(voir branche `claude/session-xfe1tv`)_ |
+| 2026-07-20 | [Règles de fonctionnement persistantes (CLAUDE.md)](./changelog/2026-07-20-persistent-rules-claude-md.md) | _voir PR_ |
+| 2026-07-20 | [Lien vers la maquette Figma dans CLAUDE.md](./changelog/2026-07-20-lien-maquette-figma.md) | _voir PR_ |
+| 2026-07-25 | [Socle de préproduction : Dockerfiles, compose dédié et variables d'environnement](./changelog/2026-07-25-preprod-docker-compose.md) | [`d060f7e`](https://github.com/lpzkjdoi/agorapilot/commit/d060f7e) |
+| 2026-07-25 | [Corrections issues de la première mise en service de la préproduction](./changelog/2026-07-25-corrections-post-mise-en-service.md) | [`4d7d4ec`](https://github.com/lpzkjdoi/agorapilot/commit/4d7d4ec) |
+| 2026-07-25 | [Accès à la préproduction restreint au réseau WireGuard](./changelog/2026-07-25-preprod-acces-vpn.md) | _voir PR_ |
+| 2026-07-25 | [Développer le front en local contre le back de préproduction](./changelog/2026-07-25-front-local-vers-back-preprod.md) | _voir PR_ |
+| 2026-07-25 | [Migration des tests front de Karma/Jasmine vers Vitest](./changelog/2026-07-25-migration-vitest.md) | _voir PR_ |
+| 2026-07-25 | [CI : porte d'entrée des PR et déploiement automatique de la préproduction](./changelog/2026-07-25-ci-pr-gate-deploiement-preprod.md) | _voir PR_ |
+| 2026-07-25 | [Header : reprise du style de la maquette Figma](./changelog/2026-07-25-header-maquette-figma.md) | _voir PR_ |
+| 2026-08-07 | [Page Publications](./changelog/2026-08-07-page-publications.md) | _voir PR_ |
+| 2026-08-14 | [Système de notifications côté front](./changelog/2026-08-14-notifications-front.md) | _voir PR_ |
+| 2026-08-15 | [GitHub CLI et règle des Pull Requests en draft](./changelog/2026-08-15-gh-cli-pr-draft.md) | _voir PR_ |
+| 2026-08-15 | [Loader de la maquette et états de chargement](./changelog/2026-08-15-loader-maquette.md) | _voir PR_ |
+| 2026-08-22 | [Favicon AgoraPilot](./changelog/2026-08-22-favicon-agorapilot.md) | _voir PR_ |
+| 2026-08-22 | [Diffusion immédiate d'une publication sur Facebook](./changelog/2026-08-22-publication-facebook-immediate.md) | _voir PR_ |
+| 2026-08-22 | [Indicateur d'environnement dans le bandeau](./changelog/2026-08-22-indicateur-environnement.md) | _voir PR_ |
+| 2026-08-22 | [Une image par environnement : prérequis prod et commentaires](./changelog/2026-08-22-image-par-environnement.md) | _voir PR_ |
+| 2026-08-22 | [Correctif : `GET /api/occurrences/weekly` renvoyait un JSON tronqué](./changelog/2026-08-22-fix-recursion-occurrences-weekly.md) | _voir PR_ |
+| 2026-08-23 | [Médiathèque — socle back : entité, stockage et API](./changelog/2026-08-23-mediatheque-socle-back.md) | _voir PR_ |
+| 2026-08-23 | [Médiathèque — page dédiée côté front](./changelog/2026-08-23-mediatheque-page-front.md) | _voir PR_ |
+| 2026-08-23 | [Médiathèque — rattachement aux publications et diffusion Facebook](./changelog/2026-08-23-mediatheque-publications-facebook.md) | _voir PR_ |
+| 2026-09-21 | [Diffusion planifiée — socle back (planification + ordonnanceur)](./changelog/2026-09-21-diffusion-planifiee-back.md) | _voir PR_ |
+| 2026-09-22 | [Page Campagnes](./changelog/2026-09-22-page-campagnes.md) | _voir PR_ |
+| 2026-09-22 | [Clôturer une campagne](./changelog/2026-09-22-cloture-campagne.md) | _voir PR_ |
+| 2026-09-22 | [Rattacher une publication à une campagne](./changelog/2026-09-22-rattacher-publication-campagne.md) | _voir PR_ |
+| 2026-09-25 | [Fiabiliser l'ordonnanceur de diffusion](./changelog/2026-09-25-fiabiliser-ordonnanceur.md) | _voir PR_ |
+| 2026-09-25 | [Créneaux de diffusion — socle back](./changelog/2026-09-25-creneaux-diffusion-back.md) | _voir PR_ |
+| 2026-09-25 | [Écran de programmation : bouton « Programmer » et page Calendrier](./changelog/2026-09-25-ecran-programmation.md) | _voir PR_ |

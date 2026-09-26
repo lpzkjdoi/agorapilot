@@ -1,8 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environment } from "../../../environments/environment";
-import { CreatePublicationRequest, Publication } from "./publication.model";
+import {
+  CreatePublicationDeliveryRequest,
+  CreatePublicationRequest,
+  Publication,
+  PublicationDelivery,
+  SetPublicationCampaignRequest,
+  SetPublicationMediasRequest,
+} from "./publication.model";
 
 @Injectable({
   providedIn: 'root',
@@ -17,5 +24,61 @@ export class PublicationsService {
 
   createPublication(request: CreatePublicationRequest): Observable<Publication> {
     return this.http.post<Publication>(this.url, request)
+  }
+
+  /**
+   * Diffuse immédiatement une publication sur la page Facebook.
+   *
+   * Le back crée une occurrence datée de l'instant présent pour tracer la
+   * diffusion, puis renvoie la livraison correspondante (201). En cas de refus
+   * du canal distant il répond 502 : la livraison est tout de même enregistrée
+   * en base au statut `FAILED`, avec le message d'erreur de Facebook.
+   */
+  publishOnFacebook(publicationId: number): Observable<PublicationDelivery> {
+    const body: CreatePublicationDeliveryRequest = { channel: 'FACEBOOK' };
+    return this.http.post<PublicationDelivery>(`${ this.url }/${ publicationId }/deliveries`, body);
+  }
+
+  /**
+   * Remplace la liste ordonnée des visuels de la publication.
+   *
+   * L'ordre du tableau fait foi : le premier média sert de vignette et de
+   * première photo à la diffusion. Un tableau vide détache tout.
+   */
+  setMedias(publicationId: number, mediaIds: number[]): Observable<Publication> {
+    const body: SetPublicationMediasRequest = { mediaIds };
+    return this.http.put<Publication>(`${ this.url }/${ publicationId }/medias`, body);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Actions de la carte publication encore sans endpoint.
+  //
+  // Elles sont déclarées ici pour que la page soit complète et que le
+  // branchement se résume, le jour venu, à remplacer le corps de la méthode par
+  // l'appel HTTP décrit en commentaire. En attendant, elles échouent
+  // explicitement plutôt que de faire croire à un succès.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Génère le fichier XLSX récapitulatif d'une publication.
+   *
+   * TODO(back) : `POST /api/publications/{id}/xlsx` — renvoyer le fichier
+   * (`responseType: 'blob'`) ou l'URL de téléchargement.
+   */
+  generateXlsx(publicationId: number): Observable<never> {
+    return throwError(() => new Error(
+      `Génération XLSX indisponible : aucun endpoint back pour la publication ${publicationId}.`,
+    ));
+  }
+
+  /**
+   * Rattache une publication à une campagne, ou l'en détache avec `null`.
+   *
+   * L'appel remplace le rattachement, il ne l'ajoute pas : une publication
+   * n'appartient qu'à une seule campagne.
+   */
+  assignToCampaign(publicationId: number, campaignId: number | null): Observable<Publication> {
+    const body: SetPublicationCampaignRequest = { campaignId };
+    return this.http.put<Publication>(`${ this.url }/${ publicationId }/campaign`, body);
   }
 }

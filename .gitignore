@@ -29,7 +29,12 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Variables d'environnement : jamais versionnées, sauf les fichiers d'exemple
+# qui servent de contrat (ex. .env.preprod.example).
 .env
+.env.*
+!.env.*.example
+
 # OS
 .DS_Store
 Thumbs.db
@@ -68,3 +73,6 @@ apps/front/.history/*
 # System files
 apps/front/.DS_Store
 apps/front/Thumbs.db
+
+# Médias déposés en développement local (le stockage vit sur un volume en préprod)
+apps/back/data/

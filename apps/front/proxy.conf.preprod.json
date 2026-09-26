@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://preprod.chariotte-manager.fr",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "warn"
+  }
+}

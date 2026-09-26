@@ -1,0 +1,7 @@
+/* Le libellé hérite de la couleur du bouton (états normal / survol / actif). */
+:host p {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: inherit;
+}

@@ -1,0 +1,69 @@
+<section class="campaign-detail">
+  <header class="campaign-detail-header">
+    <h2>{{ campaign().name }}</h2>
+    <span class="campaign-badge" [class]="'campaign-badge-' + campaign().status.toLowerCase()">
+      {{ statusLabels[campaign().status] }}
+    </span>
+  </header>
+
+  @if (campaign().startDate || campaign().endDate) {
+    <p class="campaign-detail-period">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="16px"
+           viewBox="0 -960 960 960"
+           width="16px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+      </svg>
+      @if (campaign().startDate && campaign().endDate) {
+        Du {{ campaign().startDate | date: 'd MMMM y' : undefined : 'fr-FR' }}
+        au {{ campaign().endDate | date: 'd MMMM y' : undefined : 'fr-FR' }}
+      } @else if (campaign().startDate) {
+        À partir du {{ campaign().startDate | date: 'd MMMM y' : undefined : 'fr-FR' }}
+      } @else {
+        Jusqu'au {{ campaign().endDate | date: 'd MMMM y' : undefined : 'fr-FR' }}
+      }
+    </p>
+  }
+
+  @if (campaign().description) {
+    <p class="campaign-detail-description">{{ campaign().description }}</p>
+  }
+
+  <ul class="campaign-detail-stats">
+    <li class="campaign-detail-stat">
+      <span class="campaign-detail-stat-value">{{ stats().total }}</span>
+      <span class="campaign-detail-stat-label">Publications</span>
+    </li>
+    <li class="campaign-detail-stat verified">
+      <span class="campaign-detail-stat-value">{{ stats().verified }}</span>
+      <span class="campaign-detail-stat-label">Vérifiées</span>
+    </li>
+    <li class="campaign-detail-stat drafts">
+      <span class="campaign-detail-stat-value">{{ stats().drafts }}</span>
+      <span class="campaign-detail-stat-label">Brouillons</span>
+    </li>
+  </ul>
+
+  <h3 class="campaign-detail-subtitle">Publications ({{ stats().total }})</h3>
+
+  @if (campaign().publications.length === 0) {
+    <p class="campaign-detail-placeholder">Aucune publication rattachée à cette campagne</p>
+  } @else {
+    <ul class="campaign-detail-publications">
+      @for (publication of campaign().publications; track publication.id) {
+        <li class="campaign-detail-publication">
+          <span class="campaign-detail-publication-content">{{ publication.content }}</span>
+          <span class="campaign-badge"
+                [class]="publication.status === 'VERIFIED' ? 'campaign-badge-active' : 'campaign-badge-draft'"
+          >
+            {{ publication.status === 'VERIFIED' ? 'Vérifiée' : 'Brouillon' }}
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

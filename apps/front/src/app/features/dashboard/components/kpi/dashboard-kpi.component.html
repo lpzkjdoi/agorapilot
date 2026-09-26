@@ -1,13 +1,13 @@
 <div class="kpi-card">
   <div class="kpi-card-header">
-    <label>
+    <span class="kpi-title">
       {{ title() }}
-    </label>
+    </span>
     <div class="kpi-icon-badge" [style.background-color]="color()">
       <ng-content />
     </div>
   </div>
-  <label class="kpi-value">
+  <span class="kpi-value">
     {{ value() }}
-  </label>
+  </span>
 </div>

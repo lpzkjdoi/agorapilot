@@ -1,0 +1,24 @@
+/* Ancrage de la maquette (`<Toaster position="top-right" />`) : haut-droite,
+   32 px de marge. La hauteur est posée par le composant — celle de la
+   notification de tête au repos, celle de la pile entière une fois dépliée. */
+:host {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  display: block;
+  width: min(356px, calc(100vw - 4rem));
+  transition: height 400ms cubic-bezier(0.21, 1.02, 0.73, 1);
+}
+
+@media (max-width: 640px) {
+  :host {
+    top: 1rem;
+    right: 1rem;
+    width: calc(100vw - 2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host { transition: none; }
+}

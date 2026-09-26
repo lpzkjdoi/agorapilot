@@ -2,6 +2,7 @@ package fr.maximechazard.agorapilot.back.publication;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -26,6 +27,19 @@ public class PublicationOccurrence {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PublicationOccurrenceStatus status = PublicationOccurrenceStatus.SCHEDULED;
+
+    /**
+     * Heure fixée à la main. Une occurrence épinglée garde son heure ; les autres
+     * sont réparties automatiquement dans la fenêtre de publication de leur jour,
+     * et recalculées à chaque ajout, déplacement ou annulation ce jour-là.
+     * <p>
+     * {@code @ColumnDefault} : {@code ddl-auto: update} ajoute la colonne sur une
+     * table déjà peuplée, ce que PostgreSQL refuse pour un {@code NOT NULL} sans
+     * valeur par défaut.
+     */
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean pinned = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "publication_id", nullable = false)

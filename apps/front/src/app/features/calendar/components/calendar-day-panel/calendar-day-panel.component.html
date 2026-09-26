@@ -1,0 +1,53 @@
+<!-- Fond transparent : un clic hors de la bulle la ferme, au clavier aussi. -->
+<button type="button" class="day-panel-backdrop" aria-label="Fermer" (click)="closed.emit()"></button>
+
+<div class="day-panel" role="dialog" [attr.aria-label]="'Diffusions du ' + (date() | date: 'd MMMM' : '' : 'fr-FR')">
+  <header class="day-panel-header">
+    <h3>{{ date() | date: 'EEEE d MMMM y' : '' : 'fr-FR' }}</h3>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px"
+           fill="currentColor" aria-hidden="true">
+        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  @if (occurrences().length === 0) {
+    <p class="day-panel-note">Aucune diffusion ce jour-là.</p>
+  }
+
+  <ul class="day-panel-list">
+    @for (occurrence of occurrences(); track occurrence.id) {
+      <li class="day-panel-item">
+        <p class="day-panel-content">{{ occurrence.publication.content }}</p>
+
+        <div class="day-panel-badges">
+          @for (delivery of occurrence.deliveries; track delivery.id) {
+            <span class="occurrence-badge"
+                  [class.occurrence-badge-facebook]="delivery.channel === 'FACEBOOK'"
+                  [class.occurrence-badge-intramuros]="delivery.channel === 'INTRAMUROS'"
+            >{{ channelLabels[delivery.channel] }}</span>
+          }
+          <span class="occurrence-badge"
+                [class.occurrence-badge-scheduled]="occurrence.status === 'SCHEDULED'"
+                [class.occurrence-badge-published]="occurrence.status === 'PUBLISHED'"
+                [class.occurrence-badge-failed]="occurrence.status === 'FAILED'"
+          >{{ statusLabels[occurrence.status] }}</span>
+          <span class="day-panel-time">
+            {{ time(occurrence) }} · {{ occurrence.pinned ? 'heure fixe' : 'heure auto' }}
+          </span>
+        </div>
+
+        @if (reason(occurrence); as why) {
+          <p class="day-panel-reason">Motif : {{ why }}</p>
+        }
+
+        @if (modifiable(occurrence)) {
+          <button type="button" class="day-panel-edit" (click)="edit.emit(occurrence)">Modifier</button>
+        } @else if (occurrence.status === 'SCHEDULED') {
+          <p class="day-panel-note">Diffusion imminente ou en cours : elle ne peut plus être modifiée.</p>
+        }
+      </li>
+    }
+  </ul>
+</div>

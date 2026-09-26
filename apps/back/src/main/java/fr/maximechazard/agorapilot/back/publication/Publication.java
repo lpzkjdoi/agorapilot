@@ -40,6 +40,16 @@ public class Publication {
     @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PublicationOccurrence> occurrences = new ArrayList<>();
 
+    /**
+     * Visuels rattachés, dans l'ordre choisi. La cascade porte sur le
+     * rattachement, jamais sur le média lui-même : détacher une affiche ne
+     * l'efface pas de la médiathèque, où d'autres publications peuvent s'en
+     * servir.
+     */
+    @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<PublicationMedia> medias = new ArrayList<>();
+
     @Column(nullable = false)
     private Boolean archived = false;
 
