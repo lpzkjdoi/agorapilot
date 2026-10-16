@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Erreur renvoyée par l'API Graph, lue dans le corps de sa réponse :
@@ -20,6 +21,14 @@ import java.util.Optional;
  * @param userMessage message destiné à l'utilisateur, souvent vide
  */
 public record GraphApiError(String message, Integer code, Integer subcode, String userMessage) {
+
+    /**
+     * Codes qui disent que le compte lui-même ne peut plus publier, quel que soit
+     * le contenu : {@code 190} jeton invalide ou révoqué, {@code 368} Page bloquée
+     * (confirmation d'identité, restriction temporaire). Retenter ne sert à rien
+     * tant que quelqu'un n'est pas intervenu sur Facebook.
+     */
+    private static final Set<Integer> ACCOUNT_BLOCKING_CODES = Set.of(190, 368);
 
     /**
      * Vide quand le corps n'a pas la forme attendue — page HTML d'un proxy,
@@ -62,6 +71,11 @@ public record GraphApiError(String message, Integer code, Integer subcode, Strin
         String codes = subcode == null ? "code " + code : "code " + code + ", sous-code " + subcode;
 
         return text + " (Facebook, " + codes + ")";
+    }
+
+    /** Vrai quand l'erreur bloque toutes les diffusions suivantes, pas seulement celle-ci. */
+    public boolean blocksAccount() {
+        return code != null && ACCOUNT_BLOCKING_CODES.contains(code);
     }
 
     private static String text(JsonNode error, String field) {

@@ -6,6 +6,7 @@ import fr.maximechazard.agorapilot.back.media.publishing.PublishableImageFactory
 import fr.maximechazard.agorapilot.back.publication.*;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class FacebookPublisher implements Publisher {
     private final PublicationDeliveryRepository publicationDeliveryRepository;
     private final PublishableImageFactory publishableImageFactory;
     private final ObjectMapper mapper;
+    private final ChannelSuspensionService channelSuspensionService;
 
     @Override
     public DeliveryChannel supports() {
@@ -64,9 +67,15 @@ public class FacebookPublisher implements Publisher {
             // il va aux logs. La livraison ne reçoit que le message, lu dans le calendrier.
             log.warn("Occurrence {} : Facebook a répondu {} — {}",
                     occurrence.getId(), e.getStatusCode(), e.getResponseBodyAsString());
-            markFailed(delivery, GraphApiError.parse(e.getResponseBodyAsString(), mapper)
-                    .map(GraphApiError::describe)
-                    .orElse(e.getMessage()));
+            Optional<GraphApiError> error = GraphApiError.parse(e.getResponseBodyAsString(), mapper);
+            String reason = error.map(GraphApiError::describe).orElse(e.getMessage());
+            markFailed(delivery, reason);
+
+            if (error.filter(GraphApiError::blocksAccount).isPresent()) {
+                // Les diffusions suivantes échoueraient toutes de la même façon :
+                // le canal est coupé jusqu'à ce que quelqu'un règle le problème.
+                channelSuspensionService.suspend(DeliveryChannel.FACEBOOK, reason);
+            }
         } catch (Exception e) {
             log.warn("Occurrence {} : publication Facebook en échec — {}", occurrence.getId(), e.getMessage());
             markFailed(delivery, e.getMessage());

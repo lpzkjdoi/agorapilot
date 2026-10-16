@@ -53,3 +53,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-09-25 | [Créneaux de diffusion — socle back](./changelog/2026-09-25-creneaux-diffusion-back.md) | _voir PR_ |
 | 2026-09-25 | [Écran de programmation : bouton « Programmer » et page Calendrier](./changelog/2026-09-25-ecran-programmation.md) | _voir PR_ |
 | 2026-09-26 | [Reprendre une diffusion en échec, motif lisible des refus Facebook](./changelog/2026-09-26-reprise-diffusion-echec.md) | _voir PR_ |
+| 2026-10-16 | [Suspendre le canal Facebook quand le compte est bloqué](./changelog/2026-10-16-suspension-canal-facebook.md) | _voir PR_ |

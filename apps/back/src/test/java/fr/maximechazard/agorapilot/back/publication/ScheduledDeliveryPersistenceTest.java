@@ -6,15 +6,20 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepo
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookClient;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPostResponse;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookTokenService;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionRepository;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +65,10 @@ class ScheduledDeliveryPersistenceTest {
     private PublicationDeliveryRepository publicationDeliveryRepository;
     @Autowired
     private PlatformTransactionManager transactionManager;
+    @Autowired
+    private ChannelSuspensionRepository channelSuspensionRepository;
+    @Autowired
+    private ChannelSuspensionService channelSuspensionService;
 
     @MockitoBean
     private FacebookClient facebookClient;
@@ -70,6 +80,7 @@ class ScheduledDeliveryPersistenceTest {
         publicationDeliveryRepository.deleteAll();
         publicationOccurrenceRepository.deleteAll();
         publicationRepository.deleteAll();
+        channelSuspensionRepository.deleteAll();
         when(facebookTokenService.getCurrentPageToken()).thenReturn("page-token");
     }
 
@@ -168,5 +179,39 @@ class ScheduledDeliveryPersistenceTest {
         verify(facebookClient, never()).publish(any(), any(), any());
         assertThat(onlyDelivery().getErrorMessage()).contains("60 minutes late");
         assertThat(occurrenceStatus(occurrenceId)).isEqualTo(PublicationOccurrenceStatus.FAILED);
+    }
+
+    /**
+     * Le scénario du 26/09 : Facebook bloque la Page, puis chaque diffusion
+     * suivante retentait l'appel et échouait à son tour. Désormais le premier
+     * refus coupe le canal, les suivantes attendent sans appel, et partent
+     * d'elles-mêmes une fois la suspension levée.
+     */
+    @Test
+    void a_blocked_page_suspends_facebook_until_the_suspension_is_lifted() {
+        Long blocked = occurrence(LocalDateTime.now().minusMinutes(3), DeliveryStatus.PENDING);
+        Long next = occurrence(LocalDateTime.now().minusMinutes(2), DeliveryStatus.PENDING);
+        String body = "{\"error\":{\"message\":\"Confirmez votre identité.\",\"type\":\"OAuthException\","
+                + "\"code\":368,\"error_subcode\":4854002}}";
+        when(facebookClient.publish(anyString(), any(), anyString()))
+                .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null,
+                        body.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8))
+                .thenReturn(new FacebookPostResponse("123_456"));
+
+        publicationDeliveryService.publishScheduledOccurrence(blocked);
+        publicationDeliveryService.publishScheduledOccurrence(next);
+
+        assertThat(channelSuspensionRepository.findById(DeliveryChannel.FACEBOOK)).hasValueSatisfying(suspension ->
+                assertThat(suspension.getReason()).isEqualTo("Confirmez votre identité. (Facebook, code 368, sous-code 4854002)"));
+        assertThat(occurrenceStatus(blocked)).isEqualTo(PublicationOccurrenceStatus.FAILED);
+        assertThat(occurrenceStatus(next)).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
+        verify(facebookClient, times(1)).publish(any(), any(), any());
+
+        channelSuspensionService.lift(DeliveryChannel.FACEBOOK);
+        publicationDeliveryService.publishScheduledOccurrence(next);
+
+        verify(facebookClient, times(2)).publish(any(), any(), any());
+        assertThat(occurrenceStatus(next)).isEqualTo(PublicationOccurrenceStatus.PUBLISHED);
+        assertThat(channelSuspensionRepository.findAll()).isEmpty();
     }
 }

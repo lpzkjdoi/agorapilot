@@ -4,6 +4,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DeliveryFailedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -76,6 +77,18 @@ class PublicationControllerDeliveryTest {
                        .content(BODY))
                .andExpect(status().isBadGateway())
                .andExpect(jsonPath("$.message").value("No token available"));
+    }
+
+    @Test
+    void returns_409_with_the_reason_when_the_channel_is_suspended() throws Exception {
+        when(publicationDeliveryService.publishNow(any(), any()))
+                .thenThrow(new ChannelSuspendedException("Diffusions Facebook suspendues depuis le 16/10/2026 à 14:05"));
+
+        mockMvc.perform(post("/api/publications/7/deliveries")
+                       .contentType(MediaType.APPLICATION_JSON)
+                       .content(BODY))
+               .andExpect(status().isConflict())
+               .andExpect(jsonPath("$.message").value("Diffusions Facebook suspendues depuis le 16/10/2026 à 14:05"));
     }
 
     @Test

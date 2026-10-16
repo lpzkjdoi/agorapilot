@@ -47,4 +47,16 @@ class GraphApiErrorTest {
         assertThat(GraphApiError.parse("{\"error\":\"oops\"}", mapper)).isEmpty();
         assertThat(GraphApiError.parse("", mapper)).isEmpty();
     }
+
+    @Test
+    void a_blocked_page_or_an_invalid_token_blocks_the_whole_account() {
+        assertThat(new GraphApiError("Confirmez votre identité.", 368, 4854002, "").blocksAccount()).isTrue();
+        assertThat(new GraphApiError("Error validating access token", 190, 463, null).blocksAccount()).isTrue();
+    }
+
+    @Test
+    void a_refusal_of_one_post_does_not_block_the_account() {
+        assertThat(new GraphApiError("(#100) Invalid parameter", 100, null, null).blocksAccount()).isFalse();
+        assertThat(new GraphApiError("Erreur sans code", null, null, null).blocksAccount()).isFalse();
+    }
 }
