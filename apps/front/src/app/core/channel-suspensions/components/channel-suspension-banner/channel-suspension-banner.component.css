@@ -1,0 +1,67 @@
+/* Structure de l'`Alert` de la maquette (`ui/alert.tsx` : `rounded-lg border
+   px-4 py-3 text-sm`, icône 16px, titre `font-medium`), dans la palette
+   « warning » des notifications (`notification-toast.component.css`) : la
+   maquette ne prévoit pas de bandeau de suspension, on reste dans ses codes. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+:host:not(:empty) {
+  margin-bottom: 1rem;
+}
+
+.suspension-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #FDF5D3;
+  border-radius: var(--radius-sm);
+  background-color: #FFFCEF;
+  color: #DC7609;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.suspension-icon {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+.suspension-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.suspension-title {
+  font-weight: 600;
+}
+
+.suspension-reason {
+  color: var(--color-ui-text-primary);
+}
+
+.suspension-hint {
+  color: var(--color-ui-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.suspension-lift {
+  flex: none;
+  align-self: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: #1E3A8A;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.suspension-lift:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}

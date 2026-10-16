@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Observable } from "rxjs";
+import { ChannelSuspensionsService } from "../../../../core/channel-suspensions/channel-suspensions.service";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import {
@@ -66,6 +67,7 @@ export class PublicationsPageComponent {
   private readonly mediasService = inject(MediasService);
   private readonly occurrencesService = inject(OccurrencesService);
   private readonly notifications = inject(NotificationService);
+  private readonly channelSuspensions = inject(ChannelSuspensionsService);
 
   protected readonly publications = signal<Publication[]>([]);
   protected readonly campaigns = signal<Campaign[]>([]);
@@ -255,6 +257,9 @@ export class PublicationsPageComponent {
         console.error('Diffusion Facebook impossible', err);
         this.setPublishing(publication.id, false);
         this.notifications.error(this.deliveryErrorMessage(err));
+        // Ce refus a pu suspendre le canal (compte bloqué), ou se heurter à une
+        // suspension : le bandeau doit l'afficher sans attendre son prochain passage.
+        this.channelSuspensions.refresh().subscribe({ error: () => undefined });
       },
     });
   }

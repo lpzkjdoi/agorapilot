@@ -3,6 +3,7 @@ import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ChannelSuspensionsService } from '../../../../core/channel-suspensions/channel-suspensions.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Campaign } from '../../../campaigns/campaign.model';
 import { Publication } from '../../publication.model';
@@ -257,6 +258,8 @@ describe('PublicationsPageComponent', () => {
     );
     fixture.detectChanges();
 
+    httpTesting.expectOne('/api/channels/suspensions').flush([]);
+
     expect(notifications.notifications()).toEqual([
       expect.objectContaining({
         level: 'error',
@@ -267,6 +270,34 @@ describe('PublicationsPageComponent', () => {
     expect(
       compiled.querySelector<HTMLButtonElement>('.action-facebook')?.disabled,
     ).toBe(false);
+  });
+
+  it('should relay a suspended channel and refresh the suspension banner', () => {
+    const fixture = render();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const suspensions = TestBed.inject(ChannelSuspensionsService);
+
+    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
+    fixture.detectChanges();
+
+    httpTesting.expectOne('/api/publications/1/deliveries').flush(
+      { message: 'Diffusions Facebook suspendues depuis le 16/10/2026 à 14:05 : Confirmez votre identité (Facebook, code 368)', code: 409 },
+      { status: 409, statusText: 'Conflict' },
+    );
+    httpTesting.expectOne('/api/channels/suspensions').flush([
+      { channel: 'FACEBOOK', reason: 'Confirmez votre identité (Facebook, code 368)', suspendedAt: '2026-10-16T14:05:00' },
+    ]);
+
+    expect(notifications.notifications()).toEqual([
+      expect.objectContaining({
+        level: 'error',
+        message: 'La publication n’a pas pu être diffusée sur Facebook : Diffusions Facebook suspendues depuis le '
+          + '16/10/2026 à 14:05 : Confirmez votre identité (Facebook, code 368)',
+      }),
+    ]);
+    expect(suspensions.suspensions()).toEqual([
+      expect.objectContaining({ channel: 'FACEBOOK' }),
+    ]);
   });
 
   it('should not fire a second request while a publication is already in flight', () => {
