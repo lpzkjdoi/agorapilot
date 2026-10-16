@@ -69,22 +69,37 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ## Todo / Roadmap
 
-- [ ] Authentification et gestion des utilisateurs (aucune restriction d'accès actuellement)
-- [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute ; reste l'écran de planification côté front)
+### À faire
+
+- [ ] **Gestion des utilisateurs, de bout en bout** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard) :
+  - [ ] Décider du modèle d'accès : comptes applicatifs, VPN seul, ou les deux (décision en attente)
+  - [ ] Back : entité utilisateur (nom, e-mail, rôle, actif), mots de passe hachés, authentification Spring Security avec session ou jeton, rôles (au moins administrateur / rédacteur)
+  - [ ] Back : protéger `/api/**` et les endpoints `/admin/**` (Facebook, ordonnanceur), en remplaçant la chaîne de filtres permissive
+  - [ ] Back : création, désactivation et réinitialisation du mot de passe des comptes (endpoints administrateur), premier compte au démarrage
+  - [ ] Front : page de connexion, garde de routes, intercepteur HTTP (jeton ou cookie, redirection sur `401`), déconnexion
+  - [ ] Front : utilisateur connecté dans le bandeau, page d'administration des comptes
+  - [ ] Traçabilité : auteur et dernier modificateur des publications, auteur d'une programmation, d'une reprise ou d'une levée de suspension
+  - [ ] Tests à chaque étape (back et front) et documentation de mise en service en préprod
+- [ ] Migrations de base de données versionnées (Flyway) plutôt que `ddl-auto: update` — deux `ALTER TABLE` manuels de contraintes ont déjà été nécessaires en septembre, et chaque nouvelle valeur d'enum en ajoute un
+- [ ] Tableau de bord branché sur des données réelles : les KPIs sont codés en dur (4, 6, 34, 48) et le panneau « Prochaines publications » est affiché sans données ; y montrer aussi les statuts, échecs compris
+- [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
+- [ ] CRUD complet des publications : modification et suppression (seuls création, liste, programmation et rattachements existent)
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
-- [x] Écran de programmation : bouton « Programmer » sur la carte, page Calendrier avec glisser-déposer, modification et annulation d'une diffusion
-- [x] Reprise d'une diffusion en échec depuis le calendrier, et motif lisible des refus de Facebook
-- [ ] Suspendre les diffusions Facebook quand le compte est bloqué (codes 368, 190) : aujourd'hui chaque diffusion suivante retente l'appel et échoue à son tour
+- [ ] Suspension Facebook : lever automatiquement une suspension pour jeton invalide (code 190) après un bootstrap réussi du jeton ; prévenir par mail quand un canal est suspendu (après la gestion des utilisateurs)
+- [ ] Reprendre par glisser-déposer une diffusion en échec vers un autre jour du calendrier
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
-- [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
-- [ ] CRUD complet des campagnes et publications (édition, suppression — seuls create/list existent)
-- [ ] Connecter les KPIs et le panneau "prochaines publications" du dashboard à des données réelles
-- [ ] Intégrer le formulaire de création de publication à une route de l'application
-- [ ] Compléter la CI frontend d'un lint (build et tests tournent déjà dans `front-ci.yml`)
-- [ ] Ajouter un linter/formatter JS/TS (ESLint, Prettier)
-- [ ] Migrations de base de données versionnées (Flyway/Liquibase) plutôt que `ddl-auto: update`
-- [ ] Fournir un `.env.example` pour faciliter l'onboarding
-- [ ] Étoffer la couverture de tests (seul un test de contexte Spring existe actuellement)
-- [ ] Dockerfiles de production pour le backend et le frontend
+- [ ] Appliquer Prettier au code front et le vérifier en CI (installé, scripts `format` / `format:check` présents, mais 136 fichiers non conformes)
+- [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe)
 - [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
+
+### Fait
+
+- [x] Suspension du canal Facebook quand le compte est bloqué (codes 368, 190) : plus d'appel tant que la suspension n'est pas levée, bandeau global avec bouton « Reprendre les diffusions »
+- [x] Reprise d'une diffusion en échec depuis le calendrier, et motif lisible des refus de Facebook
+- [x] Écran de programmation : bouton « Programmer » sur la carte, page Calendrier avec glisser-déposer, modification et annulation d'une diffusion
+- [x] Déclenchement automatique des publications à l'heure planifiée (`PublicationOccurrenceScheduler`, balayage chaque minute)
+- [x] Médiathèque : stockage sur volume, page dédiée, rattachement des visuels aux publications et diffusion des images sur Facebook (diffusion à valider en préproduction)
+- [x] Formulaire de création de publication intégré à la page Publications (modale)
+- [x] CI front complète : build, tests et lint ESLint (`front-ci.yml`)
+- [x] Couverture de tests back (JUnit) et front (Vitest), exigée pour toute évolution (cf. `CLAUDE.md`)
 - [x] Dockerfiles de production pour le backend et le frontend (cf. [`docs/deploiement-preprod.md`](./docs/deploiement-preprod.md))
