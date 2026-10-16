@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -40,8 +41,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CampaignServiceTest {
 
-    private static final LocalDateTime START = LocalDateTime.of(2026, 10, 1, 9, 0);
-    private static final LocalDateTime END = LocalDateTime.of(2026, 10, 31, 23, 59);
+    // Relatives à aujourd'hui : le statut se dérive de la date de début, et des
+    // dates fixes faisaient basculer la campagne « à venir » en « active » une
+    // fois le 1er octobre 2026 passé.
+    private static final LocalDateTime START = LocalDate.now().plusDays(10).atTime(9, 0);
+    private static final LocalDateTime END = START.plusDays(30);
 
     @Mock
     private CampaignRepository campaignRepository;
