@@ -1,0 +1,14 @@
+<ul class="notifications" aria-live="polite">
+  @for (notification of notificationsService.notifications(); track notification.id) {
+    <li class="notification" [class]="'notification-' + notification.level" role="status">
+      <span class="notification-message">{{ notification.message }}</span>
+      <button
+        type="button"
+        class="notification-close"
+        aria-label="Fermer la notification"
+        (click)="notificationsService.dismiss(notification.id)">
+        ×
+      </button>
+    </li>
+  }
+</ul>
