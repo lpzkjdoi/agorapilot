@@ -10,6 +10,9 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccu
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspension;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +48,7 @@ public class PublicationDeliveryService {
     private final PublicationDeliveryMapper publicationDeliveryMapper;
     private final SchedulingProperties schedulingProperties;
     private final PlatformTransactionManager transactionManager;
+    private final ChannelSuspensionService channelSuspensionService;
 
     /**
      * Publie immédiatement une publication sur le canal demandé.
@@ -55,6 +59,7 @@ public class PublicationDeliveryService {
      *
      * @throws PublicationNotFoundException        la publication n'existe pas
      * @throws UnsupportedDeliveryChannelException aucun publisher pour ce canal
+     * @throws ChannelSuspendedException           le canal est suspendu : rien n'est tenté ni tracé
      * @throws DeliveryFailedException             le canal distant a refusé la publication
      */
     @Transactional(noRollbackFor = DeliveryFailedException.class)
@@ -66,6 +71,8 @@ public class PublicationDeliveryService {
         Publisher publisher = publisherRegistry.forChannel(channel)
                 .orElseThrow(() -> new UnsupportedDeliveryChannelException(
                         "No publisher available for channel " + channel + "."));
+
+        channelSuspensionService.ensureNotSuspended(channel);
 
         PublicationOccurrence occurrence = createImmediateOccurrence(publication, channel);
         publisher.publish(occurrence);
@@ -101,6 +108,10 @@ public class PublicationDeliveryService {
      *   d'un canal soit acquis même si le suivant échoue.</li>
      *   <li><b>Résolution</b> du statut de l'occurrence.</li>
      * </ol>
+     * Une livraison sur un canal suspendu reste {@code PENDING}, sans appel
+     * distant : elle partira au premier balayage après la levée, ou passera en
+     * échec une fois le retard maximal dépassé.
+     * <p>
      * Une livraison {@code FAILED} n'est jamais retentée : le canal distant peut
      * avoir accepté la publication avant de rompre la connexion. La reprise reste
      * un geste explicite.
@@ -161,10 +172,19 @@ public class PublicationDeliveryService {
                         "Delivery interrupted before its outcome was recorded: "
                                 + "check " + delivery.getChannel() + " before publishing again.");
                 case PENDING -> {
+                    Optional<ChannelSuspension> suspension = channelSuspensionService.find(delivery.getChannel());
+
                     if (publisherRegistry.forChannel(delivery.getChannel()).isEmpty()) {
                         // Sans trace d'échec, la livraison resterait PENDING et
                         // l'occurrence reviendrait à chaque balayage.
                         markFailed(delivery, "No publisher available for channel " + delivery.getChannel() + ".");
+                    } else if (suspension.isPresent() && tooLate) {
+                        // Le motif dit pourquoi elle a attendu : « trop en retard »
+                        // seul laisserait croire à une panne du back.
+                        markFailed(delivery, "Non diffusée : " + ChannelSuspensionService.describe(suspension.get())
+                                + " — plus de " + maxLateness.toMinutes() + " minutes de retard depuis.");
+                    } else if (suspension.isPresent()) {
+                        log.debug("Delivery {} held: channel {} is suspended.", delivery.getId(), delivery.getChannel());
                     } else if (tooLate) {
                         markFailed(delivery, "Not published: more than " + maxLateness.toMinutes()
                                 + " minutes late (scheduled at " + occurrence.getScheduledAt() + ").");

@@ -13,6 +13,7 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotFoun
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -116,6 +117,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OccurrenceNotModifiableException.class)
     public ResponseEntity<ApiError> handleOccurrenceNotModifiableException(OccurrenceNotModifiableException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    /** Rien n'a été tenté : c'est l'état du canal qui s'oppose à la demande, d'où un 409. */
+    @ExceptionHandler(ChannelSuspendedException.class)
+    public ResponseEntity<ApiError> handleChannelSuspendedException(ChannelSuspendedException exception) {
         return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 

@@ -7,6 +7,7 @@ import fr.maximechazard.agorapilot.back.media.publishing.PublishableImage;
 import fr.maximechazard.agorapilot.back.media.publishing.PublishableImageFactory;
 import fr.maximechazard.agorapilot.back.publication.*;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +43,8 @@ class FacebookPublisherTest {
     private PublicationDeliveryRepository deliveryRepository;
     @Mock
     private PublishableImageFactory imageFactory;
+    @Mock
+    private ChannelSuspensionService suspensionService;
 
     private FacebookPublisher publisher;
     private PublicationOccurrence occurrence;
@@ -46,7 +52,8 @@ class FacebookPublisherTest {
 
     @BeforeEach
     void setUp() {
-        publisher = new FacebookPublisher(tokenService, facebookClient, deliveryRepository, imageFactory, new ObjectMapper());
+        publisher = new FacebookPublisher(tokenService, facebookClient, deliveryRepository, imageFactory, new ObjectMapper(),
+                suspensionService);
 
         Publication publication = new Publication("Marché samedi", PublicationStatus.VERIFIED);
         publication.setId(1L);
@@ -148,6 +155,48 @@ class FacebookPublisherTest {
                         + " (Facebook, code 368, sous-code 4854002)");
     }
 
+    /** Un compte bloqué fait échouer toutes les diffusions suivantes : le canal est coupé au premier refus. */
+    @Test
+    void suspends_the_channel_when_facebook_blocks_the_page() {
+        failWith(graphRefusal(368, "Confirmez votre identité avant de pouvoir publier au nom de cette Page."));
+
+        publisher.publish(occurrence);
+
+        assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+        verify(suspensionService).suspend(DeliveryChannel.FACEBOOK,
+                "Confirmez votre identité avant de pouvoir publier au nom de cette Page. (Facebook, code 368)");
+    }
+
+    @Test
+    void suspends_the_channel_when_the_token_is_invalid() {
+        failWith(graphRefusal(190, "Error validating access token: Session has expired."));
+
+        publisher.publish(occurrence);
+
+        verify(suspensionService).suspend(DeliveryChannel.FACEBOOK,
+                "Error validating access token: Session has expired. (Facebook, code 190)");
+    }
+
+    /** Un refus propre à ce post (texte trop long, image refusée…) ne dit rien des suivants. */
+    @Test
+    void does_not_suspend_the_channel_for_a_refusal_of_this_post_only() {
+        failWith(graphRefusal(100, "Invalid parameter"));
+
+        publisher.publish(occurrence);
+
+        assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+        verify(suspensionService, never()).suspend(any(), any());
+    }
+
+    @Test
+    void does_not_suspend_the_channel_on_a_network_failure() {
+        failWith(new IllegalStateException("Connection reset"));
+
+        publisher.publish(occurrence);
+
+        verifyNoInteractions(suspensionService);
+    }
+
     /** Une page d'erreur d'un proxy n'a pas la forme Graph : mieux vaut le message brut que rien. */
     @Test
     void keeps_the_raw_message_when_the_error_body_is_not_a_graph_error() {
@@ -159,6 +208,12 @@ class FacebookPublisherTest {
 
         assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
         assertThat(delivery.getErrorMessage()).isEqualTo(error.getMessage());
+    }
+
+    private static HttpClientErrorException graphRefusal(int code, String message) {
+        String body = "{\"error\":{\"message\":\"" + message + "\",\"type\":\"OAuthException\",\"code\":" + code + "}}";
+        return HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null,
+                body.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     }
 
     private void failWith(RuntimeException error) {

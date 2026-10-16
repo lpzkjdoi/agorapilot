@@ -10,6 +10,9 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccu
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspension;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -58,6 +61,8 @@ class PublicationDeliveryServiceTest {
     private Publisher publisher;
     @Mock
     private PlatformTransactionManager transactionManager;
+    @Mock
+    private ChannelSuspensionService channelSuspensionService;
 
     private PublicationDeliveryService service;
 
@@ -71,7 +76,8 @@ class PublicationDeliveryServiceTest {
                 publicationOccurrenceService,
                 new PublicationDeliveryMapper(),
                 new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
-                transactionManager
+                transactionManager,
+                channelSuspensionService
         );
     }
 
@@ -194,6 +200,20 @@ class PublicationDeliveryServiceTest {
                     .isInstanceOf(UnsupportedDeliveryChannelException.class);
 
             verifyNoInteractions(publicationOccurrenceRepository, publicationDeliveryRepository);
+        }
+
+        /** Rien n'est tenté ni tracé : aucune occurrence fantôme dans le calendrier. */
+        @Test
+        void rejects_a_suspended_channel_without_calling_it() {
+            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+            doThrow(new ChannelSuspendedException("Diffusions Facebook suspendues"))
+                    .when(channelSuspensionService).ensureNotSuspended(DeliveryChannel.FACEBOOK);
+
+            assertThatThrownBy(() -> service.publishNow(PUBLICATION_ID, DeliveryChannel.FACEBOOK))
+                    .isInstanceOf(ChannelSuspendedException.class);
+
+            verifyNoInteractions(publicationOccurrenceRepository, publicationDeliveryRepository, publisher);
         }
     }
 
@@ -329,6 +349,48 @@ class PublicationDeliveryServiceTest {
             service.publishScheduledOccurrence(OCCURRENCE_ID);
 
             verify(publisher).publish(occurrence);
+        }
+
+        private ChannelSuspension facebookSuspension() {
+            return new ChannelSuspension(DeliveryChannel.FACEBOOK,
+                    "Confirmez votre identité (Facebook, code 368)", LocalDateTime.of(2026, 10, 16, 14, 5));
+        }
+
+        /**
+         * Le canal est suspendu : aucun appel, la livraison attend la levée.
+         * L'occurrence reste SCHEDULED et reviendra au balayage suivant.
+         */
+        @Test
+        void holds_a_delivery_on_a_suspended_channel_without_calling_it() {
+            PublicationOccurrence occurrence = occurrenceDue(5);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+            when(channelSuspensionService.find(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(facebookSuspension()));
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            assertThat(pending.getStatus()).isEqualTo(DeliveryStatus.PENDING);
+            verify(publicationDeliveryRepository, never()).save(any());
+            verifyNoInteractions(publisher);
+        }
+
+        /** Le motif explique l'attente : « trop en retard » seul laisserait croire à une panne du back. */
+        @Test
+        void fails_a_held_delivery_past_the_maximum_lateness_with_the_suspension_reason() {
+            PublicationOccurrence occurrence = occurrenceDue(61);
+            PublicationDelivery pending = delivery(occurrence, DeliveryStatus.PENDING);
+            stub(occurrence, pending);
+            when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
+            when(channelSuspensionService.find(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(facebookSuspension()));
+
+            service.publishScheduledOccurrence(OCCURRENCE_ID);
+
+            assertThat(pending.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+            assertThat(pending.getErrorMessage()).isEqualTo("Non diffusée : Diffusions Facebook suspendues depuis le "
+                    + "16/10/2026 à 14:05 : Confirmez votre identité (Facebook, code 368) — plus de 60 minutes de retard depuis.");
+            verifyNoInteractions(publisher);
+            verify(publicationOccurrenceService).refreshStatus(occurrence);
         }
 
         /**
