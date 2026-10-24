@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -42,14 +43,17 @@ class PublicationControllerCrudTest {
     @Test
     void updates_the_content_and_the_status() throws Exception {
         when(publicationService.update(eq(7L), any(UpdatePublicationRequest.class), anyBoolean()))
-                .thenReturn(new PublicationDTO(7L, "Marché de producteurs, place du village", PublicationStatus.VERIFIED, List.of(), null));
+                .thenReturn(new PublicationDTO(7L, "Marché de producteurs, place du village", PublicationStatus.VERIFIED, List.of(), null,
+                        LocalDateTime.of(2026, 10, 1, 9, 0), "camille", LocalDateTime.of(2026, 10, 24, 9, 0), "bruno"));
 
         mockMvc.perform(put("/api/publications/7")
                        .contentType(MediaType.APPLICATION_JSON)
                        .content("{\"content\":\"Marché de producteurs, place du village\",\"status\":\"VERIFIED\"}"))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.content").value("Marché de producteurs, place du village"))
-               .andExpect(jsonPath("$.status").value("VERIFIED"));
+               .andExpect(jsonPath("$.status").value("VERIFIED"))
+               .andExpect(jsonPath("$.createdBy").value("camille"))
+               .andExpect(jsonPath("$.updatedBy").value("bruno"));
 
         verify(publicationService).update(eq(7L), argThat(request ->
                 request.getContent().equals("Marché de producteurs, place du village")

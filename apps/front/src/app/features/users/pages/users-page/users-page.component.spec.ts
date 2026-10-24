@@ -26,6 +26,7 @@ const bruno: Account = {
   lockedUntil: null, lastLoginAt: null, createdAt: null,
 };
 const events: SecurityEvent[] = [
+  { id: 3, occurredAt: '2026-10-24T09:10:00', type: 'CHANNEL_SUSPENDED', actor: null, target: null, details: 'FACEBOOK : code 368' },
   { id: 2, occurredAt: '2026-10-24T09:05:00', type: 'LOGIN_FAILED', actor: null, target: 'inconnu', details: 'Pseudo inconnu' },
   { id: 1, occurredAt: '2026-10-24T09:00:00', type: 'LOGIN_SUCCEEDED', actor: 'admin', target: null, details: null },
 ];
@@ -97,10 +98,14 @@ describe('UsersPageComponent', () => {
     const { compiled } = render();
     const items = compiled.querySelectorAll('.users-event');
 
-    expect(items.length).toBe(2);
-    expect(items[0].textContent).toContain('Connexion refusée');
-    expect(items[0].textContent).toContain('inconnu');
+    expect(items.length).toBe(3);
+    expect(items[0].textContent).toContain('Canal suspendu');
+    expect(items[0].textContent).toContain('système');
     expect(items[0].classList).toContain('users-event-alert');
+    expect(items[1].textContent).toContain('Connexion refusée');
+    expect(items[1].textContent).toContain('inconnu');
+    expect(items[1].textContent).not.toContain('système');
+    expect(items[2].classList).not.toContain('users-event-alert');
   });
 
   it('should create an account and reveal its temporary password once', () => {

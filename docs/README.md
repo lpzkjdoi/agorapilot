@@ -20,7 +20,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 | Date | Sujet | Statut |
 |---|---|---|
-| 2026-10-24 | [Comptes applicatifs et droits](./proposals/2026-10-24-comptes-et-droits.md) | En cours : étapes 1 à 4 livrées, traçabilité à faire |
+| 2026-10-24 | [Comptes applicatifs et droits](./proposals/2026-10-24-comptes-et-droits.md) | Mise en œuvre terminée (5 étapes) |
 | 2026-09-24 | [Fonctionnalités IA et traitement des mails](./proposals/2026-09-24-ai-features-and-email-intake.md) | En attente |
 | 2026-07-18 | [CI/CD : Front CI, durcissement Back CI et gitflow](./changelog/2026-07-18-cicd-pipelines-gitflow.md) | _(voir branche `develop`)_ |
 | 2026-07-20 | [Migration de la navbar (gauche → haut)](./changelog/2026-07-20-navbar-top-migration.md) | _(voir branche `claude/session-xfe1tv`)_ |
@@ -61,3 +61,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-10-24 | [Comptes et authentification — socle](./changelog/2026-10-24-authentification.md) | _voir PR_ |
 | 2026-10-24 | [Administration des comptes et journal de sécurité](./changelog/2026-10-24-administration-comptes.md) | _voir PR_ |
 | 2026-10-24 | [Vérification des publications et actions selon les droits](./changelog/2026-10-24-verification-et-droits.md) | _voir PR_ |
+| 2026-10-24 | [Traçabilité : auteurs et journal des actions](./changelog/2026-10-24-tracabilite.md) | _voir PR_ |

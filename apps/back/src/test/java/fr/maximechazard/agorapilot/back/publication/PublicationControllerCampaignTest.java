@@ -35,7 +35,8 @@ class PublicationControllerCampaignTest {
     private PublicationDeliveryService publicationDeliveryService;
 
     private static PublicationDTO publication(PublicationCampaignDTO campaign) {
-        return new PublicationDTO(7L, "Marché de producteurs", PublicationStatus.DRAFT, List.of(), campaign);
+        return new PublicationDTO(7L, "Marché de producteurs", PublicationStatus.DRAFT, List.of(), campaign,
+                null, null, null, null);
     }
 
     @Test

@@ -14,6 +14,8 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepo
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -44,12 +47,16 @@ public class PublicationOccurrenceService {
      */
     static final Duration FROZEN_HORIZON = Duration.ofMinutes(5);
 
+    /** Les dates du journal, lisibles telles quelles : {@code 26/10/2026 18:30}. */
+    private static final DateTimeFormatter JOURNAL_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     private final PublicationRepository publicationRepository;
     private final PublicationOccurrenceRepository publicationOccurrenceRepository;
     private final PublicationDeliveryRepository publicationDeliveryRepository;
     private final PublisherRegistry publisherRegistry;
     private final PublicationOccurrenceMapper publicationOccurrenceMapper;
     private final SchedulingProperties schedulingProperties;
+    private final SecurityEventService events;
     private final Clock clock;
 
     /**
@@ -119,8 +126,11 @@ public class PublicationOccurrenceService {
     public PublicationOccurrenceDTO reschedule(Long occurrenceId, RescheduleOccurrenceRequest request) {
         PublicationOccurrence occurrence = findModifiable(occurrenceId);
         LocalDate previousDay = occurrence.getScheduledAt().toLocalDate();
+        LocalDateTime previous = occurrence.getScheduledAt();
 
         PublicationOccurrence saved = place(occurrence, request);
+        events.recordAction(SecurityEventType.OCCURRENCE_RESCHEDULED,
+                describe(saved) + " : " + previous.format(JOURNAL_TIME) + " → " + target(saved));
 
         redistribute(previousDay);
         if (!previousDay.equals(request.getDate())) {
@@ -185,6 +195,7 @@ public class PublicationOccurrenceService {
         occurrence.setStatus(PublicationOccurrenceStatus.SCHEDULED);
         PublicationOccurrence saved = place(occurrence, request);
         redistribute(request.getDate());
+        events.recordAction(SecurityEventType.OCCURRENCE_RETRIED, describe(saved) + " : reprise pour " + target(saved));
 
         return publicationOccurrenceMapper.toDTO(saved);
     }
@@ -200,6 +211,8 @@ public class PublicationOccurrenceService {
     public void cancel(Long occurrenceId) {
         PublicationOccurrence occurrence = findModifiable(occurrenceId);
         LocalDate day = occurrence.getScheduledAt().toLocalDate();
+        events.recordAction(SecurityEventType.OCCURRENCE_CANCELLED, describe(occurrence) + " : prévue le "
+                + occurrence.getScheduledAt().format(JOURNAL_TIME) + (occurrence.getCreatedBy() == null ? "" : ", programmée par " + occurrence.getCreatedBy()));
 
         publicationOccurrenceRepository.delete(occurrence);
         redistribute(day);
@@ -387,6 +400,16 @@ public class PublicationOccurrenceService {
 
     private static boolean hasPublishedDelivery(PublicationOccurrence occurrence) {
         return occurrence.getDeliveries().stream().anyMatch(delivery -> delivery.getStatus() == DeliveryStatus.PUBLISHED);
+    }
+
+    /** « Diffusion 12 de « Marché de Noël… » », pour le journal. */
+    static String describe(PublicationOccurrence occurrence) {
+        return "Diffusion " + occurrence.getId() + " de " + PublicationService.excerpt(occurrence.getPublication());
+    }
+
+    /** L'heure placée, et si elle est fixée ou automatique : la répartition peut encore la déplacer. */
+    private static String target(PublicationOccurrence occurrence) {
+        return occurrence.getScheduledAt().format(JOURNAL_TIME) + (occurrence.isPinned() ? " (heure fixe)" : " (heure automatique)");
     }
 
     private LocalDateTime frozenUntil() {

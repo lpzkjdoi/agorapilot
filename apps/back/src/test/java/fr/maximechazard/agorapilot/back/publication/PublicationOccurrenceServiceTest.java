@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationDeliveryMapper;
@@ -39,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -80,6 +82,7 @@ class PublicationOccurrenceServiceTest {
                 publisherRegistry,
                 new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper()),
                 new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
+                mock(SecurityEventService.class),
                 CLOCK
         );
     }

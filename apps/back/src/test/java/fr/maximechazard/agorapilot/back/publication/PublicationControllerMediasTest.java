@@ -113,6 +113,7 @@ class PublicationControllerMediasTest {
     }
 
     private PublicationDTO publication(MediaSummaryDTO... medias) {
-        return new PublicationDTO(7L, "Marché de producteurs", PublicationStatus.DRAFT, List.of(medias), null);
+        return new PublicationDTO(7L, "Marché de producteurs", PublicationStatus.DRAFT, List.of(medias), null,
+                null, null, null, null);
     }
 }

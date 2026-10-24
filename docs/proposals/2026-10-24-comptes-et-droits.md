@@ -1,7 +1,7 @@
 # Comptes applicatifs et droits
 
 - **Date** : 2026-10-24
-- **Statut** : conception validée ; étapes 1 à 4 livrées (Flyway, authentification, administration des comptes, règles de vérification et actions selon les droits)
+- **Statut** : conception validée ; mise en œuvre terminée : les cinq étapes sont livrées
 - **Périmètre** : `apps/back` (sécurité, comptes, migrations), `apps/front` (connexion, garde, administration)
 
 ## Contexte

@@ -47,7 +47,7 @@ class PublicationServiceMediasTest {
     @BeforeEach
     void setUp() {
         service = new PublicationService(
-                publicationRepository, mediaRepository, campaignRepository, null, new PublicationMapper(new MediaMapper()));
+                publicationRepository, mediaRepository, campaignRepository, null, null, new PublicationMapper(new MediaMapper()));
         publication = new Publication("Marché de producteurs", PublicationStatus.DRAFT);
         publication.setId(PUBLICATION_ID);
     }
@@ -103,7 +103,7 @@ class PublicationServiceMediasTest {
         assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(3L, 3L), true))
                 .isInstanceOf(DuplicateMediaException.class);
 
-        verify(publicationRepository, never()).save(any());
+        verify(publicationRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -115,7 +115,7 @@ class PublicationServiceMediasTest {
         assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L, 404L), true))
                 .isInstanceOf(MediaNotFoundException.class);
 
-        verify(publicationRepository, never()).save(any());
+        verify(publicationRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -146,7 +146,7 @@ class PublicationServiceMediasTest {
 
     /** À n'appeler que dans les cas qui vont réellement jusqu'à la sauvegarde. */
     private void givenSaveEchoesBack() {
-        when(publicationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(publicationRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private void givenMedias(Long... ids) {

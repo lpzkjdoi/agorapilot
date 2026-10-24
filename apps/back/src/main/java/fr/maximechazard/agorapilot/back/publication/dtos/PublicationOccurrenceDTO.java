@@ -20,6 +20,7 @@ public record PublicationOccurrenceDTO(
         boolean pinned,
         PublicationOccurrenceStatus status,
         PublicationDTO publication,
-        List<PublicationDeliveryDTO> deliveries
+        List<PublicationDeliveryDTO> deliveries,
+        String createdBy
 ) {
 }

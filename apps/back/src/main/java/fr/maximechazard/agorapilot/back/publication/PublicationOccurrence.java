@@ -3,6 +3,7 @@ package fr.maximechazard.agorapilot.back.publication;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -54,6 +55,16 @@ public class PublicationOccurrence {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    /**
+     * Pseudo de qui l'a programmée, ou diffusée immédiatement. Pas de « dernier
+     * modificateur » : la répartition automatique déplace les diffusions des
+     * autres, et la lui attribuer tromperait. Déplacements, reprises et
+     * annulations sont au journal.
+     */
+    @CreatedBy
+    @Column(updatable = false, length = 32)
+    private String createdBy;
 
     public void schedule(LocalDateTime publishTime) {
         this.scheduledAt = publishTime;

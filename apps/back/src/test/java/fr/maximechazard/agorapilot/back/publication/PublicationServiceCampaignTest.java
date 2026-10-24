@@ -47,7 +47,7 @@ class PublicationServiceCampaignTest {
     @BeforeEach
     void setUp() {
         service = new PublicationService(
-                publicationRepository, mediaRepository, campaignRepository, null, new PublicationMapper(new MediaMapper()));
+                publicationRepository, mediaRepository, campaignRepository, null, null, new PublicationMapper(new MediaMapper()));
 
         publication = new Publication("Marché de producteurs", PublicationStatus.DRAFT);
         publication.setId(PUBLICATION_ID);
@@ -61,7 +61,7 @@ class PublicationServiceCampaignTest {
     }
 
     private void givenSaveEchoesBack() {
-        when(publicationRepository.save(any(Publication.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(publicationRepository.saveAndFlush(any(Publication.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -115,7 +115,7 @@ class PublicationServiceCampaignTest {
 
         service.setCampaign(PUBLICATION_ID, CAMPAIGN_ID);
 
-        verify(publicationRepository).save(publication);
+        verify(publicationRepository).saveAndFlush(publication);
         verify(campaignRepository, never()).save(any());
     }
 
@@ -125,7 +125,7 @@ class PublicationServiceCampaignTest {
 
         assertThatThrownBy(() -> service.setCampaign(404L, CAMPAIGN_ID))
                 .isInstanceOf(PublicationNotFoundException.class);
-        verify(publicationRepository, never()).save(any());
+        verify(publicationRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -136,6 +136,6 @@ class PublicationServiceCampaignTest {
         assertThatThrownBy(() -> service.setCampaign(PUBLICATION_ID, 404L))
                 .isInstanceOf(CampaignNotFoundException.class);
         assertThat(publication.getCampaign()).isNull();
-        verify(publicationRepository, never()).save(any());
+        verify(publicationRepository, never()).saveAndFlush(any());
     }
 }

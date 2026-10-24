@@ -71,13 +71,13 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ### À faire
 
-- [ ] **Comptes applicatifs et droits** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard). Conception : [proposition](docs/proposals/2026-10-24-comptes-et-droits.md) (une personne = un compte, refus par défaut, droits fins `ressource:action` avec profils, mot de passe provisoire donné par l'administrateur) :
+- [x] **Comptes applicatifs et droits** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard). Conception : [proposition](docs/proposals/2026-10-24-comptes-et-droits.md) (une personne = un compte, refus par défaut, droits fins `ressource:action` avec profils, mot de passe provisoire donné par l'administrateur) :
   - [x] Décider du modèle d'accès : comptes applicatifs (2026-10-24)
   - [x] Flyway (prérequis)
   - [x] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
   - [x] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
   - [x] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
-  - [ ] Traçabilité : auteurs des publications, diffusions et levées de suspension
+  - [x] Traçabilité : auteurs des publications, diffusions et levées de suspension
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
 - [ ] Suspension Facebook — limites connues de la première version (cf. [changelog](docs/changelog/2026-10-16-suspension-canal-facebook.md#limites-connues)) :

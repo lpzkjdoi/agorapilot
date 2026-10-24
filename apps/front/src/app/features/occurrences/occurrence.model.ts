@@ -24,6 +24,8 @@ export interface Occurrence {
   status: OccurrenceStatus
   publication: Publication
   deliveries: OccurrenceDelivery[]
+  /** Pseudo de qui l'a programmée ; absent pour une diffusion antérieure à la traçabilité. */
+  createdBy?: string | null
 }
 
 export type WeeklyOccurrences = Map<string, Occurrence[]>

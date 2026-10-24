@@ -31,13 +31,17 @@ export interface Publication {
   /** Campagne de rattachement, `null` si la publication n'en a pas. */
   campaign: PublicationCampaign | null,
 
-  // Présent sur l'entité back mais **pas encore exposé** par `PublicationDTO`.
-  // La maquette l'affiche : il reste optionnel côté front, et les cartes se
-  // replient proprement tant que l'API ne le renvoie pas.
-  createdAt?: string,
+  // Traçabilité. Optionnels : une publication antérieure n'a pas d'auteur, et les
+  // cartes se replient proprement sans eux.
+  createdAt?: string | null,
+  /** Pseudo de l'auteur. */
+  createdBy?: string | null,
+  updatedAt?: string | null,
+  /** Pseudo du dernier à l'avoir modifiée. */
+  updatedBy?: string | null,
 }
 
-export type CreatePublicationRequest = Omit<Publication, 'id' | 'createdAt' | 'campaign' | 'medias'>
+export type CreatePublicationRequest = Pick<Publication, 'content' | 'status'>
 
 /** Corps de `PUT /api/publications/{id}` : remplacement complet du texte et du statut. */
 export type UpdatePublicationRequest = Pick<Publication, 'content' | 'status'>

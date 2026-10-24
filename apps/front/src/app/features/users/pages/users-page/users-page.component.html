@@ -74,15 +74,20 @@
 
   <section class="users-journal" aria-labelledby="journal-title">
     <h2 id="journal-title">Journal de sécurité</h2>
+    <p class="users-subtitle">
+      Connexions, administration des comptes, et les actions qui ne laissent pas de trace ailleurs : diffusions
+      déplacées, reprises ou annulées, publications supprimées, canaux suspendus et repris.
+    </p>
     @if (events().length === 0) {
       <p class="users-subtitle">Aucun événement.</p>
     } @else {
       <ul>
         @for (event of events(); track event.id) {
-          <li class="users-event" [class.users-event-alert]="event.type === 'LOGIN_FAILED' || event.type === 'ACCOUNT_LOCKED'">
+          <li class="users-event" [class.users-event-alert]="alerts.has(event.type)">
             <time>{{ event.occurredAt | date:'d MMM, HH:mm:ss':'':'fr-FR' }}</time>
             <strong>{{ eventLabels[event.type] }}</strong>
             <span>
+              @if (!event.actor && !event.target) { système }
               @if (event.actor) { {{ event.actor }} }
               @if (event.actor && event.target) { → }
               @if (event.target) { {{ event.target }} }

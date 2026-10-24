@@ -56,10 +56,12 @@ class PublicationOccurrenceControllerTest {
                 LocalDateTime.of(2026, 8, 22, 18, 20, 5),
                 false,
                 status,
-                new PublicationDTO(1L, "Test création publication", PublicationStatus.VERIFIED, List.of(), null),
+                new PublicationDTO(1L, "Test création publication", PublicationStatus.VERIFIED, List.of(), null,
+                        null, null, null, null),
                 List.of(new PublicationDeliveryDTO(
                         1L, 1L, DeliveryChannel.FACEBOOK, deliveryStatus,
-                        LocalDateTime.of(2026, 8, 22, 18, 20, 5), "1144547398751185_122106824271408514", null)));
+                        LocalDateTime.of(2026, 8, 22, 18, 20, 5), "1144547398751185_122106824271408514", null)),
+                "camille");
     }
 
     @Nested

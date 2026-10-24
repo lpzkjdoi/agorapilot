@@ -26,7 +26,8 @@ public class PublicationOccurrenceMapper {
                 occurrence.isPinned(),
                 occurrence.getStatus(),
                 publicationMapper.toDTO(occurrence.getPublication()),
-                deliveries
+                deliveries,
+                occurrence.getCreatedBy()
         );
     }
 }
