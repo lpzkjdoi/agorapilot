@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { LOGIN_PATH } from "../../auth/auth.guards";
 import { AuthService } from "../../auth/auth.service";
@@ -25,6 +25,7 @@ export class NavbarComponent {
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+  protected readonly canManageAccounts = computed(() => this.auth.user()?.permissions.includes('users:manage') ?? false);
 
   protected onLogout(): void {
     this.auth.logout().subscribe(() => void this.router.navigateByUrl(LOGIN_PATH));

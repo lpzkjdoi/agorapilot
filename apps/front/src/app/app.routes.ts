@@ -1,24 +1,14 @@
 import { Routes } from '@angular/router';
-import { authGuard, signedInGuard, signedOutGuard } from "./core/auth/auth.guards";
-import {
-  CampaignsPageComponent,
-} from "./features/campaigns/pages/campaigns-page/campaigns-page.component";
+import { authGuard, permissionGuard, signedInGuard, signedOutGuard } from "./core/auth/auth.guards";
 import {
   DashboardPageComponent,
 } from "./features/dashboard/pages/dashboard-page/dashboard-page";
-import {
-  MediasPageComponent,
-} from "./features/medias/pages/medias-page/medias-page.component";
-import {
-  PublicationsPageComponent,
-} from "./features/publications/pages/publications-page/publications-page.component";
 
 export const routes: Routes = [
   {
     title: "Connexion",
     path: 'connexion',
-    // Pages hors application, chargées à la demande : elles ne servent qu'une
-    // fois par session, et le bundle initial est au ras de son budget.
+    // Pages hors application : elles ne servent qu'une fois par session.
     loadComponent: () => import("./features/auth/pages/login-page/login-page.component")
       .then((m) => m.LoginPageComponent),
     canActivate: [signedOutGuard],
@@ -31,6 +21,8 @@ export const routes: Routes = [
     canActivate: [signedInGuard],
   },
   // Toute l'application exige un compte connecté au mot de passe définitif.
+  // Hors tableau de bord, la page d'arrivée, les pages sont chargées à la
+  // demande : le bundle initial butait sur son budget de 500 kB à chaque ajout.
   {
     path: '',
     canActivateChild: [authGuard],
@@ -44,25 +36,33 @@ export const routes: Routes = [
       {
         title: "Campagnes",
         path: 'campagnes',
-        component: CampaignsPageComponent,
+        loadComponent: () => import("./features/campaigns/pages/campaigns-page/campaigns-page.component")
+          .then((m) => m.CampaignsPageComponent),
       },
       {
         title: "Calendrier",
         path: 'calendrier',
-        // Chargée à la demande : ses modales faisaient passer le bundle initial
-        // au-delà du budget de 500 kB.
         loadComponent: () => import("./features/calendar/pages/calendar-page/calendar-page.component")
           .then((m) => m.CalendarPageComponent),
       },
       {
         title: "Publications",
         path: 'publications',
-        component: PublicationsPageComponent,
+        loadComponent: () => import("./features/publications/pages/publications-page/publications-page.component")
+          .then((m) => m.PublicationsPageComponent),
       },
       {
         title: "Médiathèque",
         path: 'medias',
-        component: MediasPageComponent,
+        loadComponent: () => import("./features/medias/pages/medias-page/medias-page.component")
+          .then((m) => m.MediasPageComponent),
+      },
+      {
+        title: "Comptes",
+        path: 'comptes',
+        canActivate: [permissionGuard('users:manage')],
+        loadComponent: () => import("./features/users/pages/users-page/users-page.component")
+          .then((m) => m.UsersPageComponent),
       },
     ],
   },

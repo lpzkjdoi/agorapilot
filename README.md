@@ -75,7 +75,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
   - [x] Décider du modèle d'accès : comptes applicatifs (2026-10-24)
   - [x] Flyway (prérequis)
   - [x] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
-  - [ ] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
+  - [x] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
   - [ ] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
   - [ ] Traçabilité : auteurs des publications, diffusions et levées de suspension
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage

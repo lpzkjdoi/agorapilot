@@ -1,0 +1,51 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.account-panel {
+  max-width: 40rem;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-weight: 500;
+}
+
+.account-field input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.account-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ui-text-muted);
+}
+
+.account-error {
+  font-size: 13px;
+  color: #B91C1C;
+}
+
+.modal-actions .primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

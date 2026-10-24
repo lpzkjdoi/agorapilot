@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.account;
 
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +23,7 @@ class InitialAdminInitializerTest {
 
     private UserAccountRepository repository;
     private AuthService authService;
+    private SecurityEventService events;
     /** Coût minimal : seul le résultat compte ici, pas la lenteur. */
     private final PasswordEncoder encoder = new BCryptPasswordEncoder(4);
 
@@ -29,13 +31,14 @@ class InitialAdminInitializerTest {
     void setUp() {
         repository = mock(UserAccountRepository.class);
         authService = mock(AuthService.class);
+        events = mock(SecurityEventService.class);
         when(authService.now()).thenReturn(NOW);
     }
 
     private InitialAdminInitializer initializer(String username, String password) {
         SecurityProperties properties = new SecurityProperties(
                 new SecurityProperties.InitialAdmin(username, password), 5, Duration.ofMinutes(15), Duration.ofHours(12));
-        return new InitialAdminInitializer(repository, encoder, properties, authService);
+        return new InitialAdminInitializer(repository, encoder, properties, authService, events);
     }
 
     @Test

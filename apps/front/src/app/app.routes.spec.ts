@@ -52,7 +52,18 @@ describe('routes', () => {
       'calendrier',
       'publications',
       'medias',
+      'comptes',
     ]);
+  });
+
+  it('should keep the accounts page for the accounts administrators', async () => {
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/comptes');
+    (await meRequest()).flush({ username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] });
+    await navigation;
+
+    expect(TestBed.inject(Router).url).toBe('/dashboard');
+    httpTesting.match(() => true).forEach((request) => request.flush({}));
   });
 
   it('should send a signed-out visitor to the login page, remembering the requested page', async () => {

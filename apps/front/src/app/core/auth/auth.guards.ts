@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { Permission } from "./auth.model";
 import { map } from "rxjs";
 import { AuthService } from "./auth.service";
 
@@ -39,3 +40,17 @@ export const signedOutGuard: CanActivateFn = () => {
 
   return auth.currentUser().pipe(map((user) => user ? router.createUrlTree(['/dashboard']) : true));
 };
+
+/**
+ * Page réservée à un droit. Le back refuserait de toute façon ses appels : la
+ * garde évite seulement d'afficher une page vide d'erreurs.
+ */
+export function permissionGuard(permission: Permission): CanActivateFn {
+  return () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+
+    return auth.currentUser().pipe(map((user) =>
+      user?.permissions.includes(permission) ? true : router.createUrlTree(['/dashboard'])));
+  };
+}

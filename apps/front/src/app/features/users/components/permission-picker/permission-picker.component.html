@@ -1,0 +1,34 @@
+<div class="picker">
+  <div class="picker-profiles">
+    <span class="picker-caption">Profil</span>
+    @for (item of profiles; track item.label) {
+      <button type="button"
+              class="picker-profile"
+              [class.picker-profile-active]="profile()?.label === item.label"
+              [attr.aria-pressed]="profile()?.label === item.label"
+              (click)="apply(item)"
+      >{{ item.label }}</button>
+    }
+    @if (!profile()) {
+      <span class="picker-caption">{{ selected().length === 0 ? 'aucun droit' : 'sur mesure' }}</span>
+    }
+  </div>
+
+  @for (group of groups; track group.label) {
+    <fieldset class="picker-group">
+      <legend>{{ group.label }}</legend>
+      @for (permission of group.permissions; track permission.code) {
+        <label class="picker-permission" [class.picker-permission-locked]="!isGrantable(permission.code)">
+          <input type="checkbox"
+                 [value]="permission.code"
+                 [checked]="isSelected(permission.code)"
+                 [disabled]="!isGrantable(permission.code)"
+                 (change)="toggle(permission.code, $any($event.target).checked)"
+          />
+          <span>{{ permission.label }}</span>
+          <code>{{ permission.code }}</code>
+        </label>
+      }
+    </fieldset>
+  }
+</div>
