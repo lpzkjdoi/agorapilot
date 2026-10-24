@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  OnInit,
+  output,
+} from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -19,9 +25,15 @@ import { CreatePublicationFormValue } from "../../publication.model";
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PublicationFormComponent {
-  /** Vrai tant que la création est en cours : le formulaire attend la réponse. */
+export class PublicationFormComponent implements OnInit {
+  /** Vrai tant que l'envoi est en cours : le formulaire attend la réponse. */
   readonly submitting = input(false);
+
+  /**
+   * Valeur de départ en modification. Lue une seule fois, à l'ouverture : la
+   * modale est recréée pour chaque publication modifiée.
+   */
+  readonly initialValue = input<CreatePublicationFormValue | null>(null);
 
   readonly submitted = output<CreatePublicationFormValue>();
   readonly cancelled = output<void>();
@@ -36,6 +48,19 @@ export class PublicationFormComponent {
     }),
   });
 
+  /** En modification, le formulaire garde la saisie : la modale se ferme sur le succès. */
+  protected get editing(): boolean {
+    return this.initialValue() !== null;
+  }
+
+  ngOnInit(): void {
+    const initial = this.initialValue();
+
+    if (initial) {
+      this.form.setValue(initial);
+    }
+  }
+
   onSubmit(): void {
     // Un double envoi créerait deux publications : on ignore le second.
     if (this.submitting()) {
@@ -48,7 +73,10 @@ export class PublicationFormComponent {
     }
 
     this.submitted.emit(this.form.getRawValue());
-    this.form.reset({ content: '', status: true });
+
+    if (!this.editing) {
+      this.form.reset({ content: '', status: true });
+    }
   }
 
 }

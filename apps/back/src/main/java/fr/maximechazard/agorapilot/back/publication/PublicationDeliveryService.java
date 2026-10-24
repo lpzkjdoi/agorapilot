@@ -64,7 +64,7 @@ public class PublicationDeliveryService {
      */
     @Transactional(noRollbackFor = DeliveryFailedException.class)
     public PublicationDeliveryDTO publishNow(Long publicationId, DeliveryChannel channel) {
-        Publication publication = publicationRepository.findById(publicationId)
+        Publication publication = publicationRepository.findByIdAndArchivedFalse(publicationId)
                 .orElseThrow(() -> new PublicationNotFoundException(
                         "Publication with id " + publicationId + " does not exist."));
 

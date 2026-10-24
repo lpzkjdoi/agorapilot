@@ -253,4 +253,59 @@ describe('PublicationCardComponent', () => {
 
     expect(manage).toHaveBeenCalledWith(draft);
   });
+
+  it('should emit `edit` when the edit action is used', async () => {
+    const fixture = await render(draft);
+    const edit = vi.fn();
+    fixture.componentInstance.edit.subscribe(edit);
+
+    ((fixture.nativeElement as HTMLElement).querySelector('.action-edit') as HTMLButtonElement).click();
+
+    expect(edit).toHaveBeenCalledWith(draft);
+  });
+
+  it('should ask for a confirmation before emitting `remove`', async () => {
+    const fixture = await render(draft);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const remove = vi.fn();
+    fixture.componentInstance.remove.subscribe(remove);
+
+    (compiled.querySelector('.action-delete') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(remove).not.toHaveBeenCalled();
+    expect(compiled.querySelector('.manage-confirm')?.textContent).toContain('annuler ses diffusions programmées');
+
+    (compiled.querySelector('.action-delete') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(remove).toHaveBeenCalledWith(draft);
+    expect(compiled.querySelector('.manage-confirm')).toBeNull();
+  });
+
+  it('should drop the confirmation when it is cancelled', async () => {
+    const fixture = await render(draft);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const remove = vi.fn();
+    fixture.componentInstance.remove.subscribe(remove);
+
+    (compiled.querySelector('.action-delete') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (compiled.querySelector('.action-cancel') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(remove).not.toHaveBeenCalled();
+    expect(compiled.querySelector('.action-edit')).not.toBeNull();
+  });
+
+  it('should lock the delete action while deleting', async () => {
+    const fixture = TestBed.createComponent(PublicationCardComponent);
+    fixture.componentRef.setInput('publication', draft);
+    fixture.componentRef.setInput('deleting', true);
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.action-delete') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent).toContain('Suppression…');
+  });
 });

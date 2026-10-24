@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CreatePublicationFormValue } from '../../publication.model';
+import { CreatePublicationFormValue, Publication } from '../../publication.model';
 import { CreatePublicationModalComponent } from './create-publication-modal.component';
 
 describe('CreatePublicationModalComponent', () => {
@@ -84,5 +84,21 @@ describe('CreatePublicationModalComponent', () => {
     compiled.querySelector('form')?.dispatchEvent(new Event('submit'));
 
     expect(emitted).toEqual({ content: 'Marché de producteurs samedi', status: true });
+  });
+
+  it('should switch to edition when a publication is given, prefilled', () => {
+    const publication: Publication = {
+      id: 4, content: 'Fermeture de la mairie', status: 'VERIFIED', medias: [], campaign: null,
+    };
+    const fixture = TestBed.createComponent(CreatePublicationModalComponent);
+    fixture.componentRef.setInput('publication', publication);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('#create-publication-title')?.textContent).toContain('Modifier la publication');
+    expect(compiled.querySelector('.modal-subtitle')?.textContent).toContain('déjà publiées ne changent pas');
+    expect((compiled.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Fermeture de la mairie');
+    expect((compiled.querySelector('#status') as HTMLInputElement).checked).toBe(true);
+    expect(compiled.querySelector('.publication-form-submit')?.textContent).toContain('Enregistrer');
   });
 });

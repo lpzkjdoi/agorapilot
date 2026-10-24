@@ -55,3 +55,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-09-26 | [Reprendre une diffusion en échec, motif lisible des refus Facebook](./changelog/2026-09-26-reprise-diffusion-echec.md) | _voir PR_ |
 | 2026-10-16 | [Suspendre le canal Facebook quand le compte est bloqué](./changelog/2026-10-16-suspension-canal-facebook.md) | _voir PR_ |
 | 2026-10-24 | [Tableau de bord branché sur des données réelles](./changelog/2026-10-24-tableau-de-bord-donnees-reelles.md) | _voir PR_ |
+| 2026-10-24 | [Modifier et supprimer une publication](./changelog/2026-10-24-crud-publications.md) | _voir PR_ |

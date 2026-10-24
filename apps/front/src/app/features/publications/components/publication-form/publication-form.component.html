@@ -32,9 +32,9 @@
     <button type="submit" class="publication-form-submit" [disabled]="submitting()">
       @if (submitting()) {
         <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
-        <app-loader size="sm" variant="dark" label="Création en cours…" />
+        <app-loader size="sm" variant="dark" [label]="editing ? 'Enregistrement en cours…' : 'Création en cours…'" />
       }
-      Créer la publication
+      {{ editing ? 'Enregistrer' : 'Créer la publication' }}
     </button>
   </div>
 </form>

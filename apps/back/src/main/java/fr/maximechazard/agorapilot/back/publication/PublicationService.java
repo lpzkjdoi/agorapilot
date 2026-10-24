@@ -8,9 +8,11 @@ import fr.maximechazard.agorapilot.back.media.MediaRepository;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DuplicateMediaException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.UpdatePublicationRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ public class PublicationService {
     private final PublicationRepository publicationRepository;
     private final MediaRepository mediaRepository;
     private final CampaignRepository campaignRepository;
+    private final PublicationOccurrenceService publicationOccurrenceService;
     private final PublicationMapper mapper;
 
     public PublicationDTO create(CreatePublicationRequest request) {
@@ -36,8 +39,51 @@ public class PublicationService {
     }
 
     public Iterable<PublicationDTO> getAll() {
-        List<Publication> list = publicationRepository.findAll();
+        List<Publication> list = publicationRepository.findAllByArchivedFalse();
         return list.stream().map(mapper::toDTO).toList();
+    }
+
+    /**
+     * Remplace le texte et le statut de la publication.
+     * <p>
+     * Les diffusions encore programmées partiront avec le nouveau texte : le
+     * publisher le lit au moment de diffuser. Celles déjà publiées ne changent
+     * pas sur les canaux distants.
+     */
+    @Transactional
+    public PublicationDTO update(Long publicationId, UpdatePublicationRequest request) {
+        Publication publication = findOrThrow(publicationId);
+
+        publication.setContent(request.getContent());
+        publication.setStatus(request.getStatus());
+
+        return mapper.toDTO(publicationRepository.save(publication));
+    }
+
+    /**
+     * Supprime la publication. Ses diffusions programmées sont annulées, et ses
+     * échecs jamais publiés nulle part disparaissent avec elle.
+     * <p>
+     * Une publication déjà diffusée n'est pas effacée mais archivée : ses
+     * diffusions restent visibles dans le calendrier comme historique de ce qui
+     * est parti. Pour l'utilisateur, l'effet est le même — elle quitte la liste
+     * et n'est plus modifiable.
+     *
+     * @throws PublicationNotFoundException     la publication n'existe pas, ou plus
+     * @throws OccurrenceNotModifiableException une diffusion est en cours ou imminente
+     */
+    @Transactional
+    public void delete(Long publicationId) {
+        Publication publication = findOrThrow(publicationId);
+
+        boolean hasHistory = publicationOccurrenceService.releaseOccurrencesOf(publication);
+
+        if (hasHistory) {
+            publication.setArchived(true);
+            publicationRepository.save(publication);
+        } else {
+            publicationRepository.delete(publication);
+        }
     }
 
     /**
@@ -53,8 +99,7 @@ public class PublicationService {
      */
     @Transactional
     public PublicationDTO setMedias(Long publicationId, List<Long> mediaIds) {
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new PublicationNotFoundException("Publication " + publicationId + " introuvable"));
+        Publication publication = findOrThrow(publicationId);
 
         List<Long> ids = mediaIds == null ? List.of() : mediaIds;
         rejectDuplicates(ids);
@@ -103,8 +148,7 @@ public class PublicationService {
      */
     @Transactional
     public PublicationDTO setCampaign(Long publicationId, Long campaignId) {
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new PublicationNotFoundException("Publication " + publicationId + " introuvable"));
+        Publication publication = findOrThrow(publicationId);
 
         Campaign campaign = campaignId == null ? null : campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new CampaignNotFoundException("Campagne " + campaignId + " introuvable"));
@@ -112,6 +156,12 @@ public class PublicationService {
         publication.setCampaign(campaign);
 
         return mapper.toDTO(publicationRepository.save(publication));
+    }
+
+    /** Une publication archivée est traitée comme absente. */
+    private Publication findOrThrow(Long publicationId) {
+        return publicationRepository.findByIdAndArchivedFalse(publicationId)
+                .orElseThrow(() -> new PublicationNotFoundException("Publication " + publicationId + " introuvable"));
     }
 
     private Media findMediaOrThrow(Long mediaId) {

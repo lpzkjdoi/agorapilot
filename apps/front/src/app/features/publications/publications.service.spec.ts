@@ -173,4 +173,28 @@ describe('PublicationsService', () => {
 
     request.flush({ id: 7, content: 'Marché', status: 'DRAFT', medias: [], campaign: null });
   });
+
+  it('should PUT the content and status on /api/publications/{id}', () => {
+    let received: Publication | undefined;
+    service.updatePublication(2, { content: 'Conseil municipal reporté', status: 'VERIFIED' })
+           .subscribe((publication) => (received = publication));
+
+    const req = httpTesting.expectOne('/api/publications/2');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ content: 'Conseil municipal reporté', status: 'VERIFIED' });
+    req.flush({ ...publications[1], content: 'Conseil municipal reporté', status: 'VERIFIED' });
+
+    expect(received?.content).toBe('Conseil municipal reporté');
+  });
+
+  it('should DELETE /api/publications/{id}', () => {
+    let done = false;
+    service.deletePublication(2).subscribe(() => (done = true));
+
+    const req = httpTesting.expectOne('/api/publications/2');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(done).toBe(true);
+  });
 });

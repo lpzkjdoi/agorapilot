@@ -18,7 +18,11 @@ public class CampaignMapper {
         List<PublicationDTO> publications = new ArrayList<>();
 
         if (campaign.getPublications() != null && !campaign.getPublications().isEmpty()) {
-            publications = campaign.getPublications().stream().map(publicationMapper::toDTO).toList();
+            // Une publication supprimée mais archivée pour son historique n'a plus sa place dans la campagne.
+            publications = campaign.getPublications().stream()
+                    .filter(publication -> !Boolean.TRUE.equals(publication.getArchived()))
+                    .map(publicationMapper::toDTO)
+                    .toList();
         }
 
         return new CampaignDTO(

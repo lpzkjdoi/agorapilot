@@ -9,8 +9,15 @@
 <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-publication-title">
   <header class="modal-header">
     <div>
-      <h2 id="create-publication-title">Créer une publication</h2>
-      <p class="modal-subtitle">Rédigez le contenu, il sera programmable ensuite.</p>
+      @if (publication()) {
+        <h2 id="create-publication-title">Modifier la publication</h2>
+        <p class="modal-subtitle">
+          Les diffusions programmées partiront avec le nouveau texte ; celles déjà publiées ne changent pas.
+        </p>
+      } @else {
+        <h2 id="create-publication-title">Créer une publication</h2>
+        <p class="modal-subtitle">Rédigez le contenu, il sera programmable ensuite.</p>
+      }
     </div>
     <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
       <svg xmlns="http://www.w3.org/2000/svg"
@@ -28,6 +35,7 @@
 
   <app-publication-form
     [submitting]="creating()"
+    [initialValue]="initialValue()"
     (submitted)="submitted.emit($event)"
     (cancelled)="closed.emit()"
   />

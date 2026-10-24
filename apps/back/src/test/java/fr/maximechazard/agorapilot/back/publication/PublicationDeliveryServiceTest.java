@@ -115,7 +115,7 @@ class PublicationDeliveryServiceTest {
         private PublicationOccurrence stubSuccessfulPublication(DeliveryStatus resultingStatus) {
             PublicationOccurrence occurrence = savedOccurrence();
 
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
             when(publicationOccurrenceRepository.save(any(PublicationOccurrence.class))).thenReturn(occurrence);
             when(publicationDeliveryRepository.findByOccurrenceAndChannel(occurrence, DeliveryChannel.FACEBOOK))
@@ -183,7 +183,7 @@ class PublicationDeliveryServiceTest {
 
         @Test
         void rejects_an_unknown_publication() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.empty());
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.publishNow(PUBLICATION_ID, DeliveryChannel.FACEBOOK))
                     .isInstanceOf(PublicationNotFoundException.class);
@@ -193,7 +193,7 @@ class PublicationDeliveryServiceTest {
 
         @Test
         void rejects_a_channel_without_publisher() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.INTRAMUROS)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.publishNow(PUBLICATION_ID, DeliveryChannel.INTRAMUROS))
@@ -205,7 +205,7 @@ class PublicationDeliveryServiceTest {
         /** Rien n'est tenté ni tracé : aucune occurrence fantôme dans le calendrier. */
         @Test
         void rejects_a_suspended_channel_without_calling_it() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
             doThrow(new ChannelSuspendedException("Diffusions Facebook suspendues"))
                     .when(channelSuspensionService).ensureNotSuspended(DeliveryChannel.FACEBOOK);

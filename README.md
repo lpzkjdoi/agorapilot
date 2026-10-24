@@ -82,7 +82,6 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
   - [ ] Tests à chaque étape (back et front) et documentation de mise en service en préprod
 - [ ] Migrations de base de données versionnées (Flyway) plutôt que `ddl-auto: update` — deux `ALTER TABLE` manuels de contraintes ont déjà été nécessaires en septembre, et chaque nouvelle valeur d'enum en ajoute un
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
-- [ ] CRUD complet des publications : modification et suppression (seuls création, liste, programmation et rattachements existent)
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
 - [ ] Suspension Facebook — limites connues de la première version (cf. [changelog](docs/changelog/2026-10-16-suspension-canal-facebook.md#limites-connues)) :
   - [ ] Levée uniquement manuelle : un nouveau jeton posé par `POST /admin/facebook/bootstrap` ne lève pas une suspension pour jeton invalide (code 190), il faut aussi cliquer « Reprendre les diffusions » — la lever automatiquement après un bootstrap réussi
@@ -96,6 +95,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ### Fait
 
+- [x] CRUD complet des publications : modification (texte, statut) et suppression, qui annule les diffusions programmées et archive une publication déjà diffusée
 - [x] Tableau de bord branché sur des données réelles (`GET /api/dashboard`) : campagnes actives, diffusions de la semaine, brouillons, échecs, et les cinq prochaines diffusions
 - [x] Suspension du canal Facebook quand le compte est bloqué (codes 368, 190) : plus d'appel tant que la suspension n'est pas levée, bandeau global avec bouton « Reprendre les diffusions »
 - [x] Reprise d'une diffusion en échec depuis le calendrier, et motif lisible des refus de Facebook

@@ -130,7 +130,7 @@ class PublicationOccurrenceServiceTest {
 
         @Test
         void schedules_an_occurrence_with_one_pending_delivery_per_channel() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
             when(publicationOccurrenceRepository.save(any(PublicationOccurrence.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -161,7 +161,7 @@ class PublicationOccurrenceServiceTest {
         /** Rien n'est diffusé à la planification : c'est l'ordonnanceur qui sert. */
         @Test
         void publishes_nothing_at_scheduling_time() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
             when(publicationOccurrenceRepository.save(any(PublicationOccurrence.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -174,7 +174,7 @@ class PublicationOccurrenceServiceTest {
         /** Il est 22:30 : programmer « pour aujourd'hui » ne peut plus aboutir. */
         @Test
         void refuses_a_day_whose_window_is_over() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
 
             assertThatThrownBy(() -> service.create(dayRequest(NOW.toLocalDate())))
@@ -186,7 +186,7 @@ class PublicationOccurrenceServiceTest {
 
         @Test
         void refuses_a_past_day() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.FACEBOOK)).thenReturn(Optional.of(publisher));
 
             assertThatThrownBy(() -> service.create(dayRequest(NOW.toLocalDate().minusDays(1))))
@@ -195,7 +195,7 @@ class PublicationOccurrenceServiceTest {
 
         @Test
         void rejects_an_unknown_publication() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.empty());
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.create(request(SCHEDULED_AT, Set.of(DeliveryChannel.FACEBOOK))))
                     .isInstanceOf(PublicationNotFoundException.class);
@@ -209,7 +209,7 @@ class PublicationOccurrenceServiceTest {
          */
         @Test
         void rejects_a_channel_without_publisher() {
-            when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
+            when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication()));
             when(publisherRegistry.forChannel(DeliveryChannel.INTRAMUROS)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.create(request(SCHEDULED_AT, Set.of(DeliveryChannel.INTRAMUROS))))

@@ -128,4 +128,39 @@ describe('PublicationFormComponent', () => {
     component.form.controls.content.setValue('x'.repeat(2001));
     expect(component.form.controls.content.invalid).toBe(true);
   });
+
+  describe('en modification', () => {
+    function createEditing() {
+      const fixture = TestBed.createComponent(PublicationFormComponent);
+      fixture.componentRef.setInput('initialValue', { content: 'Conseil municipal', status: false });
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('should start from the initial value', () => {
+      const form = createEditing().componentInstance.form;
+
+      expect(form.getRawValue()).toEqual({ content: 'Conseil municipal', status: false });
+      expect(form.valid).toBe(true);
+    });
+
+    it('should label the submit button « Enregistrer »', () => {
+      const fixture = createEditing();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('.publication-form-submit')?.textContent)
+        .toContain('Enregistrer');
+    });
+
+    it('should keep the input after a submit, the modal closing on success', () => {
+      const component = createEditing().componentInstance;
+      let emitted: CreatePublicationFormValue | undefined;
+      component.submitted.subscribe((value) => (emitted = value));
+
+      component.form.controls.content.setValue('Conseil municipal reporté');
+      component.onSubmit();
+
+      expect(emitted).toEqual({ content: 'Conseil municipal reporté', status: false });
+      expect(component.form.controls.content.value).toBe('Conseil municipal reporté');
+    });
+  });
 });

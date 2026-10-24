@@ -76,6 +76,13 @@ export class PublicationsPageComponent {
   protected readonly createModalOpen = signal(false);
   protected readonly creating = signal(false);
 
+  /** Publication qu'on modifie, `null` quand la modale est fermée. */
+  protected readonly editingFor = signal<Publication | null>(null);
+  protected readonly saving = signal(false);
+
+  /** Ids des publications dont la suppression est en cours. */
+  protected readonly deleting = signal<ReadonlySet<number>>(new Set());
+
   /** Ids des publications dont la diffusion Facebook est en cours. */
   protected readonly publishing = signal<ReadonlySet<number>>(new Set());
 
@@ -168,6 +175,63 @@ export class PublicationsPageComponent {
             this.notifications.error('La publication n’a pas pu être créée.');
           },
         });
+  }
+
+  // ------------------------- Modification, suppression -------------------------
+
+  protected onEdit(publication: Publication): void {
+    this.editingFor.set(publication);
+  }
+
+  protected onEditSubmitted(value: CreatePublicationFormValue): void {
+    const publication = this.editingFor();
+
+    if (!publication) {
+      return;
+    }
+
+    this.saving.set(true);
+
+    this.publicationsService
+        .updatePublication(publication.id, {
+          content: value.content,
+          status: value.status ? 'VERIFIED' : 'DRAFT',
+        })
+        .subscribe({
+          next: (updated) => {
+            this.replacePublication(updated);
+            this.saving.set(false);
+            this.editingFor.set(null);
+            this.notifications.success('Publication enregistrée.');
+          },
+          error: (err: HttpErrorResponse) => {
+            console.error('Modification de la publication impossible', err);
+            this.saving.set(false);
+            this.notifications.error(apiErrorMessage(err, 'La publication n’a pas pu être enregistrée.'));
+          },
+        });
+  }
+
+  protected onDelete(publication: Publication): void {
+    if (this.deleting().has(publication.id)) {
+      return;
+    }
+
+    this.setDeleting(publication.id, true);
+
+    this.publicationsService.deletePublication(publication.id).subscribe({
+      next: () => {
+        this.publications.update((publications) => publications.filter((item) => item.id !== publication.id));
+        this.setDeleting(publication.id, false);
+        this.notifications.success('Publication supprimée.');
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Suppression de la publication impossible', err);
+        this.setDeleting(publication.id, false);
+        // 409 : une diffusion est en cours ou imminente, le back dit quand réessayer.
+        this.notifications.error(apiErrorMessage(err, 'La publication n’a pas pu être supprimée.'));
+      },
+    });
   }
 
   // ------------------------------- Visuels -------------------------------
@@ -353,6 +417,26 @@ export class PublicationsPageComponent {
         this.error.set('Les publications n’ont pas pu être chargées.');
         this.loading.set(false);
       },
+    });
+  }
+
+  private replacePublication(updated: Publication): void {
+    this.publications.update((publications) =>
+      publications.map((item) => (item.id === updated.id ? updated : item)),
+    );
+  }
+
+  private setDeleting(publicationId: number, active: boolean): void {
+    this.deleting.update((ids) => {
+      const next = new Set(ids);
+
+      if (active) {
+        next.add(publicationId);
+      } else {
+        next.delete(publicationId);
+      }
+
+      return next;
     });
   }
 
