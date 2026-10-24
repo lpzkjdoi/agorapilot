@@ -85,7 +85,10 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] CRUD complet des publications : modification et suppression (seuls création, liste, programmation et rattachements existent)
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
-- [ ] Suspension Facebook : lever automatiquement une suspension pour jeton invalide (code 190) après un bootstrap réussi du jeton ; prévenir par mail quand un canal est suspendu (après la gestion des utilisateurs)
+- [ ] Suspension Facebook — limites connues de la première version (cf. [changelog](docs/changelog/2026-10-16-suspension-canal-facebook.md#limites-connues)) :
+  - [ ] Levée uniquement manuelle : un nouveau jeton posé par `POST /admin/facebook/bootstrap` ne lève pas une suspension pour jeton invalide (code 190), il faut aussi cliquer « Reprendre les diffusions » — la lever automatiquement après un bootstrap réussi
+  - [ ] Diffusions retenues : passée leur heure, elles restent « programmées » dans le calendrier et ne peuvent être ni déplacées ni annulées tant qu'elles ne sont pas tranchées (levée, ou échec au-delà du retard maximal) — les signaler comme « en attente » et permettre de les annuler
+  - [ ] Pas d'alerte hors de l'application : la suspension ne se voit qu'en ouvrant AgoraPilot — prévenir par mail (après la gestion des utilisateurs, pour les destinataires)
 - [ ] Reprendre par glisser-déposer une diffusion en échec vers un autre jour du calendrier
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [ ] Appliquer Prettier au code front et le vérifier en CI (installé, scripts `format` / `format:check` présents, mais 136 fichiers non conformes)
