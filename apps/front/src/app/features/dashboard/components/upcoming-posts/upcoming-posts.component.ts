@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { RouterLink } from "@angular/router";
 import { Occurrence } from "../../../occurrences/occurrence.model";
 import {
   UpcomingPostCardComponent,
@@ -7,6 +8,7 @@ import {
 @Component({
   selector: 'app-upcoming-posts',
   imports: [
+    RouterLink,
     UpcomingPostCardComponent,
   ],
   templateUrl: './upcoming-posts.component.html',
@@ -16,4 +18,6 @@ import {
 })
 export class UpcomingPostsComponent {
   upcomingOccurrences = input<Occurrence[]>([])
+  /** Tant que la liste charge, « Aucune publication prévue » serait faux. */
+  loading = input(false)
 }

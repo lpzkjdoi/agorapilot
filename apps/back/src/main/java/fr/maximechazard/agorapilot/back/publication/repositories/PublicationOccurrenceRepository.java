@@ -14,4 +14,12 @@ public interface PublicationOccurrenceRepository extends JpaRepository<Publicati
     List<PublicationOccurrence> findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(LocalDateTime start, LocalDateTime end);
 
     List<PublicationOccurrence> findAllByScheduledAtBeforeAndStatus(LocalDateTime scheduledAt, PublicationOccurrenceStatus status);
+
+    /** Intervalle semi-ouvert {@code [start, end)}, comme ci-dessus. */
+    long countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan(PublicationOccurrenceStatus status, LocalDateTime start, LocalDateTime end);
+
+    long countByStatus(PublicationOccurrenceStatus status);
+
+    /** Les cinq prochaines occurrences d'un statut à partir de {@code from}, la plus proche d'abord. */
+    List<PublicationOccurrence> findTop5ByStatusAndScheduledAtGreaterThanEqualOrderByScheduledAtAsc(PublicationOccurrenceStatus status, LocalDateTime from);
 }

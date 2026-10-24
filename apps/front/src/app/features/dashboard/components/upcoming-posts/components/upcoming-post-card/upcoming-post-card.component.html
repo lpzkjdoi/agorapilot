@@ -1,3 +1,27 @@
-<div>
-  {{ occurrence()?.id }} - {{ occurrence()?.publication?.content }}
-</div>
+@if (occurrence(); as occurrence) {
+  <div class="upcoming-card">
+    <div class="upcoming-date">
+      <span class="upcoming-day">{{ occurrence.scheduledAt | date:'dd' }}</span>
+      <span class="upcoming-month">{{ occurrence.scheduledAt | date:'MMM':'':'fr-FR' }}</span>
+    </div>
+    <div class="upcoming-body">
+      <p class="upcoming-content">{{ occurrence.publication.content }}</p>
+      <div class="upcoming-badges">
+        @for (delivery of occurrence.deliveries; track delivery.id) {
+          <span class="occurrence-badge"
+                [class.occurrence-badge-facebook]="delivery.channel === 'FACEBOOK'"
+                [class.occurrence-badge-intramuros]="delivery.channel === 'INTRAMUROS'"
+          >{{ channelLabels[delivery.channel] }}</span>
+        }
+        <span class="occurrence-badge"
+              [class.occurrence-badge-scheduled]="occurrence.status === 'SCHEDULED'"
+              [class.occurrence-badge-published]="occurrence.status === 'PUBLISHED'"
+              [class.occurrence-badge-failed]="occurrence.status === 'FAILED'"
+        >{{ statusLabels[occurrence.status] }}</span>
+        <span class="upcoming-time">
+          {{ occurrence.scheduledAt | date:'EEEE':'':'fr-FR' }} · {{ time() }}
+        </span>
+      </div>
+    </div>
+  </div>
+}

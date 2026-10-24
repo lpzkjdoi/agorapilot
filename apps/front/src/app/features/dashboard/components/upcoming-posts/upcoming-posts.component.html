@@ -1,20 +1,24 @@
 <div class="posts-panel">
   <div class="posts-panel-header">
     <h3>Publications à venir</h3>
-    <button class="posts-panel-see-all">
+    <a class="posts-panel-see-all" routerLink="/calendrier">
       Voir tout
       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
         <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
       </svg>
-    </button>
+    </a>
   </div>
-  <ul>
-    @for (occurrence of upcomingOccurrences(); track occurrence.id) {
-      <li>
-        <app-upcoming-post-card [occurrence]="occurrence" />
-      </li>
-    } @empty {
-      <li><p>Aucune publication prévue</p></li>
+  <ul class="posts-panel-list">
+    @if (loading()) {
+      <li><p class="posts-panel-note">Chargement…</p></li>
+    } @else {
+      @for (occurrence of upcomingOccurrences(); track occurrence.id) {
+        <li>
+          <app-upcoming-post-card [occurrence]="occurrence" />
+        </li>
+      } @empty {
+        <li><p class="posts-panel-note">Aucune publication prévue</p></li>
+      }
     }
   </ul>
 </div>
