@@ -2,7 +2,8 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
-import { CurrentUser } from '../../auth/auth.model';
+import { ALL_PERMISSIONS } from '../../../features/users/permissions';
+import { CurrentUser, Permission } from '../../auth/auth.model';
 import { AuthService } from '../../auth/auth.service';
 import { NavbarComponent } from './navbar.component';
 
@@ -10,14 +11,26 @@ describe('NavbarComponent', () => {
   const user = signal<CurrentUser | null>(null);
   const logout = vi.fn(() => of(undefined));
 
+  const can = (permission: Permission) => user()?.permissions.includes(permission) ?? false;
+
   beforeEach(async () => {
-    user.set(null);
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ALL_PERMISSIONS });
     logout.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: { user, logout } }],
+      providers: [provideRouter([]), { provide: AuthService, useValue: { user, logout, can } }],
     }).compileComponents();
+  });
+
+  it('should show only the entries the account may open', () => {
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ['medias:read'] });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+
+    const names = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[appNavbarButton]'))
+                       .map((button) => button.getAttribute('name'));
+    expect(names).toEqual(['Médiathèque']);
   });
 
   it('should show the signed-in username, linking to the password change', () => {
@@ -55,6 +68,7 @@ describe('NavbarComponent', () => {
   });
 
   it('should show no account block without a signed-in user', () => {
+    user.set(null);
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();
 
@@ -119,7 +133,8 @@ describe('NavbarComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     const buttons = compiled.querySelectorAll('.navbar-nav-button');
-    expect(buttons.length).toBe(5);
+    // Les cinq pages, plus « Comptes » pour un compte qui a tous les droits.
+    expect(buttons.length).toBe(6);
 
     const publications = buttons[3];
     expect(publications.textContent).toContain('Publications');
@@ -145,6 +160,8 @@ describe('NavbarComponent', () => {
   });
 
   it('should render the environment badge at the far right of the bar', () => {
+    // Sans compte : le bloc du compte, sinon dernier, n'est pas rendu.
+    user.set(null);
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();
     const header = (fixture.nativeElement as HTMLElement).querySelector('.navbar') as HTMLElement;

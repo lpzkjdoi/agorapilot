@@ -42,6 +42,8 @@ export class CalendarDayPanelComponent {
   readonly date = input.required<string>();
   readonly occurrences = input.required<Occurrence[]>();
   readonly now = input.required<Date>();
+  /** `occurrences:schedule` : sans lui, la bulle se lit mais ne propose aucune action. */
+  readonly canSchedule = input(true);
 
   readonly closed = output<void>();
   readonly edit = output<Occurrence>();

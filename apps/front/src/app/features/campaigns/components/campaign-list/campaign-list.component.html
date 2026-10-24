@@ -1,21 +1,23 @@
 <section class="campaign-list">
   <header class="campaign-list-header">
     <h2>Campagnes</h2>
-    <button type="button"
-            class="campaign-list-create"
-            aria-label="Créer une campagne"
-            (click)="createRequested.emit()"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg"
-           height="16px"
-           viewBox="0 -960 960 960"
-           width="16px"
-           fill="currentColor"
-           aria-hidden="true"
+    @if (canCreate()) {
+      <button type="button"
+              class="campaign-list-create"
+              aria-label="Créer une campagne"
+              (click)="createRequested.emit()"
       >
-        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-      </svg>
-    </button>
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 -960 960 960"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+        </svg>
+      </button>
+    }
   </header>
 
   <div class="campaign-list-search">

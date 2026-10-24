@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -40,7 +41,7 @@ class PublicationControllerCrudTest {
 
     @Test
     void updates_the_content_and_the_status() throws Exception {
-        when(publicationService.update(eq(7L), any(UpdatePublicationRequest.class)))
+        when(publicationService.update(eq(7L), any(UpdatePublicationRequest.class), anyBoolean()))
                 .thenReturn(new PublicationDTO(7L, "Marché de producteurs, place du village", PublicationStatus.VERIFIED, List.of(), null));
 
         mockMvc.perform(put("/api/publications/7")
@@ -52,7 +53,7 @@ class PublicationControllerCrudTest {
 
         verify(publicationService).update(eq(7L), argThat(request ->
                 request.getContent().equals("Marché de producteurs, place du village")
-                        && request.getStatus() == PublicationStatus.VERIFIED));
+                        && request.getStatus() == PublicationStatus.VERIFIED), anyBoolean());
     }
 
     @Test
@@ -62,7 +63,7 @@ class PublicationControllerCrudTest {
                        .content("{\"content\":\"  \",\"status\":\"DRAFT\"}"))
                .andExpect(status().isBadRequest());
 
-        verify(publicationService, never()).update(any(), any());
+        verify(publicationService, never()).update(any(), any(), anyBoolean());
     }
 
     @Test
@@ -72,12 +73,12 @@ class PublicationControllerCrudTest {
                        .content("{\"content\":\"Marché\"}"))
                .andExpect(status().isBadRequest());
 
-        verify(publicationService, never()).update(any(), any());
+        verify(publicationService, never()).update(any(), any(), anyBoolean());
     }
 
     @Test
     void answers_404_when_updating_an_unknown_publication() throws Exception {
-        when(publicationService.update(eq(404L), any())).thenThrow(new PublicationNotFoundException("Publication 404 introuvable"));
+        when(publicationService.update(eq(404L), any(), anyBoolean())).thenThrow(new PublicationNotFoundException("Publication 404 introuvable"));
 
         mockMvc.perform(put("/api/publications/404")
                        .contentType(MediaType.APPLICATION_JSON)

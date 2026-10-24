@@ -6,6 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Media } from '../../media.model';
 import { MediasPageComponent } from './medias-page.component';
+import { provideSignedInAs, signInAs } from '../../../../core/auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -62,7 +63,7 @@ describe('MediasPageComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MediasPageComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
@@ -289,5 +290,14 @@ describe('MediasPageComponent', () => {
     expect(notifications.notifications()).toEqual([
       expect.objectContaining({ message: expect.stringContaining('utilisé par des publications') }),
     ]);
+  });
+
+  it('should show the library without the upload zone nor actions, for a reader', () => {
+    signInAs(['medias:read']);
+    render();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('app-media-upload-zone')).toBeNull();
+    expect(compiled.querySelectorAll('.media-actions button')).toHaveLength(0);
   });
 });

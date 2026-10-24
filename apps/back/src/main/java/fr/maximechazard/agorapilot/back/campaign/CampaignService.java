@@ -4,8 +4,6 @@ import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
-import fr.maximechazard.agorapilot.back.publication.Publication;
-import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,12 +25,8 @@ public class CampaignService {
                 request.getEndDate()
         );
 
-        if (request.getPublications() != null && !request.getPublications().isEmpty()) {
-            for (CreatePublicationRequest p : request.getPublications()) {
-                Publication publication = new Publication(p.getContent(), p.getStatus());
-                campaign.addPublication(publication);
-            }
-        }
+        // Une campagne naît vide : ses publications s'y rattachent ensuite, avec les
+        // droits et les règles de statut qui s'appliquent aux publications.
 
         return mapper.toDTO(campaignRepository.save(campaign));
     }

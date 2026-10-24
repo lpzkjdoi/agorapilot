@@ -8,6 +8,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { Campaign } from '../../../campaigns/campaign.model';
 import { Publication } from '../../publication.model';
 import { PublicationsPageComponent } from './publications-page.component';
+import { provideSignedInAs, signInAs } from '../../../../core/auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -36,7 +37,7 @@ describe('PublicationsPageComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicationsPageComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
@@ -459,9 +460,16 @@ describe('PublicationsPageComponent', () => {
     };
 
     it('should open the modal on the publication that was clicked', () => {
-      const { compiled } = openModal(1);
+      const { compiled } = openModal(0);
 
-      expect(compiled.querySelector('.schedule-publication')?.textContent).toContain('Conseil municipal reporté');
+      expect(compiled.querySelector('.schedule-publication')?.textContent).toContain('Marché de producteurs samedi');
+    });
+
+    it('should not let a draft be scheduled', () => {
+      const fixture = render();
+      const button = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.action-schedule')[1];
+
+      expect(button.disabled).toBe(true);
     });
 
     it('should POST a day-only schedule and announce the time chosen by the back', () => {
@@ -847,6 +855,49 @@ describe('PublicationsPageComponent', () => {
           level: 'error',
           message: 'La publication n’a pas pu être supprimée. La publication 2 a une diffusion en cours ou imminente.',
         }),
+      ]);
+    });
+  });
+
+  describe('selon les droits', () => {
+    it('should only show the publications to a reader: no creation, no action, no campaigns request', () => {
+      signInAs(['publications:read']);
+      const fixture = TestBed.createComponent(PublicationsPageComponent);
+      httpTesting.expectOne('/api/publications').flush(publications);
+      httpTesting.expectNone('/api/campaigns');
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      expect(compiled.querySelector('.publications-create')).toBeNull();
+      expect(compiled.querySelectorAll('app-publication-card')).toHaveLength(3);
+      for (const selector of ['.action-edit', '.action-delete', '.action-facebook', '.action-schedule',
+                              '.action-medias', '.action-campaign']) {
+        expect(compiled.querySelector(selector)).toBeNull();
+      }
+    });
+
+    it('should warn an editor without the right to verify, and tell when the publication went back to draft', () => {
+      signInAs(['publications:read', 'publications:write', 'campaigns:read']);
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      compiled.querySelectorAll<HTMLButtonElement>('.action-edit')[0].click();
+      fixture.detectChanges();
+      expect(compiled.querySelector('app-create-publication-modal [role="note"]')?.textContent)
+        .toContain('repassera en brouillon');
+      expect(compiled.querySelector('app-create-publication-modal #status')).toBeNull();
+
+      const textarea = compiled.querySelector('app-create-publication-modal textarea') as HTMLTextAreaElement;
+      textarea.value = 'Marché de producteurs dimanche';
+      textarea.dispatchEvent(new Event('input'));
+      compiled.querySelector('app-create-publication-modal form')?.dispatchEvent(new Event('submit'));
+
+      const request = httpTesting.expectOne('/api/publications/1');
+      expect(request.request.body).toEqual({ content: 'Marché de producteurs dimanche', status: 'VERIFIED' });
+      request.flush({ ...publications[0], content: 'Marché de producteurs dimanche', status: 'DRAFT' });
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: expect.stringContaining('repassée en brouillon') }),
       ]);
     });
   });

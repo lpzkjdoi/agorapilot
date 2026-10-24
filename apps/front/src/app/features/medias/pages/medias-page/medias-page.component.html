@@ -17,11 +17,13 @@
     </div>
   </header>
 
-  <app-media-upload-zone
-    [uploading]="uploading()"
-    [progress]="uploadProgress()"
-    (filesSelected)="onFilesSelected($event)"
-  />
+  @if (canEdit()) {
+    <app-media-upload-zone
+      [uploading]="uploading()"
+      [progress]="uploadProgress()"
+      (filesSelected)="onFilesSelected($event)"
+    />
+  }
 
   @if (error(); as message) {
     <p class="medias-error" role="alert">{{ message }}</p>
@@ -30,7 +32,9 @@
       <app-loader size="lg" label="Chargement des médias…" />
     </div>
   } @else if (medias().length === 0) {
-    <p class="medias-placeholder">Aucun média pour le moment — déposez votre première affiche ci-dessus</p>
+    <p class="medias-placeholder">
+      Aucun média pour le moment{{ canEdit() ? ' — déposez votre première affiche ci-dessus' : '' }}
+    </p>
   } @else {
     <p class="medias-count">
       {{ visibleMedias().length }}
@@ -48,6 +52,8 @@
             <app-media-card
               [media]="media"
               [busy]="busy().has(media.id)"
+              [canEdit]="canEdit()"
+              [canDelete]="canDelete()"
               (renamed)="onEdit($event)"
               (archiveToggled)="onToggleArchive($event)"
               (deleted)="onDelete($event)"

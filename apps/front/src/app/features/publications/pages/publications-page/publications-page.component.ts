@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Observable } from "rxjs";
 import { ChannelSuspensionsService } from "../../../../core/channel-suspensions/channel-suspensions.service";
+import { AuthService } from "../../../../core/auth/auth.service";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import {
@@ -68,6 +69,17 @@ export class PublicationsPageComponent {
   private readonly occurrencesService = inject(OccurrencesService);
   private readonly notifications = inject(NotificationService);
   private readonly channelSuspensions = inject(ChannelSuspensionsService);
+  private readonly auth = inject(AuthService);
+
+  // Droits du compte : seules les actions permises sont proposées. Le back les
+  // refuserait de toute façon.
+  protected readonly canCreate = computed(() => this.auth.can('publications:write'));
+  protected readonly canVerify = computed(() => this.auth.can('publications:verify'));
+  protected readonly canDelete = computed(() => this.auth.can('publications:delete'));
+  protected readonly canPublish = computed(() => this.auth.can('publications:publish'));
+  protected readonly canSchedule = computed(() => this.auth.can('occurrences:schedule'));
+  protected readonly canManageMedias = computed(() => this.canCreate() && this.auth.can('medias:read'));
+  protected readonly canAssignCampaign = computed(() => this.canCreate() && this.auth.can('campaigns:read'));
 
   protected readonly publications = signal<Publication[]>([]);
   protected readonly campaigns = signal<Campaign[]>([]);
@@ -147,7 +159,12 @@ export class PublicationsPageComponent {
   constructor() {
     this.loadPublications();
 
-    // Les campagnes alimentent le filtre « Toutes les campagnes ».
+    // Les campagnes alimentent le filtre « Toutes les campagnes ». Sans le droit
+    // de les voir, le filtre ne propose que « Sans campagne ».
+    if (!this.auth.can('campaigns:read')) {
+      return;
+    }
+
     this.campaignsService.getCampaigns().subscribe({
       next: (campaigns) => this.campaigns.set(campaigns),
       error: (err) => console.error('Chargement des campagnes impossible', err),
@@ -202,7 +219,9 @@ export class PublicationsPageComponent {
             this.replacePublication(updated);
             this.saving.set(false);
             this.editingFor.set(null);
-            this.notifications.success('Publication enregistrée.');
+            this.notifications.success(publication.status === 'VERIFIED' && updated.status === 'DRAFT'
+              ? 'Publication enregistrée, repassée en brouillon : elle devra être vérifiée à nouveau.'
+              : 'Publication enregistrée.');
           },
           error: (err: HttpErrorResponse) => {
             console.error('Modification de la publication impossible', err);

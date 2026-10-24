@@ -12,6 +12,7 @@ import { DashboardPageComponent } from './features/dashboard/pages/dashboard-pag
 import { MediasPageComponent } from './features/medias/pages/medias-page/medias-page.component';
 import { PublicationsPageComponent } from './features/publications/pages/publications-page/publications-page.component';
 import { routes } from './app.routes';
+import { ALL_PERMISSIONS } from './features/users/permissions';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -28,7 +29,7 @@ describe('routes', () => {
 
   /** Les pages de l'application exigent un compte : la garde lit `/api/me` d'abord. */
   async function signIn(status: 'ACTIVE' | 'PENDING_PASSWORD' = 'ACTIVE'): Promise<void> {
-    (await meRequest()).flush({ username: 'camille', status, permissions: [] });
+    (await meRequest()).flush({ username: 'camille', status, permissions: ALL_PERMISSIONS });
   }
 
   /** La navigation est asynchrone : la garde émet sa requête un peu après. */
@@ -53,6 +54,7 @@ describe('routes', () => {
       'publications',
       'medias',
       'comptes',
+      'aucun-droit',
     ]);
   });
 
@@ -159,5 +161,24 @@ describe('routes', () => {
 
     expect(TestBed.inject(Router).url).toBe('/dashboard');
     httpTesting.match(() => true).forEach((request) => request.flush({}));
+  });
+
+  it('should send an account without any permission to the page that says so', async () => {
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/publications');
+    (await meRequest()).flush({ username: 'camille', status: 'ACTIVE', permissions: [] });
+    await navigation;
+
+    expect(TestBed.inject(Router).url).toBe('/aucun-droit');
+  });
+
+  it('should send an account to the first page it may open', async () => {
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/dashboard');
+    (await meRequest()).flush({ username: 'camille', status: 'ACTIVE', permissions: ['medias:read'] });
+    await navigation;
+
+    expect(TestBed.inject(Router).url).toBe('/medias');
+    httpTesting.match(() => true).forEach((request) => request.flush([]));
   });
 });

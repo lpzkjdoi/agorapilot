@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { concatMap, from } from 'rxjs';
+import { AuthService } from "../../../../core/auth/auth.service";
 import { LoaderComponent } from '../../../../core/loader/loader.component';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { MediaCardComponent } from '../../components/media-card/media-card.component';
@@ -23,6 +24,9 @@ type ArchivedFilter = 'CURRENT' | 'ARCHIVED';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MediasPageComponent {
+  private readonly auth = inject(AuthService);
+  protected readonly canEdit = computed(() => this.auth.can('medias:write'));
+  protected readonly canDelete = computed(() => this.auth.can('medias:delete'));
   private readonly mediasService = inject(MediasService);
   private readonly notifications = inject(NotificationService);
 

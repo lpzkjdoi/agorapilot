@@ -6,6 +6,7 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleEx
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotVerifiedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccurrenceRepository;
@@ -65,6 +66,7 @@ public class PublicationOccurrenceService {
      * silencieusement dans trois jours.
      *
      * @throws PublicationNotFoundException        la publication n'existe pas
+     * @throws PublicationNotVerifiedException     la publication n'est pas vérifiée
      * @throws UnsupportedDeliveryChannelException un des canaux n'a pas de publisher
      * @throws InvalidScheduleException            jour passé, ou fenêtre du jour close
      */
@@ -72,6 +74,10 @@ public class PublicationOccurrenceService {
     public PublicationOccurrenceDTO create(CreatePublicationOccurrenceRequest request) {
         Publication publication = publicationRepository.findByIdAndArchivedFalse(request.getPublicationId())
                 .orElseThrow(() -> new PublicationNotFoundException("Publication with id " + request.getPublicationId() + " does not exist."));
+
+        if (publication.getStatus() != PublicationStatus.VERIFIED) {
+            throw new PublicationNotVerifiedException(publication.getId());
+        }
 
         PublicationOccurrence occurrence = new PublicationOccurrence();
 
@@ -155,6 +161,10 @@ public class PublicationOccurrenceService {
         if (Boolean.TRUE.equals(occurrence.getPublication().getArchived())) {
             throw new OccurrenceNotModifiableException("La publication de la diffusion " + occurrenceId
                     + " a été supprimée : elle ne peut plus être reprise.");
+        }
+
+        if (occurrence.getPublication().getStatus() != PublicationStatus.VERIFIED) {
+            throw new PublicationNotVerifiedException(occurrence.getPublication().getId());
         }
 
         for (PublicationDelivery delivery : occurrence.getDeliveries()) {

@@ -70,18 +70,12 @@ class CampaignServiceTest {
     }
 
     /** {@link CreateCampaignRequest} n'expose que des getters : Spring la peuple par réflexion. */
-    private static CreateCampaignRequest request(String name, LocalDateTime startDate, String... contents) {
+    private static CreateCampaignRequest request(String name, LocalDateTime startDate) {
         CreateCampaignRequest request = new CreateCampaignRequest();
         set(request, "name", name);
         set(request, "description", "Une description");
         set(request, "startDate", startDate);
         set(request, "endDate", startDate == null ? null : END);
-        set(request, "publications", Arrays.stream(contents).map(content -> {
-            CreatePublicationRequest publication = new CreatePublicationRequest();
-            set(publication, "content", content);
-            set(publication, "status", PublicationStatus.VERIFIED);
-            return publication;
-        }).toList());
         return request;
     }
 
@@ -137,24 +131,6 @@ class CampaignServiceTest {
 
     @Nested
     class Create {
-
-        @Test
-        void rattacheLesPublicationsALaCampagne() {
-            when(campaignRepository.save(any(Campaign.class))).thenAnswer(invocation -> {
-                Campaign saved = invocation.getArgument(0);
-                saved.setId(5L);
-                return saved;
-            });
-
-            CampaignDTO dto = service.create(request("Marché de Noël", START, "Rendez-vous samedi"));
-
-            ArgumentCaptor<Campaign> captor = ArgumentCaptor.forClass(Campaign.class);
-            verify(campaignRepository).save(captor.capture());
-            assertThat(captor.getValue().getPublications()).singleElement()
-                                                           .satisfies(p -> assertThat(p.getCampaign()).isSameAs(captor.getValue()));
-            assertThat(dto.id()).isEqualTo(5L);
-            assertThat(dto.publications()).hasSize(1);
-        }
 
         @Test
         void deriveLeStatutDeLaDateDeDebutALaCreation() {

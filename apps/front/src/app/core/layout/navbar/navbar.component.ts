@@ -25,7 +25,11 @@ export class NavbarComponent {
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
-  protected readonly canManageAccounts = computed(() => this.auth.user()?.permissions.includes('users:manage') ?? false);
+  // Une entrée par page que le compte a le droit de voir.
+  protected readonly canReadPublications = computed(() => this.auth.can('publications:read'));
+  protected readonly canReadCampaigns = computed(() => this.auth.can('campaigns:read'));
+  protected readonly canReadMedias = computed(() => this.auth.can('medias:read'));
+  protected readonly canManageAccounts = computed(() => this.auth.can('users:manage'));
 
   protected onLogout(): void {
     this.auth.logout().subscribe(() => void this.router.navigateByUrl(LOGIN_PATH));

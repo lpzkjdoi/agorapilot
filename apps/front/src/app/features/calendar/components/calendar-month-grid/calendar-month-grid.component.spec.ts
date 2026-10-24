@@ -31,6 +31,7 @@ function occurrence(id: number, scheduledAt: string, overrides: Partial<Occurren
       [today]="'2026-10-10'"
       [now]="now"
       [selectedDay]="selectedDay"
+      [canSchedule]="canSchedule"
       [panel]="panel"
       (daySelected)="selected.push($event)"
       (moved)="moves.push($event)"
@@ -42,6 +43,7 @@ class HostComponent {
   now = NOW;
   byDay = new Map<string, Occurrence[]>();
   selectedDay: string | null = null;
+  canSchedule = true;
   selected: string[] = [];
   moves: OccurrenceMove[] = [];
 }
@@ -115,6 +117,14 @@ describe('CalendarMonthGridComponent', () => {
     const chips = cell(12).querySelectorAll('app-calendar-occurrence-chip');
     expect(chips[0].getAttribute('draggable')).toBe('true');
     expect(chips[1].getAttribute('draggable')).toBeNull();
+  });
+
+  it('should let nothing be dragged without the right to schedule', () => {
+    host.canSchedule = false;
+    host.byDay = new Map([['2026-10-12', [occurrence(1, '2026-10-12T16:00:00')]]]);
+    fixture.detectChanges();
+
+    expect(cell(12).querySelector('app-calendar-occurrence-chip')?.getAttribute('draggable')).toBeNull();
   });
 
   it('should select a day of the month when clicked', () => {

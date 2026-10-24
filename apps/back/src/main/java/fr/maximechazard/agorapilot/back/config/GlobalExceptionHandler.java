@@ -17,6 +17,8 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleEx
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotVerifiedException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.VerificationNotAllowedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
 import lombok.extern.slf4j.Slf4j;
@@ -154,6 +156,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<ApiError> handleInvalidPasswordException(InvalidPasswordException exception) {
         return build(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(PublicationNotVerifiedException.class)
+    public ResponseEntity<ApiError> handlePublicationNotVerifiedException(PublicationNotVerifiedException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(VerificationNotAllowedException.class)
+    public ResponseEntity<ApiError> handleVerificationNotAllowedException(VerificationNotAllowedException exception) {
+        return build(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {

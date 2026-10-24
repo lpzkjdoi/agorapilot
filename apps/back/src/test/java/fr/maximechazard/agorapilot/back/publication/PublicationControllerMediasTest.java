@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +40,7 @@ class PublicationControllerMediasTest {
 
     @Test
     void returns_the_publication_with_its_medias_in_the_order_that_was_sent() throws Exception {
-        when(publicationService.setMedias(eq(7L), any())).thenReturn(publication(
+        when(publicationService.setMedias(eq(7L), any(), anyBoolean())).thenReturn(publication(
                 new MediaSummaryDTO(3L, "Affiche", "a.png", "image/png", 1200, 1800, null),
                 new MediaSummaryDTO(1L, null, "b.jpg", "image/jpeg", 800, 600, "Une photo")));
 
@@ -52,12 +53,12 @@ class PublicationControllerMediasTest {
                .andExpect(jsonPath("$.medias[1].id").value(1))
                .andExpect(jsonPath("$.medias[1].altText").value("Une photo"));
 
-        verify(publicationService).setMedias(7L, List.of(3L, 1L));
+        verify(publicationService).setMedias(eq(7L), eq(List.of(3L, 1L)), anyBoolean());
     }
 
     @Test
     void accepts_an_empty_list_to_detach_everything() throws Exception {
-        when(publicationService.setMedias(eq(7L), any())).thenReturn(publication());
+        when(publicationService.setMedias(eq(7L), any(), anyBoolean())).thenReturn(publication());
 
         mockMvc.perform(put("/api/publications/7/medias")
                        .contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +66,7 @@ class PublicationControllerMediasTest {
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.medias.length()").value(0));
 
-        verify(publicationService).setMedias(7L, List.of());
+        verify(publicationService).setMedias(eq(7L), eq(List.of()), anyBoolean());
     }
 
     @Test
@@ -78,7 +79,7 @@ class PublicationControllerMediasTest {
 
     @Test
     void returns_400_when_the_same_media_appears_twice() throws Exception {
-        when(publicationService.setMedias(any(), any()))
+        when(publicationService.setMedias(any(), any(), anyBoolean()))
                 .thenThrow(new DuplicateMediaException("Le média 3 est présent deux fois dans la liste"));
 
         mockMvc.perform(put("/api/publications/7/medias")
@@ -90,7 +91,7 @@ class PublicationControllerMediasTest {
 
     @Test
     void returns_404_for_an_unknown_publication() throws Exception {
-        when(publicationService.setMedias(any(), any()))
+        when(publicationService.setMedias(any(), any(), anyBoolean()))
                 .thenThrow(new PublicationNotFoundException("Publication 404 introuvable"));
 
         mockMvc.perform(put("/api/publications/404/medias")
@@ -101,7 +102,7 @@ class PublicationControllerMediasTest {
 
     @Test
     void returns_404_for_an_unknown_media() throws Exception {
-        when(publicationService.setMedias(any(), any()))
+        when(publicationService.setMedias(any(), any(), anyBoolean()))
                 .thenThrow(new MediaNotFoundException("Média 404 introuvable"));
 
         mockMvc.perform(put("/api/publications/7/medias")

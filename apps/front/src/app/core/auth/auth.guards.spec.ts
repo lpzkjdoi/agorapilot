@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { firstValueFrom, isObservable, Observable, of } from 'rxjs';
-import { authGuard, permissionGuard, signedInGuard, signedOutGuard } from './auth.guards';
+import { authGuard, homePath, permissionGuard, signedInGuard, signedOutGuard } from './auth.guards';
 import { CurrentUser } from './auth.model';
 import { AuthService } from './auth.service';
 
@@ -54,10 +54,10 @@ describe('auth guards', () => {
   });
 
   describe('signedOutGuard', () => {
-    it('should send a signed-in account to the dashboard', async () => {
+    it('should send a signed-in account to its home page', async () => {
       expect(await run(signedOutGuard)).toBe(true);
 
-      current = { username: 'camille', status: 'ACTIVE', permissions: [] };
+      current = { username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] };
       expect(await run(signedOutGuard)).toBe('/dashboard');
     });
   });
@@ -66,13 +66,26 @@ describe('auth guards', () => {
     it('should let in only the accounts holding the permission', async () => {
       const guard = permissionGuard('users:manage');
 
-      expect(await run(guard)).toBe('/dashboard');
+      expect(await run(guard)).toBe('/aucun-droit');
 
       current = { username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] };
       expect(await run(guard)).toBe('/dashboard');
 
       current = { username: 'camille', status: 'ACTIVE', permissions: ['users:manage'] };
       expect(await run(guard)).toBe(true);
+    });
+  });
+
+  describe('homePath', () => {
+    it('should pick the first page the account may open, in order of preference', () => {
+      const as = (permissions: CurrentUser['permissions']): CurrentUser => ({ username: 'c', status: 'ACTIVE', permissions });
+
+      expect(homePath(as(['users:manage', 'publications:read']))).toBe('/dashboard');
+      expect(homePath(as(['medias:read', 'campaigns:read']))).toBe('/campagnes');
+      expect(homePath(as(['medias:read']))).toBe('/medias');
+      expect(homePath(as(['users:manage']))).toBe('/comptes');
+      expect(homePath(as(['occurrences:schedule']))).toBe('/aucun-droit');
+      expect(homePath(null)).toBe('/aucun-droit');
     });
   });
 });

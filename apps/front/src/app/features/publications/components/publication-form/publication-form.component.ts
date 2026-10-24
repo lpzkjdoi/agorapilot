@@ -35,6 +35,12 @@ export class PublicationFormComponent implements OnInit {
    */
   readonly initialValue = input<CreatePublicationFormValue | null>(null);
 
+  /**
+   * `publications:verify`. Sans lui, la case « vérifiée » n'apparaît pas et le
+   * statut reste celui de départ : brouillon pour une création.
+   */
+  readonly canVerify = input(true);
+
   readonly submitted = output<CreatePublicationFormValue>();
   readonly cancelled = output<void>();
 
@@ -58,6 +64,8 @@ export class PublicationFormComponent implements OnInit {
 
     if (initial) {
       this.form.setValue(initial);
+    } else if (!this.canVerify()) {
+      this.form.controls.status.setValue(false);
     }
   }
 
@@ -75,7 +83,7 @@ export class PublicationFormComponent implements OnInit {
     this.submitted.emit(this.form.getRawValue());
 
     if (!this.editing) {
-      this.form.reset({ content: '', status: true });
+      this.form.reset({ content: '', status: this.canVerify() });
     }
   }
 

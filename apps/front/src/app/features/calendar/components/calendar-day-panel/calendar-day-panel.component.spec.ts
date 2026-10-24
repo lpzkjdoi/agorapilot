@@ -125,4 +125,15 @@ describe('CalendarDayPanelComponent', () => {
 
     expect(closed).toHaveBeenCalledTimes(2);
   });
+
+  it('should offer neither « Modifier » nor « Reprendre » without the right to schedule', () => {
+    fixture = TestBed.createComponent(CalendarDayPanelComponent);
+    fixture.componentRef.setInput('date', '2026-10-03');
+    fixture.componentRef.setInput('occurrences', [occurrence(), occurrence({ id: 2, status: 'FAILED' })]);
+    fixture.componentRef.setInput('now', NOW);
+    fixture.componentRef.setInput('canSchedule', false);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.day-panel-edit')).toHaveLength(0);
+  });
 });

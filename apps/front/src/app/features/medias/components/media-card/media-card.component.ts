@@ -18,6 +18,10 @@ export class MediaCardComponent {
 
   /** Vrai pendant la suppression : désactive les actions et l'annonce à l'écran. */
   readonly busy = input(false);
+  /** `medias:write` : renommer, archiver. */
+  readonly canEdit = input(true);
+  /** `medias:delete`. */
+  readonly canDelete = input(true);
 
   readonly renamed = output<Media>();
   readonly archiveToggled = output<Media>();

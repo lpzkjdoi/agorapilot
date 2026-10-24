@@ -31,6 +31,16 @@ export class PublicationCardComponent {
   /** Suppression en cours : les boutons de suppression se verrouillent. */
   readonly deleting = input(false);
 
+  /** Droits du compte : une action qu'il ne peut pas faire n'est pas proposée. */
+  readonly canEdit = input(true);
+  readonly canDelete = input(true);
+  readonly canPublish = input(true);
+  readonly canSchedule = input(true);
+  /** Choisir des visuels exige aussi de voir la médiathèque. */
+  readonly canManageMedias = input(true);
+  /** Choisir une campagne exige aussi de voir les campagnes. */
+  readonly canAssignCampaign = input(true);
+
   readonly generateXlsx = output<Publication>();
   readonly manageMedias = output<Publication>();
   readonly publishOnFacebook = output<Publication>();

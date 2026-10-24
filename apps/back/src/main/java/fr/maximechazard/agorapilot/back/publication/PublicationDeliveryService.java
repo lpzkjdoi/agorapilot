@@ -4,6 +4,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationDeliveryMapper;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DeliveryFailedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotVerifiedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeliveryRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccurrenceRepository;
@@ -67,6 +68,10 @@ public class PublicationDeliveryService {
         Publication publication = publicationRepository.findByIdAndArchivedFalse(publicationId)
                 .orElseThrow(() -> new PublicationNotFoundException(
                         "Publication with id " + publicationId + " does not exist."));
+
+        if (publication.getStatus() != PublicationStatus.VERIFIED) {
+            throw new PublicationNotVerifiedException(publicationId);
+        }
 
         Publisher publisher = publisherRegistry.forChannel(channel)
                 .orElseThrow(() -> new UnsupportedDeliveryChannelException(
@@ -174,7 +179,13 @@ public class PublicationDeliveryService {
                 case PENDING -> {
                     Optional<ChannelSuspension> suspension = channelSuspensionService.find(delivery.getChannel());
 
-                    if (publisherRegistry.forChannel(delivery.getChannel()).isEmpty()) {
+                    if (occurrence.getPublication().getStatus() != PublicationStatus.VERIFIED) {
+                        // Repassée en brouillon après sa programmation (texte ou
+                        // visuels modifiés) : ce qui a été vérifié n'est plus ce
+                        // qui partirait.
+                        markFailed(delivery, "Non diffusée : la publication n'est plus vérifiée "
+                                + "(repassée en brouillon après sa programmation).");
+                    } else if (publisherRegistry.forChannel(delivery.getChannel()).isEmpty()) {
                         // Sans trace d'échec, la livraison resterait PENDING et
                         // l'occurrence reviendrait à chaque balayage.
                         markFailed(delivery, "No publisher available for channel " + delivery.getChannel() + ".");

@@ -5,6 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { AuthService } from "../../../../core/auth/auth.service";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import { Campaign, CreateCampaignFormValue } from "../../campaign.model";
@@ -33,6 +34,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CampaignsPageComponent {
+  private readonly auth = inject(AuthService);
+  protected readonly canCreate = computed(() => this.auth.can('campaigns:write'));
   private readonly campaignsService = inject(CampaignsService);
   private readonly notifications = inject(NotificationService);
 

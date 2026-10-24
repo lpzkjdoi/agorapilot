@@ -58,7 +58,7 @@ class PublicationServiceMediasTest {
         givenSaveEchoesBack();
         givenMedias(3L, 1L, 7L);
 
-        PublicationDTO dto = service.setMedias(PUBLICATION_ID, List.of(3L, 1L, 7L));
+        PublicationDTO dto = service.setMedias(PUBLICATION_ID, List.of(3L, 1L, 7L), true);
 
         // L'ordre fait foi : le premier média sert de vignette et de première photo.
         assertThat(dto.medias()).extracting(m -> m.id()).containsExactly(3L, 1L, 7L);
@@ -70,10 +70,10 @@ class PublicationServiceMediasTest {
         givenPublication();
         givenSaveEchoesBack();
         givenMedias(1L, 2L);
-        service.setMedias(PUBLICATION_ID, List.of(1L, 2L));
+        service.setMedias(PUBLICATION_ID, List.of(1L, 2L), true);
 
         givenMedias(2L);
-        PublicationDTO dto = service.setMedias(PUBLICATION_ID, List.of(2L));
+        PublicationDTO dto = service.setMedias(PUBLICATION_ID, List.of(2L), true);
 
         assertThat(dto.medias()).extracting(m -> m.id()).containsExactly(2L);
     }
@@ -83,9 +83,9 @@ class PublicationServiceMediasTest {
         givenPublication();
         givenSaveEchoesBack();
         givenMedias(1L);
-        service.setMedias(PUBLICATION_ID, List.of(1L));
+        service.setMedias(PUBLICATION_ID, List.of(1L), true);
 
-        assertThat(service.setMedias(PUBLICATION_ID, List.of()).medias()).isEmpty();
+        assertThat(service.setMedias(PUBLICATION_ID, List.of(), true).medias()).isEmpty();
     }
 
     @Test
@@ -93,14 +93,14 @@ class PublicationServiceMediasTest {
         givenPublication();
         givenSaveEchoesBack();
 
-        assertThat(service.setMedias(PUBLICATION_ID, null).medias()).isEmpty();
+        assertThat(service.setMedias(PUBLICATION_ID, null, true).medias()).isEmpty();
     }
 
     @Test
     void refuses_a_list_holding_the_same_media_twice() {
         givenPublication();
 
-        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(3L, 3L)))
+        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(3L, 3L), true))
                 .isInstanceOf(DuplicateMediaException.class);
 
         verify(publicationRepository, never()).save(any());
@@ -112,7 +112,7 @@ class PublicationServiceMediasTest {
         when(mediaRepository.findById(1L)).thenReturn(Optional.of(media(1L)));
         when(mediaRepository.findById(404L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L, 404L)))
+        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L, 404L), true))
                 .isInstanceOf(MediaNotFoundException.class);
 
         verify(publicationRepository, never()).save(any());
@@ -122,7 +122,7 @@ class PublicationServiceMediasTest {
     void fails_on_an_unknown_publication() {
         when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L)))
+        assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L), true))
                 .isInstanceOf(PublicationNotFoundException.class);
     }
 
@@ -132,9 +132,9 @@ class PublicationServiceMediasTest {
         givenPublication();
         givenSaveEchoesBack();
         givenMedias(1L);
-        service.setMedias(PUBLICATION_ID, List.of(1L));
+        service.setMedias(PUBLICATION_ID, List.of(1L), true);
 
-        service.setMedias(PUBLICATION_ID, List.of());
+        service.setMedias(PUBLICATION_ID, List.of(), true);
 
         verify(mediaRepository, never()).delete(any());
         verify(mediaRepository, never()).deleteById(any());

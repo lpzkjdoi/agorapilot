@@ -20,6 +20,8 @@ import { CAMPAIGN_STATUS_LABELS, Campaign } from "../../campaign.model";
 export class CampaignListComponent {
   readonly campaigns = input.required<Campaign[]>();
   readonly selectedId = input<number | null>(null);
+  /** `campaigns:write` : sans lui, pas de bouton de création. */
+  readonly canCreate = input(true);
 
   readonly selected = output<Campaign>();
   readonly createRequested = output<void>();

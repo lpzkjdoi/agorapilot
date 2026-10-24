@@ -131,4 +131,11 @@ describe('CampaignListComponent', () => {
     expect(compiled.querySelector('.campaign-list-placeholder')?.textContent)
       .toContain('Aucune campagne pour le moment');
   });
+
+  it('should not offer to create a campaign without the right to', () => {
+    fixture.componentRef.setInput('canCreate', false);
+    const compiled = render([]);
+
+    expect(compiled.querySelector('.campaign-list-create')).toBeNull();
+  });
 });

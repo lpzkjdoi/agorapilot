@@ -20,7 +20,9 @@ export const routes: Routes = [
       .then((m) => m.ChangePasswordPageComponent),
     canActivate: [signedInGuard],
   },
-  // Toute l'application exige un compte connecté au mot de passe définitif.
+  // Toute l'application exige un compte connecté au mot de passe définitif, et
+  // chaque page son droit de lecture. Sans lui, la garde mène à la première page
+  // permise (`homePath`).
   // Hors tableau de bord, la page d'arrivée, les pages sont chargées à la
   // demande : le bundle initial butait sur son budget de 500 kB à chaque ajout.
   {
@@ -31,29 +33,34 @@ export const routes: Routes = [
       {
         title: "Dashboard",
         path: 'dashboard',
+        canActivate: [permissionGuard('publications:read')],
         component: DashboardPageComponent,
       },
       {
         title: "Campagnes",
         path: 'campagnes',
+        canActivate: [permissionGuard('campaigns:read')],
         loadComponent: () => import("./features/campaigns/pages/campaigns-page/campaigns-page.component")
           .then((m) => m.CampaignsPageComponent),
       },
       {
         title: "Calendrier",
         path: 'calendrier',
+        canActivate: [permissionGuard('publications:read')],
         loadComponent: () => import("./features/calendar/pages/calendar-page/calendar-page.component")
           .then((m) => m.CalendarPageComponent),
       },
       {
         title: "Publications",
         path: 'publications',
+        canActivate: [permissionGuard('publications:read')],
         loadComponent: () => import("./features/publications/pages/publications-page/publications-page.component")
           .then((m) => m.PublicationsPageComponent),
       },
       {
         title: "Médiathèque",
         path: 'medias',
+        canActivate: [permissionGuard('medias:read')],
         loadComponent: () => import("./features/medias/pages/medias-page/medias-page.component")
           .then((m) => m.MediasPageComponent),
       },
@@ -63,6 +70,12 @@ export const routes: Routes = [
         canActivate: [permissionGuard('users:manage')],
         loadComponent: () => import("./features/users/pages/users-page/users-page.component")
           .then((m) => m.UsersPageComponent),
+      },
+      {
+        title: "Aucun droit",
+        path: 'aucun-droit',
+        loadComponent: () => import("./features/auth/pages/no-access-page/no-access-page.component")
+          .then((m) => m.NoAccessPageComponent),
       },
     ],
   },

@@ -10,6 +10,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DuplicateMediaException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
+import fr.maximechazard.agorapilot.back.publication.exceptions.VerificationNotAllowedException;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.UpdatePublicationRequest;
@@ -33,7 +34,16 @@ public class PublicationService {
     private final PublicationOccurrenceService publicationOccurrenceService;
     private final PublicationMapper mapper;
 
-    public PublicationDTO create(CreatePublicationRequest request) {
+    /**
+     * @param canVerify l'auteur détient {@code publications:verify} ; sans lui, la
+     *                  publication ne peut naître que brouillon
+     * @throws VerificationNotAllowedException une publication vérifiée demandée sans le droit
+     */
+    public PublicationDTO create(CreatePublicationRequest request, boolean canVerify) {
+        if (request.getStatus() == PublicationStatus.VERIFIED && !canVerify) {
+            throw new VerificationNotAllowedException();
+        }
+
         Publication publication = new Publication(request.getContent(), request.getStatus());
         return mapper.toDTO(publicationRepository.save(publication));
     }
@@ -49,13 +59,29 @@ public class PublicationService {
      * Les diffusions encore programmées partiront avec le nouveau texte : le
      * publisher le lit au moment de diffuser. Celles déjà publiées ne changent
      * pas sur les canaux distants.
+     * <p>
+     * Sans {@code publications:verify}, le statut ne peut pas changer, et
+     * modifier le texte d'une publication vérifiée la repasse en brouillon : ce
+     * qui a été vérifié, c'est l'ancien texte. Ses diffusions programmées ne
+     * partiront pas tant qu'elle n'est pas vérifiée à nouveau.
+     *
+     * @throws VerificationNotAllowedException un changement de statut demandé sans le droit
      */
     @Transactional
-    public PublicationDTO update(Long publicationId, UpdatePublicationRequest request) {
+    public PublicationDTO update(Long publicationId, UpdatePublicationRequest request, boolean canVerify) {
         Publication publication = findOrThrow(publicationId);
 
+        if (!canVerify && request.getStatus() != publication.getStatus()) {
+            throw new VerificationNotAllowedException();
+        }
+
+        boolean contentChanged = !publication.getContent().equals(request.getContent());
         publication.setContent(request.getContent());
         publication.setStatus(request.getStatus());
+
+        if (contentChanged && !canVerify) {
+            publication.setStatus(PublicationStatus.DRAFT);
+        }
 
         return mapper.toDTO(publicationRepository.save(publication));
     }
@@ -97,9 +123,14 @@ public class PublicationService {
      * réordonnancement, des INSERT que Hibernate exécute avant les DELETE — et la
      * contrainte d'unicité {@code (publication_id, media_id)} sauterait.
      */
+    /**
+     * Comme pour le texte, changer les visuels d'une publication vérifiée sans
+     * {@code publications:verify} la repasse en brouillon.
+     */
     @Transactional
-    public PublicationDTO setMedias(Long publicationId, List<Long> mediaIds) {
+    public PublicationDTO setMedias(Long publicationId, List<Long> mediaIds, boolean canVerify) {
         Publication publication = findOrThrow(publicationId);
+        List<Long> before = publication.getMedias().stream().map(attachment -> attachment.getMedia().getId()).toList();
 
         List<Long> ids = mediaIds == null ? List.of() : mediaIds;
         rejectDuplicates(ids);
@@ -134,6 +165,10 @@ public class PublicationService {
         // relecture, sinon le DTO renvoyé juste après ne serait pas dans l'ordre
         // demandé.
         attachments.sort(Comparator.comparing(PublicationMedia::getPosition));
+
+        if (!canVerify && !before.equals(ids)) {
+            publication.setStatus(PublicationStatus.DRAFT);
+        }
 
         return mapper.toDTO(publicationRepository.save(publication));
     }

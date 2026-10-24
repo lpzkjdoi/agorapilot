@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.account.Permission;
+import fr.maximechazard.agorapilot.back.account.Permissions;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationDeliveryRequest;
@@ -11,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/publications")
@@ -29,7 +32,7 @@ public class PublicationController {
     // -------------------------------- POST --------------------------------
     @PostMapping
     public ResponseEntity<PublicationDTO> create(@RequestBody @Valid CreatePublicationRequest request) {
-        return new ResponseEntity<>(publicationService.create(request), HttpStatus.CREATED);
+        return new ResponseEntity<>(publicationService.create(request, canVerify()), HttpStatus.CREATED);
     }
 
     /**
@@ -53,7 +56,7 @@ public class PublicationController {
     /** Remplace le texte et le statut ; les diffusions à venir partiront avec le nouveau texte. */
     @PutMapping("/{id}")
     public ResponseEntity<PublicationDTO> update(@PathVariable Long id, @RequestBody @Valid UpdatePublicationRequest request) {
-        return ResponseEntity.ok(publicationService.update(id, request));
+        return ResponseEntity.ok(publicationService.update(id, request, canVerify()));
     }
 
     /**
@@ -67,7 +70,7 @@ public class PublicationController {
             @PathVariable Long id,
             @RequestBody @Valid SetPublicationMediasRequest request
     ) {
-        return new ResponseEntity<>(publicationService.setMedias(id, request.getMediaIds()), HttpStatus.OK);
+        return new ResponseEntity<>(publicationService.setMedias(id, request.getMediaIds(), canVerify()), HttpStatus.OK);
     }
 
     /**
@@ -92,5 +95,10 @@ public class PublicationController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         publicationService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Les droits relus pour cette requête par {@code AccountRefreshFilter}. */
+    private static boolean canVerify() {
+        return Permissions.held(SecurityContextHolder.getContext().getAuthentication(), Permission.PUBLICATIONS_VERIFY);
     }
 }

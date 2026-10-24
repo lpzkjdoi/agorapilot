@@ -101,4 +101,33 @@ describe('CreatePublicationModalComponent', () => {
     expect((compiled.querySelector('#status') as HTMLInputElement).checked).toBe(true);
     expect(compiled.querySelector('.publication-form-submit')?.textContent).toContain('Enregistrer');
   });
+
+  describe('sans le droit de vérifier', () => {
+    function render(publication: Publication | null) {
+      const fixture = TestBed.createComponent(CreatePublicationModalComponent);
+      fixture.componentRef.setInput('publication', publication);
+      fixture.componentRef.setInput('canVerify', false);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('should announce a draft and hide the « verified » box on creation', () => {
+      const compiled = render(null);
+
+      expect(compiled.querySelector('.modal-subtitle')?.textContent).toContain('enregistrée en brouillon');
+      expect(compiled.querySelector('#status')).toBeNull();
+    });
+
+    it('should warn that editing a verified publication sends it back to draft', () => {
+      const compiled = render({ id: 4, content: 'Fermeture de la mairie', status: 'VERIFIED', medias: [], campaign: null });
+
+      expect(compiled.querySelector('[role="note"]')?.textContent).toContain('repassera en brouillon');
+    });
+
+    it('should not warn about a draft', () => {
+      const compiled = render({ id: 4, content: 'Fermeture de la mairie', status: 'DRAFT', medias: [], campaign: null });
+
+      expect(compiled.querySelector('[role="note"]')).toBeNull();
+    });
+  });
 });

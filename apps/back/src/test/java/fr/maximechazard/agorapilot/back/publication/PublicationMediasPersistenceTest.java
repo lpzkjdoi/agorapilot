@@ -64,7 +64,7 @@ class PublicationMediasPersistenceTest {
 
     @Test
     void attaches_medias_in_order() {
-        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, first));
+        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, first), true);
 
         assertThat(dto.medias()).extracting(media -> media.id()).containsExactly(second, first);
     }
@@ -74,9 +74,9 @@ class PublicationMediasPersistenceTest {
         // Le cas qui cassait : réordonner sans changer la composition faisait
         // recréer les mêmes couples (publication, média), et Hibernate émet les
         // INSERT avant les DELETE.
-        publicationService.setMedias(publicationId, List.of(first, second));
+        publicationService.setMedias(publicationId, List.of(first, second), true);
 
-        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, first));
+        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, first), true);
 
         assertThat(dto.medias()).extracting(media -> media.id()).containsExactly(second, first);
         assertThat(publicationMediaRepository.count()).isEqualTo(2);
@@ -90,7 +90,7 @@ class PublicationMediasPersistenceTest {
     @Test
     @Transactional
     void keeps_the_order_after_a_reload_from_the_database() {
-        publicationService.setMedias(publicationId, List.of(third, first, second));
+        publicationService.setMedias(publicationId, List.of(third, first, second), true);
 
         entityManager.flush();
         entityManager.clear();
@@ -104,9 +104,9 @@ class PublicationMediasPersistenceTest {
 
     @Test
     void adds_and_removes_in_the_same_call() {
-        publicationService.setMedias(publicationId, List.of(first, second));
+        publicationService.setMedias(publicationId, List.of(first, second), true);
 
-        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, third));
+        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(second, third), true);
 
         assertThat(dto.medias()).extracting(media -> media.id()).containsExactly(second, third);
         assertThat(publicationMediaRepository.count()).isEqualTo(2);
@@ -114,9 +114,9 @@ class PublicationMediasPersistenceTest {
 
     @Test
     void detaches_everything_without_deleting_the_medias() {
-        publicationService.setMedias(publicationId, List.of(first, second));
+        publicationService.setMedias(publicationId, List.of(first, second), true);
 
-        assertThat(publicationService.setMedias(publicationId, List.of()).medias()).isEmpty();
+        assertThat(publicationService.setMedias(publicationId, List.of(), true).medias()).isEmpty();
         assertThat(publicationMediaRepository.count()).isZero();
         // La médiathèque est une bibliothèque partagée : les visuels restent.
         assertThat(mediaRepository.count()).isEqualTo(3);
@@ -124,8 +124,8 @@ class PublicationMediasPersistenceTest {
 
     @Test
     void is_idempotent_when_called_twice_with_the_same_list() {
-        publicationService.setMedias(publicationId, List.of(first, second));
-        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(first, second));
+        publicationService.setMedias(publicationId, List.of(first, second), true);
+        PublicationDTO dto = publicationService.setMedias(publicationId, List.of(first, second), true);
 
         assertThat(dto.medias()).extracting(media -> media.id()).containsExactly(first, second);
         assertThat(publicationMediaRepository.count()).isEqualTo(2);
