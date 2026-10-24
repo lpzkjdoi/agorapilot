@@ -181,50 +181,71 @@ Une fois les images publiées sur GHCR, `IMAGE_TAG` renseigné dans le `.env` :
 docker compose -f docker-compose.preprod.yaml pull && docker compose -f docker-compose.preprod.yaml up -d
 ```
 
-### Migration ponctuelle — statut `FAILED` des occurrences
+## Migrations de schéma (Flyway)
 
-Hibernate dérive une contrainte `CHECK` de chaque enum, et `ddl-auto: update` ne
-la met **pas** à jour : sur une base déjà créée, `publication_occurrences.status`
-n'accepte que `SCHEDULED` et `PUBLISHED`. Depuis l'ordonnanceur de diffusion, une
-occurrence dont un canal a échoué passe à `FAILED` — l'écriture serait rejetée.
-À passer une fois, avant le premier déploiement qui embarque l'ordonnanceur :
+Le schéma de la base est porté par les migrations Flyway de
+[`apps/back/src/main/resources/db/migration`](../apps/back/src/main/resources/db/migration),
+jouées au démarrage du back. Hibernate ne modifie plus rien (`ddl-auto: validate`) :
+il vérifie seulement que le schéma correspond aux entités, et le back refuse de
+démarrer sinon.
 
-```bash
-docker compose -f docker-compose.preprod.yaml exec -T db \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
-ALTER TABLE publication_occurrences DROP CONSTRAINT IF EXISTS publication_occurrences_status_check;
-ALTER TABLE publication_occurrences ADD CONSTRAINT publication_occurrences_status_check
-    CHECK (status IN ('SCHEDULED', 'PUBLISHED', 'FAILED'));
-SQL
-```
+Faire évoluer le schéma, c'est ajouter un fichier `V<n>__<sujet>.sql` (SQL commun
+à PostgreSQL et à H2, que les tests jouent aussi). On ne modifie **jamais** une
+migration déjà jouée : Flyway compare leurs sommes de contrôle et refuserait de
+démarrer. Une nouvelle valeur d'enum, par exemple, est une migration qui
+remplace la contrainte `CHECK` de la colonne. Elle n'est plus un `ALTER TABLE`
+à passer à la main.
 
-Si la contrainte porte un autre nom (base restaurée, renommage manuel), la
-retrouver avant de la remplacer :
+### Premier déploiement avec Flyway
 
-```sql
-SELECT conname FROM pg_constraint
-WHERE conrelid = 'publication_occurrences'::regclass AND contype = 'c';
-```
+La base de préproduction a été créée par Hibernate, avant Flyway. Au premier
+démarrage, Flyway constate qu'elle a des tables mais pas d'historique : il
+l'inscrit d'office en version 1 (`baseline-on-migrate`) et **ne rejoue pas** `V1`.
+Il faut donc que la base soit bien dans l'état décrit par `V1`. Avant de fusionner
+la PR qui introduit Flyway :
 
-### Migration ponctuelle — statut `IN_PROGRESS` des livraisons
+1. **Sauvegarder la base** :
 
-Même mécanisme que ci-dessus, sur `publication_deliveries.status` : l'ordonnanceur
-pose désormais `IN_PROGRESS` sur une livraison avant d'appeler le canal distant.
-Sans cette migration, **toute diffusion planifiée échoue** à la prise en charge
-(l'écriture est rejetée par la contrainte, rien n'est publié). À passer une fois,
-avant le premier déploiement qui embarque ce statut :
+   ```bash
+   docker compose -f docker-compose.preprod.yaml exec -T db \
+     pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > ~/agorapilot-avant-flyway.sql
+   ```
 
-```bash
-docker compose -f docker-compose.preprod.yaml exec -T db \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
-ALTER TABLE publication_deliveries DROP CONSTRAINT IF EXISTS publication_deliveries_status_check;
-ALTER TABLE publication_deliveries ADD CONSTRAINT publication_deliveries_status_check
-    CHECK (status IN ('PENDING', 'IN_PROGRESS', 'PUBLISHED', 'FAILED'));
-SQL
-```
+2. **Comparer les contraintes** avec celles de `V1` :
 
-Même requête sur `pg_constraint` que ci-dessus (avec `'publication_deliveries'`)
-si la contrainte porte un autre nom.
+   ```bash
+   docker compose -f docker-compose.preprod.yaml exec -T db \
+     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At -c "
+       SELECT conrelid::regclass || ' ' || conname FROM pg_constraint
+       WHERE connamespace = 'public'::regnamespace ORDER BY 1"
+   ```
+
+   Attendu, à l’ordre près : 22 lignes, une par contrainte déclarée dans
+   `V1__schema_initial.sql` (clés primaires `<table>_pkey`, contraintes d'enum
+   `<table>_<colonne>_check`, `medias_storage_key_key`,
+   `publication_medias_publication_id_media_id_key`, et les cinq clés étrangères
+   `fk…` d'Hibernate). Une contrainte d'enum renommée ou recréée à la main en
+   septembre se corrige avant le déploiement, avec un `ALTER TABLE … RENAME
+   CONSTRAINT`.
+
+   Les colonnes, elles, n'ont pas à être comparées à la main : si l'une manque
+   ou n'a pas le bon type, `validate` empêche le back de démarrer, et le
+   déploiement échoue sans rien modifier.
+
+3. **Après le déploiement**, l'historique doit montrer la ligne de référence :
+
+   ```bash
+   docker compose -f docker-compose.preprod.yaml exec -T db \
+     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+     -c "SELECT version, description, type, success FROM flyway_schema_history"
+   ```
+
+   Attendu : `1 | Schéma créé par Hibernate avant Flyway | BASELINE | t`.
+
+Les deux migrations manuelles de septembre (statut `FAILED` des occurrences,
+statut `IN_PROGRESS` des livraisons) sont déjà passées et intégrées à `V1`, qui
+porte les contraintes à jour. Elles restent décrites dans leurs changelogs
+respectifs.
 
 ## Développer le front en local contre le back de préproduction
 
@@ -433,9 +454,6 @@ manuel : restaurer `.env.bak`, et redéployer un tag antérieur en fixant
 
 ## Dette connue
 
-- **`ddl-auto: update`** : le schéma est encore dérivé des entités JPA. Le
-  passage à Flyway est un prérequis avant la mise en production
-  (cf. [`gitflow.md`](./gitflow.md)).
 - **Aucune authentification applicative** : la chaîne de filtres du profil
   `preprod` est permissive, comme en développement. La préproduction ne doit
   donc pas contenir de données réelles sensibles.

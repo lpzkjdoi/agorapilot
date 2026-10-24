@@ -39,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
         "agorapilot.media.root=${java.io.tmpdir}/agorapilot-media-test",
         // L'ordonnanceur ne doit pas balayer en parallèle du test.
         "agorapilot.scheduling.occurrences-delay=PT1H",

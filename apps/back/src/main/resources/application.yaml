@@ -19,9 +19,22 @@ spring:
       max-file-size: 15MB
       max-request-size: 20MB
 
+  # Le schéma est porté par Flyway (src/main/resources/db/migration) ; Hibernate
+  # se contente de vérifier au démarrage qu'il correspond aux entités, et refuse
+  # de démarrer sinon. Toute évolution du schéma passe par une nouvelle
+  # migration `V<n>__<sujet>.sql`, jamais par une modification d'une migration
+  # déjà jouée.
+  flyway:
+    # Une base créée avant Flyway (préproduction) a déjà toutes ses tables mais
+    # pas d'historique : elle est inscrite d'office en version 1 et ne rejoue
+    # pas le schéma de départ. Sans effet sur une base vide, qui joue V1.
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: Schéma créé par Hibernate avant Flyway
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:

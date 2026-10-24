@@ -136,7 +136,7 @@ Reste à faire :
 - Workflow de déploiement prod (tag `vX.Y.Z`, Environment `production` avec approbation manuelle).
 
 Prérequis avant le premier déploiement prod :
-- Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.
+- ~~Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.~~ Fait le 2026-10-24.
 - Authentification applicative : la chaîne de filtres actuelle est permissive.
 - **Une image par environnement, assumée comme telle.** C'est déjà le cas de fait
   depuis le badge d'environnement : `build-info.ts` fige l'environnement servi

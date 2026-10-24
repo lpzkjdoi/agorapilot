@@ -24,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
         "agorapilot.media.root=${java.io.tmpdir}/agorapilot-media-test",
         "spring.jpa.show-sql=false"
 })
