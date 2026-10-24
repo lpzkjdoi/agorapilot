@@ -1,17 +1,16 @@
 package fr.maximechazard.agorapilot.back.media;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.media.dtos.MediaContent;
 import fr.maximechazard.agorapilot.back.media.dtos.MediaDTO;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.UnsupportedMediaFileTypeException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -30,8 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Couvre le contrat HTTP de {@code /api/medias} — en particulier les codes
  * d'erreur et les en-têtes de cache sur lesquels le front s'appuie.
  */
-@WebMvcTest(MediaController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(MediaController.class)
 class MediaControllerTest {
 
     private static final byte[] CONTENT = "une affiche".getBytes(StandardCharsets.UTF_8);

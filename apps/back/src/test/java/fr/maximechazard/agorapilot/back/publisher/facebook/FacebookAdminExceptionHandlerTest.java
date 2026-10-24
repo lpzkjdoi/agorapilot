@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.publisher.facebook;
 
+import static fr.maximechazard.agorapilot.back.account.Permission.CHANNELS_MANAGE;
+import static fr.maximechazard.agorapilot.back.support.TestUsers.allowedTo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,7 +58,7 @@ class FacebookAdminExceptionHandlerTest {
                 GRAPH_API_ERROR.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8))
                 .given(tokenService).bootstrap(anyString());
 
-        mockMvc.perform(post("/admin/facebook/bootstrap").param("shortLivedToken", "peu-importe"))
+        mockMvc.perform(post("/admin/facebook/bootstrap").with(allowedTo(CHANNELS_MANAGE)).param("shortLivedToken", "peu-importe"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("facebook_api_error"))
                 .andExpect(jsonPath("$.message")
@@ -72,7 +74,7 @@ class FacebookAdminExceptionHandlerTest {
                 "indisponible".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8))
                 .given(tokenService).bootstrap(anyString());
 
-        mockMvc.perform(post("/admin/facebook/bootstrap").param("shortLivedToken", "peu-importe"))
+        mockMvc.perform(post("/admin/facebook/bootstrap").with(allowedTo(CHANNELS_MANAGE)).param("shortLivedToken", "peu-importe"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.upstreamStatus").value(503));
     }
@@ -84,7 +86,7 @@ class FacebookAdminExceptionHandlerTest {
                 "pas du json".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8))
                 .given(tokenService).bootstrap(anyString());
 
-        mockMvc.perform(post("/admin/facebook/bootstrap").param("shortLivedToken", "peu-importe"))
+        mockMvc.perform(post("/admin/facebook/bootstrap").with(allowedTo(CHANNELS_MANAGE)).param("shortLivedToken", "peu-importe"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("pas du json"));
     }
@@ -94,7 +96,7 @@ class FacebookAdminExceptionHandlerTest {
         willThrow(new IllegalStateException("No token available"))
                 .given(tokenService).getTokenStatus(anyString());
 
-        mockMvc.perform(get("/admin/facebook/token/status"))
+        mockMvc.perform(get("/admin/facebook/token/status").with(allowedTo(CHANNELS_MANAGE)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("facebook_invalid_state"))
                 .andExpect(jsonPath("$.message").value("No token available"));

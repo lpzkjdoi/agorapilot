@@ -86,4 +86,10 @@
     </button>
   </nav>
   <app-environment-badge />
+  @if (user(); as user) {
+    <div class="navbar-account">
+      <a class="navbar-username" routerLink="/mot-de-passe" title="Changer de mot de passe">{{ user.username }}</a>
+      <button type="button" class="navbar-logout" (click)="onLogout()">Se déconnecter</button>
+    </div>
+  }
 </header>

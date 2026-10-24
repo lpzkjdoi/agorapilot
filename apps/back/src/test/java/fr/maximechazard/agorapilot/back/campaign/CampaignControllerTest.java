@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.campaign;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
@@ -10,9 +11,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,8 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Couvre le contrat HTTP de {@code /api/campaigns}.
  */
-@WebMvcTest(CampaignController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(CampaignController.class)
 class CampaignControllerTest {
 
     @Autowired

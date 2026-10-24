@@ -153,9 +153,8 @@ Attendu : `{"status":"UP"}`.
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/api/publications
 ```
 
-Attendu : **200**. Un **401** signifierait que le profil `preprod` n'a pas de
-chaîne de filtres et que Spring Security est repassé sur son HTTP Basic par
-défaut (cas verrouillé par `SecurityConfigPreprodTest`).
+Attendu : **401**. L'API est fermée à qui n'est pas connecté (cas verrouillé par
+`SecurityConfigPreprodTest`). Un **200** signifierait qu'elle est ouverte.
 
 Enfin, depuis l'extérieur : `https://$PREPROD_HOST` doit servir l'application
 avec un certificat valide. Si le certificat manque, regarder les logs Traefik :
@@ -260,19 +259,79 @@ Trois points à connaître :
   dès qu'il s'agit d'écrire, ou de modifier le back, utiliser
   [`docker-compose.yaml`](../docker-compose.yaml).
 
+## Comptes et connexion
+
+L'application exige un compte (cf.
+[proposition](./proposals/2026-10-24-comptes-et-droits.md)). Tout est refusé par
+défaut : un compte n'a que les droits qu'on lui donne.
+
+### Premier compte
+
+Au démarrage, si la base n'a **aucun** compte, le back crée un administrateur
+(tous les droits) à partir de deux valeurs de l'Environment GitHub `preprod` :
+
+- Variable `AGORAPILOT_ADMIN_USERNAME` : 3 à 32 caractères parmi `a-z`, `0-9`,
+  `.`, `_` et `-` ;
+- Secret `AGORAPILOT_ADMIN_PASSWORD` : 12 caractères au moins.
+
+Ce mot de passe est **provisoire** : à la première connexion, l'application
+demande d'en choisir un autre avant toute chose. Une valeur hors règle empêche
+le back de démarrer, plutôt que de créer un compte faible. Sans ces valeurs,
+une base vide démarre sans compte, et personne ne peut se connecter.
+
+Une fois le compte créé, ces valeurs ne servent plus. Les retirer de
+l'Environment n'a aucun effet sur le compte.
+
+### Sessions
+
+- Le cookie de session est `HttpOnly`, `Secure` et `SameSite=Strict`. Il
+  expire après 30 minutes d'inactivité, et au plus tard 12 heures après la
+  connexion.
+- Après 5 échecs de connexion consécutifs, le compte est verrouillé pendant
+  15 minutes.
+- Statut et droits sont relus à chaque requête. Désactiver un compte ou lui
+  retirer un droit prend effet tout de suite, et changer de mot de passe coupe
+  ses autres sessions.
+
+### Appeler l'API depuis le VPS
+
+Les endpoints `/admin/**` (jeton Facebook, état de l'ordonnanceur) exigent une
+session ouverte par un compte qui a le droit `channels:manage`, ainsi que le
+jeton CSRF sur les requêtes qui modifient. Depuis le VPS, ou à travers un tunnel
+SSH (`ssh -L 8080:127.0.0.1:8080 utilisateur@vps`) :
+
+```bash
+B=http://127.0.0.1:8080
+read -rp 'Pseudo : ' U; read -rsp 'Mot de passe : ' P; echo
+XSRF=$(curl -s -D - -o /dev/null $B/api/me | sed -n 's/^[Ss]et-[Cc]ookie: XSRF-TOKEN=\([^;]*\).*/\1/p' | tr -d '\r')
+SESSION=$(curl -s -D - -o /dev/null -H "Cookie: XSRF-TOKEN=$XSRF" -H "X-XSRF-TOKEN: $XSRF" \
+  -H 'Content-Type: application/json' -d "{\"username\":\"$U\",\"password\":\"$P\"}" \
+  $B/api/auth/login | sed -n 's/^[Ss]et-[Cc]ookie: JSESSIONID=\([^;]*\).*/\1/p' | tr -d '\r')
+unset P
+C="Cookie: JSESSIONID=$SESSION; XSRF-TOKEN=$XSRF"
+```
+
+Les cookies passent en en-tête plutôt que par `curl -c` / `-b` : le cookie de
+session est `Secure`, et `curl` refuse de le renvoyer en HTTP. Un mot de passe
+contenant `"` ou `\` casse ce JSON : le changer, ou écrire le corps à la main.
+
+Ensuite, pour une lecture : `curl -s -H "$C" $B/admin/scheduler/status`. Pour
+une écriture, ajouter le jeton : `curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" …`.
+Pour fermer la session :
+
+```bash
+curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" $B/api/auth/logout
+```
+
 ## Endpoints d'administration Facebook
 
 `FacebookAdminController` expose `POST /admin/facebook/bootstrap` et
-`GET /admin/facebook/token/status` **sans aucune authentification**. Ils ne sont
-donc **pas** proxifiés par le nginx du front : depuis Internet, `/admin/...`
-renvoie l'`index.html` de la SPA, jamais l'API.
+`GET /admin/facebook/token/status`, réservés aux comptes qui ont le droit
+`channels:manage`. Ils ne sont **pas** proxifiés par le nginx du front : depuis
+Internet, `/admin/...` renvoie l'`index.html` de la SPA, jamais l'API.
 
-Ils restent joignables sur la boucle locale du VPS. Pour initialiser le token de
-page depuis un poste de travail, ouvrir un tunnel SSH :
-
-```bash
-ssh -L 8080:127.0.0.1:8080 utilisateur@vps
-```
+Ils restent joignables sur la boucle locale du VPS, avec une session ouverte
+comme décrit dans [Appeler l'API depuis le VPS](#appeler-lapi-depuis-le-vps).
 
 Il faut ensuite un **token utilisateur de courte durée**, généré depuis le
 [Graph API Explorer](https://developers.facebook.com/tools/explorer/). Deux
@@ -292,7 +351,7 @@ affiche son App ID.
 Le token se passe ensuite **en paramètre de requête** — il est obligatoire :
 
 ```bash
-curl -X POST "http://127.0.0.1:8080/admin/facebook/bootstrap?shortLivedToken=LE_TOKEN"
+curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" "$B/admin/facebook/bootstrap?shortLivedToken=LE_TOKEN"
 ```
 
 Réponse attendue : `Token successfully initialized`. Le service échange ce token
@@ -300,7 +359,7 @@ contre un token utilisateur longue durée, en dérive le token de page, et stock
 les deux en base (table `facebook_tokens`). Vérifier ensuite :
 
 ```bash
-curl -s http://127.0.0.1:8080/admin/facebook/token/status
+curl -s -H "$C" $B/admin/facebook/token/status
 ```
 
 Un `expiresAt` à dix ans (`daysRemaining` ≈ 3650) est normal : Facebook a renvoyé
@@ -315,11 +374,12 @@ serait en UTC et le renouvellement aurait lieu à une autre heure locale.
 
 ## État de l'ordonnanceur de diffusion
 
-`GET /admin/scheduler/status`, comme les endpoints Facebook : non authentifié,
-non proxifié par le nginx du front, joignable seulement depuis le VPS.
+`GET /admin/scheduler/status`, comme les endpoints Facebook : droit
+`channels:manage`, non proxifié par le nginx du front, joignable seulement
+depuis le VPS.
 
 ```bash
-curl -s http://127.0.0.1:8080/admin/scheduler/status
+curl -s -H "$C" $B/admin/scheduler/status
 ```
 
 | Champ | Sens |
@@ -437,11 +497,6 @@ manuel : restaurer `.env.bak`, et redéployer un tag antérieur en fixant
 
 ## Dette connue
 
-- **Aucune authentification applicative** : la chaîne de filtres du profil
-  `preprod` est permissive, comme en développement. La préproduction ne doit
-  donc pas contenir de données réelles sensibles.
-- **Swagger UI est public** sur la préproduction (`/swagger-ui/`), choix assumé
-  pour un environnement de test.
 - **La validité réelle du token Facebook n'est jamais vérifiée.**
   `FacebookTokenService.renewIfNeeded()` ne se déclenche que si la date
   d'expiration *stockée* arrive à moins de 15 jours. Avec un token permanent
