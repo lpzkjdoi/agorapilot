@@ -36,7 +36,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
         "agorapilot.media.root=${java.io.tmpdir}/agorapilot-media-test",
         // L'ordonnanceur ne doit pas servir les diffusions passées du jeu de test.
         "agorapilot.scheduling.occurrences-delay=PT1H",
