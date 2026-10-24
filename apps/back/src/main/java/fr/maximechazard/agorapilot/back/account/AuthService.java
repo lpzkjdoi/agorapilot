@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.account;
 
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import fr.maximechazard.agorapilot.back.account.exceptions.AuthenticationFailedException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ public class AuthService {
     private final UserAccountRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final SecurityProperties properties;
+    private final SecurityEventService events;
     private final Clock clock;
 
     /**
@@ -27,10 +30,11 @@ public class AuthService {
     private final String dummyHash;
 
     public AuthService(UserAccountRepository repository, PasswordEncoder passwordEncoder,
-                       SecurityProperties properties, Clock clock) {
+                       SecurityProperties properties, SecurityEventService events, Clock clock) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
+        this.events = events;
         this.clock = clock;
         this.dummyHash = passwordEncoder.encode("agorapilot-dummy-password");
     }
@@ -53,6 +57,7 @@ public class AuthService {
         if (found.isEmpty()) {
             passwordEncoder.matches(password, dummyHash);
             log.info("Connexion refusée : pseudo inconnu");
+            events.record(SecurityEventType.LOGIN_FAILED, null, username, "Pseudo inconnu");
             throw new AuthenticationFailedException();
         }
 
@@ -62,6 +67,7 @@ public class AuthService {
         if (account.isLocked(now)) {
             passwordEncoder.matches(password, dummyHash);
             log.info("Connexion refusée pour {} : compte verrouillé jusqu'à {}", account.getUsername(), account.getLockedUntil());
+            events.record(SecurityEventType.LOGIN_FAILED, null, account.getUsername(), "Compte verrouillé");
             throw new AuthenticationFailedException();
         }
 
@@ -72,6 +78,7 @@ public class AuthService {
 
         if (account.getStatus() == AccountStatus.DISABLED) {
             log.info("Connexion refusée pour {} : compte désactivé", account.getUsername());
+            events.record(SecurityEventType.LOGIN_FAILED, null, account.getUsername(), "Compte désactivé");
             throw new AuthenticationFailedException();
         }
 
@@ -79,6 +86,7 @@ public class AuthService {
         account.setLockedUntil(null);
         account.setLastLoginAt(now);
         log.info("Connexion de {}", account.getUsername());
+        events.record(SecurityEventType.LOGIN_SUCCEEDED, account.getUsername(), null, null);
 
         return repository.save(account);
     }
@@ -116,6 +124,7 @@ public class AuthService {
 
         repository.save(account);
         log.info("Mot de passe changé par {}", account.getUsername());
+        events.record(SecurityEventType.PASSWORD_CHANGED, account.getUsername(), null, null);
 
         return now;
     }
@@ -151,9 +160,13 @@ public class AuthService {
             account.setLockedUntil(now.plus(properties.lockDuration()));
             log.warn("Compte {} verrouillé jusqu'à {} après {} échecs de connexion",
                     account.getUsername(), account.getLockedUntil(), failures);
+            events.record(SecurityEventType.LOGIN_FAILED, null, account.getUsername(), "Mot de passe erroné");
+            events.record(SecurityEventType.ACCOUNT_LOCKED, null, account.getUsername(),
+                    failures + " échecs consécutifs, verrouillé jusqu'à " + account.getLockedUntil());
         } else {
             account.setFailedAttempts(failures);
             log.info("Connexion refusée pour {} : mot de passe erroné ({} échec(s))", account.getUsername(), failures);
+            events.record(SecurityEventType.LOGIN_FAILED, null, account.getUsername(), "Mot de passe erroné");
         }
 
         repository.save(account);

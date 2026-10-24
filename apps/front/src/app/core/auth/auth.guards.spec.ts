@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { firstValueFrom, isObservable, Observable, of } from 'rxjs';
-import { authGuard, signedInGuard, signedOutGuard } from './auth.guards';
+import { authGuard, permissionGuard, signedInGuard, signedOutGuard } from './auth.guards';
 import { CurrentUser } from './auth.model';
 import { AuthService } from './auth.service';
 
@@ -59,6 +59,20 @@ describe('auth guards', () => {
 
       current = { username: 'camille', status: 'ACTIVE', permissions: [] };
       expect(await run(signedOutGuard)).toBe('/dashboard');
+    });
+  });
+
+  describe('permissionGuard', () => {
+    it('should let in only the accounts holding the permission', async () => {
+      const guard = permissionGuard('users:manage');
+
+      expect(await run(guard)).toBe('/dashboard');
+
+      current = { username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] };
+      expect(await run(guard)).toBe('/dashboard');
+
+      current = { username: 'camille', status: 'ACTIVE', permissions: ['users:manage'] };
+      expect(await run(guard)).toBe(true);
     });
   });
 });

@@ -42,6 +42,18 @@ describe('NavbarComponent', () => {
     expect(navigate).toHaveBeenCalledWith('/connexion');
   });
 
+  it('should show the Comptes entry only to accounts administrators', () => {
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[routerLink="/comptes"]')).toBeNull();
+
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ['users:manage'] });
+    fixture.detectChanges();
+    expect(compiled.querySelector('[routerLink="/comptes"]')).not.toBeNull();
+  });
+
   it('should show no account block without a signed-in user', () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     fixture.detectChanges();

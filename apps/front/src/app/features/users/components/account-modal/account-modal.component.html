@@ -1,0 +1,57 @@
+<button type="button" class="modal-backdrop" aria-label="Fermer la fenêtre" (click)="closed.emit()"></button>
+
+<div class="modal-panel account-panel" role="dialog" aria-modal="true" aria-labelledby="account-title">
+  <header class="modal-header">
+    <div>
+      @if (account(); as existing) {
+        <h2 id="account-title">Droits de {{ existing.username }}</h2>
+        <p class="modal-subtitle">Pris en compte dès sa prochaine action, sans reconnexion.</p>
+      } @else {
+        <h2 id="account-title">Créer un compte</h2>
+        <p class="modal-subtitle">
+          Un mot de passe provisoire sera généré, à transmettre à la personne : elle le changera à sa première
+          connexion.
+        </p>
+      }
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"
+           fill="currentColor" aria-hidden="true">
+        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  <form class="account-form" (submit)="$event.preventDefault(); onSubmit()">
+    @if (!account()) {
+      <label class="account-field" for="account-username">
+        Pseudo
+        <input id="account-username" name="username" [value]="username()" (input)="username.set($any($event.target).value)"
+               autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" />
+        <span class="account-hint">3 à 32 caractères : lettres minuscules, chiffres, « . », « _ » ou « - ».</span>
+      </label>
+      @if (usernameError()) {
+        <p class="account-error" role="alert">Ce pseudo ne respecte pas la règle.</p>
+      }
+    }
+
+    <app-permission-picker [(selected)]="permissions" [grantable]="grantable()" />
+
+    @if (permissions().length === 0) {
+      <p class="account-hint">Sans aucun droit, le compte pourra se connecter mais ne verra rien.</p>
+    }
+    @if (error(); as message) {
+      <p class="account-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">Annuler</button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        @if (saving()) {
+          <app-loader size="sm" variant="dark" label="Enregistrement en cours…" />
+        }
+        {{ account() ? 'Enregistrer les droits' : 'Créer le compte' }}
+      </button>
+    </div>
+  </form>
+</div>

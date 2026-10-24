@@ -20,7 +20,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 | Date | Sujet | Statut |
 |---|---|---|
-| 2026-10-24 | [Comptes applicatifs et droits](./proposals/2026-10-24-comptes-et-droits.md) | En cours : socle d'authentification livré |
+| 2026-10-24 | [Comptes applicatifs et droits](./proposals/2026-10-24-comptes-et-droits.md) | En cours : socle et administration des comptes livrés |
 | 2026-09-24 | [Fonctionnalités IA et traitement des mails](./proposals/2026-09-24-ai-features-and-email-intake.md) | En attente |
 | 2026-07-18 | [CI/CD : Front CI, durcissement Back CI et gitflow](./changelog/2026-07-18-cicd-pipelines-gitflow.md) | _(voir branche `develop`)_ |
 | 2026-07-20 | [Migration de la navbar (gauche → haut)](./changelog/2026-07-20-navbar-top-migration.md) | _(voir branche `claude/session-xfe1tv`)_ |
@@ -59,3 +59,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-10-24 | [Modifier et supprimer une publication](./changelog/2026-10-24-crud-publications.md) | _voir PR_ |
 | 2026-10-24 | [Migrations de schéma versionnées (Flyway)](./changelog/2026-10-24-flyway.md) | _voir PR_ |
 | 2026-10-24 | [Comptes et authentification — socle](./changelog/2026-10-24-authentification.md) | _voir PR_ |
+| 2026-10-24 | [Administration des comptes et journal de sécurité](./changelog/2026-10-24-administration-comptes.md) | _voir PR_ |

@@ -14,6 +14,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Set;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -29,9 +34,9 @@ import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_D
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_PUBLISH;
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_READ;
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_WRITE;
-import static fr.maximechazard.agorapilot.back.support.TestUsers.allPermissions;
-import static fr.maximechazard.agorapilot.back.support.TestUsers.allowedTo;
+import static fr.maximechazard.agorapilot.back.account.Permission.USERS_MANAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -64,9 +69,26 @@ class EndpointPermissionsTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private UserAccountRepository repository;
+
     /** Le jeton Facebook ne doit pas être réellement demandé à Facebook. */
     @MockitoBean
     private FacebookTokenService facebookTokenService;
+
+    /**
+     * Une session ouverte par un vrai compte qui détient exactement ces droits :
+     * {@code AccountRefreshFilter} le relit en base, comme en production.
+     */
+    private RequestPostProcessor accountWith(Permission... permissions) {
+        repository.deleteAll();
+        UserAccount account = repository.save(new UserAccount("tester", "pas-de-mot-de-passe", AccountStatus.ACTIVE,
+                Set.of(permissions), LocalDateTime.now().minusDays(1).truncatedTo(ChronoUnit.MICROS)));
+        AuthenticatedUser user = new AuthenticatedUser(account.getId(), account.getUsername(), LocalDateTime.now());
+        RequestPostProcessor session = authentication(AccountRefreshFilter.authenticationFor(user, account));
+
+        return request -> csrf().postProcessRequest(session.postProcessRequest(request));
+    }
 
     record Endpoint(HttpMethod method, String path, Permission required) {
         MockHttpServletRequestBuilder toRequest() {
@@ -113,7 +135,14 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.GET, "/api/medias/999/file", MEDIAS_READ),
                 new Endpoint(HttpMethod.POST, "/api/medias", MEDIAS_WRITE),
                 new Endpoint(HttpMethod.PATCH, "/api/medias/999", MEDIAS_WRITE),
-                new Endpoint(HttpMethod.DELETE, "/api/medias/999", MEDIAS_DELETE)
+                new Endpoint(HttpMethod.DELETE, "/api/medias/999", MEDIAS_DELETE),
+
+                new Endpoint(HttpMethod.GET, "/api/users", USERS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/api/users", USERS_MANAGE),
+                new Endpoint(HttpMethod.PUT, "/api/users/999/permissions", USERS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/api/users/999/disable", USERS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/api/users/999/password-reset", USERS_MANAGE),
+                new Endpoint(HttpMethod.GET, "/api/security-events", USERS_MANAGE)
         );
     }
 
@@ -131,14 +160,14 @@ class EndpointPermissionsTest {
                 .filter(permission -> permission != endpoint.required())
                 .toArray(Permission[]::new);
 
-        mockMvc.perform(endpoint.toRequest().with(allowedTo(allButRequired)))
+        mockMvc.perform(endpoint.toRequest().with(accountWith(allButRequired)))
                .andExpect(status().isForbidden());
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("endpoints")
     void is_open_with_its_permission_alone(Endpoint endpoint) throws Exception {
-        int status = mockMvc.perform(endpoint.toRequest().with(allowedTo(endpoint.required())))
+        int status = mockMvc.perform(endpoint.toRequest().with(accountWith(endpoint.required())))
                             .andReturn().getResponse().getStatus();
 
         assertThat(status).as(endpoint.toString()).isNotIn(401, 403);
@@ -147,9 +176,9 @@ class EndpointPermissionsTest {
     /** Un endpoint sans règle est fermé, quels que soient les droits. */
     @Test
     void denies_any_route_without_a_rule_even_with_every_permission() throws Exception {
-        mockMvc.perform(get("/api/unknown").with(allPermissions()))
+        mockMvc.perform(get("/api/unknown").with(accountWith(Permission.values())))
                .andExpect(status().isForbidden());
-        mockMvc.perform(request(HttpMethod.PATCH, "/api/publications/1").with(allPermissions()))
+        mockMvc.perform(request(HttpMethod.PATCH, "/api/publications/1").with(accountWith(Permission.values())))
                .andExpect(status().isForbidden());
     }
 

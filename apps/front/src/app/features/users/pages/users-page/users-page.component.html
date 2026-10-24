@@ -1,0 +1,117 @@
+<div class="users-page">
+  <header class="users-header">
+    <div>
+      <h1>Comptes</h1>
+      <p class="users-subtitle">Une personne, un compte. Chacun n’a que les droits qu’on lui donne.</p>
+    </div>
+    <button type="button" class="users-create" (click)="openCreate()">Créer un compte</button>
+  </header>
+
+  @if (error(); as message) {
+    <p class="users-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <div class="users-loading"><app-loader size="lg" label="Chargement des comptes…" /></div>
+  } @else {
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th scope="col">Pseudo</th>
+          <th scope="col">Statut</th>
+          <th scope="col">Droits</th>
+          <th scope="col">Dernière connexion</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (account of accounts(); track account.id) {
+          <tr>
+            <td class="users-name">
+              {{ account.username }}
+              @if (account.username === me()) {
+                <span class="users-self">vous</span>
+              }
+            </td>
+            <td>
+              <span class="users-status users-status-{{ account.status.toLowerCase() }}">
+                {{ statusLabels[account.status] }}
+              </span>
+              @if (account.lockedUntil) {
+                <span class="users-locked">Verrouillé jusqu’à {{ account.lockedUntil | date:'HH:mm':'':'fr-FR' }}</span>
+              }
+            </td>
+            <td>{{ profileOf(account) }}</td>
+            <td>
+              {{ account.lastLoginAt ? (account.lastLoginAt | date:'d MMM y, HH:mm':'':'fr-FR') : 'Jamais' }}
+            </td>
+            <td class="users-actions">
+              @if (account.username !== me()) {
+                @let pending = confirming();
+                @if (pending && pending.account.id === account.id) {
+                  <span class="users-confirm" role="alert">
+                    {{ pending.action === 'disable'
+                      ? 'Désactiver ce compte et couper ses sessions ?'
+                      : 'Donner un nouveau mot de passe provisoire et couper ses sessions ?' }}
+                  </span>
+                  <button type="button" (click)="confirming.set(null)">Annuler</button>
+                  <button type="button" class="danger" (click)="confirm()">Confirmer</button>
+                } @else {
+                  <button type="button" [disabled]="busy() === account.id" (click)="openPermissions(account)">Droits</button>
+                  <button type="button" [disabled]="busy() === account.id" (click)="ask(account, 'reset')">
+                    {{ account.status === 'DISABLED' ? 'Réactiver' : 'Réinitialiser le mot de passe' }}
+                  </button>
+                  @if (account.status !== 'DISABLED') {
+                    <button type="button" class="danger" [disabled]="busy() === account.id"
+                            (click)="ask(account, 'disable')">Désactiver</button>
+                  }
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <section class="users-journal" aria-labelledby="journal-title">
+    <h2 id="journal-title">Journal de sécurité</h2>
+    @if (events().length === 0) {
+      <p class="users-subtitle">Aucun événement.</p>
+    } @else {
+      <ul>
+        @for (event of events(); track event.id) {
+          <li class="users-event" [class.users-event-alert]="event.type === 'LOGIN_FAILED' || event.type === 'ACCOUNT_LOCKED'">
+            <time>{{ event.occurredAt | date:'d MMM, HH:mm:ss':'':'fr-FR' }}</time>
+            <strong>{{ eventLabels[event.type] }}</strong>
+            <span>
+              @if (event.actor) { {{ event.actor }} }
+              @if (event.actor && event.target) { → }
+              @if (event.target) { {{ event.target }} }
+            </span>
+            @if (event.details) {
+              <span class="users-event-details">{{ event.details }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+@if (editing() !== undefined) {
+  <app-account-modal
+    [account]="editing() ?? null"
+    [grantable]="grantable()"
+    [saving]="saving()"
+    [error]="modalError()"
+    (closed)="closeModal()"
+    (submitted)="onSubmitted($event)"
+  />
+}
+
+@if (revealed(); as shown) {
+  <app-temporary-password-modal
+    [username]="shown.account.username"
+    [password]="shown.temporaryPassword"
+    (closed)="revealed.set(null)"
+  />
+}

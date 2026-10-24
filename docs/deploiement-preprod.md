@@ -282,6 +282,26 @@ une base vide démarre sans compte, et personne ne peut se connecter.
 Une fois le compte créé, ces valeurs ne servent plus. Les retirer de
 l'Environment n'a aucun effet sur le compte.
 
+### Administrer les comptes
+
+Les autres comptes se créent depuis la page **Comptes** de l'application, qui
+n'apparaît qu'aux comptes ayant le droit `users:manage`. On y crée un compte, on
+règle ses droits à partir d'un profil (Lecteur, Rédacteur, Diffuseur,
+Administrateur), on le désactive ou on réinitialise son mot de passe. Le mot de
+passe provisoire ne s'affiche qu'une seule fois : il faut le transmettre à la
+personne par un canal sûr. Réactiver un compte désactivé passe par une
+réinitialisation : il repart avec un nouveau mot de passe provisoire.
+
+Deux garde-fous s'ajoutent au droit `users:manage` :
+
+- **aucune action sur son propre compte** (ses droits, sa désactivation, son mot
+  de passe, qui se change depuis le lien du pseudo dans le bandeau). Il reste
+  donc toujours au moins un administrateur ;
+- **on ne donne ni ne retire que des droits qu'on détient soi-même**.
+
+Le **journal de sécurité**, en bas de la même page, liste les connexions, les
+refus, les verrouillages et toutes les actions d'administration.
+
 ### Sessions
 
 - Le cookie de session est `HttpOnly`, `Secure` et `SameSite=Strict`. Il

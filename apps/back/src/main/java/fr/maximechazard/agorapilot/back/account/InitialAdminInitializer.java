@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.account;
 
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ public class InitialAdminInitializer implements ApplicationRunner {
     private final PasswordEncoder passwordEncoder;
     private final SecurityProperties properties;
     private final AuthService authService;
+    private final SecurityEventService events;
 
     @Override
     @Transactional
@@ -59,5 +62,7 @@ public class InitialAdminInitializer implements ApplicationRunner {
         repository.save(new UserAccount(username, passwordEncoder.encode(admin.password()),
                 AccountStatus.PENDING_PASSWORD, EnumSet.allOf(Permission.class), authService.now()));
         log.info("Premier compte créé : {}, administrateur, mot de passe provisoire à changer à la première connexion.", username);
+        events.record(SecurityEventType.ACCOUNT_CREATED, null, username,
+                "Premier compte, créé au démarrage avec tous les droits");
     }
 }

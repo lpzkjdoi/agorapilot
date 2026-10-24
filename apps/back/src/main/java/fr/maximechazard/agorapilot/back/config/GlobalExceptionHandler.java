@@ -1,6 +1,9 @@
 package fr.maximechazard.agorapilot.back.config;
 
+import fr.maximechazard.agorapilot.back.account.exceptions.AccountNotFoundException;
 import fr.maximechazard.agorapilot.back.account.exceptions.AuthenticationFailedException;
+import fr.maximechazard.agorapilot.back.account.exceptions.ForbiddenAccountOperationException;
+import fr.maximechazard.agorapilot.back.account.exceptions.InvalidAccountRequestException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
@@ -131,6 +134,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<ApiError> handleAuthenticationFailedException(AuthenticationFailedException exception) {
         return build(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<ApiError> handleAccountNotFoundException(AccountNotFoundException exception) {
+        return build(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenAccountOperationException.class)
+    public ResponseEntity<ApiError> handleForbiddenAccountOperationException(ForbiddenAccountOperationException exception) {
+        return build(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidAccountRequestException.class)
+    public ResponseEntity<ApiError> handleInvalidAccountRequestException(InvalidAccountRequestException exception) {
+        return build(exception.isConflict() ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     @ExceptionHandler(InvalidPasswordException.class)

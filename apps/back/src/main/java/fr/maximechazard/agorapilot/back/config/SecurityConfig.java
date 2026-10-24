@@ -40,6 +40,7 @@ import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_D
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_PUBLISH;
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_READ;
 import static fr.maximechazard.agorapilot.back.account.Permission.PUBLICATIONS_WRITE;
+import static fr.maximechazard.agorapilot.back.account.Permission.USERS_MANAGE;
 
 /**
  * Une seule chaîne, pour tous les profils : tout est refusé sauf ce qui est
@@ -130,6 +131,12 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/medias").hasAuthority(MEDIAS_WRITE.code())
             .requestMatchers(HttpMethod.PATCH, "/api/medias/*").hasAuthority(MEDIAS_WRITE.code())
             .requestMatchers(HttpMethod.DELETE, "/api/medias/*").hasAuthority(MEDIAS_DELETE.code())
+
+            // ---- Comptes et journal de sécurité
+            .requestMatchers(HttpMethod.GET, "/api/users", "/api/security-events").hasAuthority(USERS_MANAGE.code())
+            .requestMatchers(HttpMethod.POST, "/api/users", "/api/users/*/disable", "/api/users/*/password-reset")
+                .hasAuthority(USERS_MANAGE.code())
+            .requestMatchers(HttpMethod.PUT, "/api/users/*/permissions").hasAuthority(USERS_MANAGE.code())
 
             // ---- Tout le reste
             .anyRequest().denyAll();
