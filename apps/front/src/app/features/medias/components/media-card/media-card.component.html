@@ -38,11 +38,15 @@
       <button type="button" (click)="confirmingDelete.set(false)">Annuler</button>
       <button type="button" class="danger" [disabled]="busy()" (click)="confirmDelete()">Confirmer</button>
     } @else {
-      <button type="button" [disabled]="busy()" (click)="renamed.emit(media())">Modifier</button>
-      <button type="button" [disabled]="busy()" (click)="archiveToggled.emit(media())">
-        {{ media().archived ? 'Désarchiver' : 'Archiver' }}
-      </button>
-      <button type="button" class="danger" [disabled]="busy()" (click)="confirmingDelete.set(true)">Supprimer</button>
+      @if (canEdit()) {
+        <button type="button" [disabled]="busy()" (click)="renamed.emit(media())">Modifier</button>
+        <button type="button" [disabled]="busy()" (click)="archiveToggled.emit(media())">
+          {{ media().archived ? 'Désarchiver' : 'Archiver' }}
+        </button>
+      }
+      @if (canDelete()) {
+        <button type="button" class="danger" [disabled]="busy()" (click)="confirmingDelete.set(true)">Supprimer</button>
+      }
     }
   </div>
 </article>

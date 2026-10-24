@@ -88,7 +88,8 @@ class PublicationCrudPersistenceTest {
         publicationOccurrenceRepository.deleteAll();
         publicationRepository.deleteAll();
         campaignRepository.deleteAll();
-        publicationId = publicationRepository.save(new Publication("Marché de Noël samedi", PublicationStatus.DRAFT)).getId();
+        // Vérifiée : seule une publication vérifiée se programme.
+        publicationId = publicationRepository.save(new Publication("Marché de Noël samedi", PublicationStatus.VERIFIED)).getId();
     }
 
     // ------------------------------------------------------------ helpers
@@ -135,7 +136,7 @@ class PublicationCrudPersistenceTest {
 
     @Test
     void updates_the_content_and_the_status() {
-        PublicationDTO updated = service.update(publicationId, update("Marché de Noël dimanche", PublicationStatus.VERIFIED));
+        PublicationDTO updated = service.update(publicationId, update("Marché de Noël dimanche", PublicationStatus.VERIFIED), true);
 
         assertThat(updated.content()).isEqualTo("Marché de Noël dimanche");
         assertThat(updated.status()).isEqualTo(PublicationStatus.VERIFIED);
@@ -149,7 +150,7 @@ class PublicationCrudPersistenceTest {
     void keeps_the_scheduled_occurrences_of_an_updated_publication() {
         Long occurrenceId = scheduleOn(publicationId, TOMORROW);
 
-        service.update(publicationId, update("Marché de Noël dimanche", PublicationStatus.VERIFIED));
+        service.update(publicationId, update("Marché de Noël dimanche", PublicationStatus.VERIFIED), true);
 
         PublicationOccurrence occurrence = publicationOccurrenceRepository.findById(occurrenceId).orElseThrow();
         assertThat(occurrence.getStatus()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
@@ -157,7 +158,7 @@ class PublicationCrudPersistenceTest {
 
     @Test
     void refuses_to_update_an_unknown_publication() {
-        assertThatThrownBy(() -> service.update(404L, update("Texte", PublicationStatus.DRAFT)))
+        assertThatThrownBy(() -> service.update(404L, update("Texte", PublicationStatus.DRAFT), true))
                 .isInstanceOf(PublicationNotFoundException.class);
     }
 
@@ -223,7 +224,7 @@ class PublicationCrudPersistenceTest {
         // En production, la session reste ouverte pendant la requête HTTP (open-in-view).
         List<CampaignDTO> campaigns = transactionTemplate.execute(status -> campaignService.getAll());
         assertThat(campaigns.getFirst().publications()).isEmpty();
-        assertThatThrownBy(() -> service.update(publicationId, update("Texte", PublicationStatus.DRAFT)))
+        assertThatThrownBy(() -> service.update(publicationId, update("Texte", PublicationStatus.DRAFT), true))
                 .isInstanceOf(PublicationNotFoundException.class);
         assertThatThrownBy(() -> scheduleOn(publicationId, TOMORROW))
                 .isInstanceOf(PublicationNotFoundException.class);

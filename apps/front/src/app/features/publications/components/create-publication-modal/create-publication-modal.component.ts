@@ -26,6 +26,13 @@ export class CreatePublicationModalComponent {
   /** Publication à modifier ; absente, la modale crée une publication. */
   readonly publication = input<Publication | null>(null);
 
+  /** `publications:verify`, transmis au formulaire. */
+  readonly canVerify = input(true);
+
+  /** Sans le droit de vérifier, modifier une publication vérifiée la repasse en brouillon. */
+  protected readonly losesVerification = computed(() =>
+    !this.canVerify() && this.publication()?.status === 'VERIFIED');
+
   protected readonly initialValue = computed<CreatePublicationFormValue | null>(() => {
     const publication = this.publication();
 

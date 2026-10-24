@@ -4,18 +4,20 @@
       <h1>Publications</h1>
       <p class="publications-subtitle">Gérez et organisez vos publications</p>
     </div>
-    <button type="button" class="publications-create" (click)="createModalOpen.set(true)">
-      <svg xmlns="http://www.w3.org/2000/svg"
-           height="16px"
-           viewBox="0 -960 960 960"
-           width="16px"
-           fill="currentColor"
-           aria-hidden="true"
-      >
-        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-      </svg>
-      Créer une publication
-    </button>
+    @if (canCreate()) {
+      <button type="button" class="publications-create" (click)="createModalOpen.set(true)">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="16px"
+             viewBox="0 -960 960 960"
+             width="16px"
+             fill="currentColor"
+             aria-hidden="true"
+        >
+          <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+        </svg>
+        Créer une publication
+      </button>
+    }
   </header>
 
   <app-publication-filters
@@ -50,6 +52,12 @@
               [publication]="publication"
               [publishing]="publishing().has(publication.id)"
               [deleting]="deleting().has(publication.id)"
+              [canEdit]="canCreate()"
+              [canDelete]="canDelete()"
+              [canPublish]="canPublish()"
+              [canSchedule]="canSchedule()"
+              [canManageMedias]="canManageMedias()"
+              [canAssignCampaign]="canAssignCampaign()"
               (generateXlsx)="onGenerateXlsx($event)"
               (manageMedias)="onManageMedias($event)"
               (publishOnFacebook)="onPublishOnFacebook($event)"
@@ -68,6 +76,7 @@
 @if (createModalOpen()) {
   <app-create-publication-modal
     [creating]="creating()"
+    [canVerify]="canVerify()"
     (closed)="createModalOpen.set(false)"
     (submitted)="onCreate($event)"
   />
@@ -77,6 +86,7 @@
   <app-create-publication-modal
     [publication]="publication"
     [creating]="saving()"
+    [canVerify]="canVerify()"
     (closed)="editingFor.set(null)"
     (submitted)="onEditSubmitted($event)"
   />

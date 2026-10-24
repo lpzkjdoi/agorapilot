@@ -155,4 +155,21 @@ describe('MediaCardComponent', () => {
 
     expect(Array.from(buttons).every((button) => button.disabled)).toBe(true);
   });
+
+  it('should offer only the actions the account may perform', () => {
+    fixture = TestBed.createComponent(MediaCardComponent);
+    fixture.componentRef.setInput('media', media());
+    fixture.componentRef.setInput('canEdit', false);
+    fixture.detectChanges();
+    let labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.media-actions button'))
+                      .map((button) => button.textContent?.trim());
+    expect(labels).toEqual(['Supprimer']);
+
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('canDelete', false);
+    fixture.detectChanges();
+    labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.media-actions button'))
+                  .map((button) => button.textContent?.trim());
+    expect(labels).toEqual(['Modifier', 'Archiver']);
+  });
 });

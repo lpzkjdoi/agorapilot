@@ -18,14 +18,16 @@
       <p class="suspension-reason">{{ suspension.reason }}</p>
       <p class="suspension-hint">
         Les diffusions prévues sont mises en attente ; celles qui dépassent le retard toléré passent en échec.
-        Réglez le problème sur {{ label(suspension) }}, puis reprenez les diffusions.
+        Réglez le problème sur {{ label(suspension) }}, puis reprenez les diffusions{{ canLift() ? '' : ' (droit « Gérer les canaux »)' }}.
       </p>
     </div>
-    <button type="button"
-            class="suspension-lift"
-            [disabled]="lifting() === suspension.channel"
-            (click)="onLift(suspension)">
-      {{ lifting() === suspension.channel ? 'Reprise…' : 'Reprendre les diffusions' }}
-    </button>
+    @if (canLift()) {
+      <button type="button"
+              class="suspension-lift"
+              [disabled]="lifting() === suspension.channel"
+              (click)="onLift(suspension)">
+        {{ lifting() === suspension.channel ? 'Reprise…' : 'Reprendre les diffusions' }}
+      </button>
+    }
   </div>
 }

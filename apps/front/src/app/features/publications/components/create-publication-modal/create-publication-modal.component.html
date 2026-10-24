@@ -14,9 +14,19 @@
         <p class="modal-subtitle">
           Les diffusions programmées partiront avec le nouveau texte ; celles déjà publiées ne changent pas.
         </p>
+        @if (losesVerification()) {
+          <p class="modal-subtitle modal-warning" role="note">
+            Si vous changez le texte, la publication repassera en brouillon : elle devra être vérifiée à nouveau
+            avant de partir, y compris pour ses diffusions déjà programmées.
+          </p>
+        }
       } @else {
         <h2 id="create-publication-title">Créer une publication</h2>
-        <p class="modal-subtitle">Rédigez le contenu, il sera programmable ensuite.</p>
+        <p class="modal-subtitle">
+          {{ canVerify()
+            ? 'Rédigez le contenu, il sera programmable ensuite.'
+            : 'Rédigez le contenu : la publication sera enregistrée en brouillon, à faire vérifier avant diffusion.' }}
+        </p>
       }
     </div>
     <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
@@ -36,6 +46,7 @@
   <app-publication-form
     [submitting]="creating()"
     [initialValue]="initialValue()"
+    [canVerify]="canVerify()"
     (submitted)="submitted.emit($event)"
     (cancelled)="closed.emit()"
   />

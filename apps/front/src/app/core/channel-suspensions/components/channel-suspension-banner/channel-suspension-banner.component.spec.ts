@@ -9,6 +9,7 @@ import {
   ChannelSuspensionBannerComponent,
   SUSPENSIONS_REFRESH_MS,
 } from './channel-suspension-banner.component';
+import { provideSignedInAs, signInAs } from '../../../auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -27,7 +28,7 @@ describe('ChannelSuspensionBannerComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [ChannelSuspensionBannerComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
@@ -126,5 +127,24 @@ describe('ChannelSuspensionBannerComponent', () => {
         message: 'Les diffusions Facebook n’ont pas pu être reprises. Base injoignable.',
       }),
     ]);
+  });
+
+  describe('selon les droits', () => {
+    it('should explain the suspension without offering to lift it, without « channels:manage »', () => {
+      signInAs(['publications:read']);
+      const compiled = render([facebook]).nativeElement as HTMLElement;
+
+      expect(compiled.querySelector('.suspension-banner')).not.toBeNull();
+      expect(compiled.querySelector('.suspension-lift')).toBeNull();
+      expect(compiled.querySelector('.suspension-hint')?.textContent).toContain('Gérer les canaux');
+    });
+
+    it('should not even ask, without the right to read publications', () => {
+      signInAs(['medias:read']);
+      TestBed.createComponent(ChannelSuspensionBannerComponent);
+      vi.advanceTimersByTime(60_000);
+
+      httpTesting.expectNone('/api/channels/suspensions');
+    });
   });
 });

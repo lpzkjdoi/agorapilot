@@ -1,8 +1,9 @@
 import { formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, EMPTY, switchMap, timer } from 'rxjs';
+import { catchError, EMPTY, filter, switchMap, timer } from 'rxjs';
+import { AuthService } from '../../../auth/auth.service';
 import { NotificationService } from '../../../notifications/notification.service';
 import { apiErrorMessage } from '../../../../features/occurrences/occurrence.utils';
 import { DeliveryChannel } from '../../../../features/publications/publication.model';
@@ -31,6 +32,10 @@ export const SUSPENSIONS_REFRESH_MS = 60_000;
 export class ChannelSuspensionBannerComponent {
   private readonly suspensionsService = inject(ChannelSuspensionsService);
   private readonly notifications = inject(NotificationService);
+  private readonly auth = inject(AuthService);
+
+  /** Lever une suspension exige `channels:manage` ; la voir, `publications:read`. */
+  protected readonly canLift = computed(() => this.auth.can('channels:manage'));
 
   protected readonly suspensions = this.suspensionsService.suspensions;
   protected readonly lifting = signal<DeliveryChannel | null>(null);
@@ -38,6 +43,7 @@ export class ChannelSuspensionBannerComponent {
   constructor() {
     timer(0, SUSPENSIONS_REFRESH_MS)
       .pipe(
+        filter(() => this.auth.can('publications:read')),
         // Un échec de lecture garde le dernier état connu : mieux vaut un
         // bandeau un peu en retard qu'une notification d'erreur chaque minute.
         switchMap(() => this.suspensionsService.refresh().pipe(catchError(() => EMPTY))),

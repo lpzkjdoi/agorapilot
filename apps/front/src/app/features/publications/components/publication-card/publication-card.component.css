@@ -166,10 +166,14 @@
   color: #1E3A8A;
 }
 
-/* Diffusion en cours. */
+/* Diffusion en cours, ou brouillon (titre explicatif) qui ne peut pas partir. */
 .action:disabled {
   cursor: progress;
   opacity: 0.7;
+}
+
+.action[title]:disabled {
+  cursor: not-allowed;
 }
 
 .action-medias {

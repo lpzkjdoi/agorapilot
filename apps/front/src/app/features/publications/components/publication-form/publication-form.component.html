@@ -16,10 +16,12 @@
     </div>
   </div>
 
-  <label class="publication-form-checkbox" for="status">
-    <input id="status" formControlName="status" type="checkbox">
-    Marquer la publication comme vérifiée
-  </label>
+  @if (canVerify()) {
+    <label class="publication-form-checkbox" for="status">
+      <input id="status" formControlName="status" type="checkbox">
+      Marquer la publication comme vérifiée
+    </label>
+  }
 
   <div class="publication-form-actions">
     <button type="button"

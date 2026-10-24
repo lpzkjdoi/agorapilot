@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { AuthService } from "../../../../core/auth/auth.service";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import { Occurrence } from "../../../occurrences/occurrence.model";
@@ -67,6 +68,10 @@ import {
 export class CalendarPageComponent {
   private readonly occurrencesService = inject(OccurrencesService);
   private readonly notifications = inject(NotificationService);
+  private readonly auth = inject(AuthService);
+
+  /** Sans `occurrences:schedule`, le calendrier se consulte sans rien proposer de modifier. */
+  protected readonly canSchedule = computed(() => this.auth.can('occurrences:schedule'));
 
   protected readonly month = signal<CalendarMonth>(monthOf(new Date()));
   protected readonly occurrences = signal<Occurrence[]>([]);

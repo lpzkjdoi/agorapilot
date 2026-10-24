@@ -163,4 +163,30 @@ describe('PublicationFormComponent', () => {
       expect(component.form.controls.content.value).toBe('Conseil municipal reporté');
     });
   });
+
+  describe('sans le droit de vérifier', () => {
+    it('should hide the « verified » box and create a draft', () => {
+      const fixture = TestBed.createComponent(PublicationFormComponent);
+      fixture.componentRef.setInput('canVerify', false);
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      let emitted: CreatePublicationFormValue | undefined;
+      component.submitted.subscribe((value) => (emitted = value));
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('#status')).toBeNull();
+
+      component.form.controls.content.setValue('Nouvelle annonce');
+      component.onSubmit();
+      expect(emitted).toEqual({ content: 'Nouvelle annonce', status: false });
+    });
+
+    it('should keep the status of the publication being edited', () => {
+      const fixture = TestBed.createComponent(PublicationFormComponent);
+      fixture.componentRef.setInput('canVerify', false);
+      fixture.componentRef.setInput('initialValue', { content: 'Conseil municipal', status: true });
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.form.controls.status.value).toBe(true);
+    });
+  });
 });

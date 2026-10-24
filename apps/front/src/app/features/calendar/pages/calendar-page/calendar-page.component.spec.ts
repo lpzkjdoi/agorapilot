@@ -7,6 +7,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { Occurrence } from '../../../occurrences/occurrence.model';
 import { OCCURRENCE_DRAG_TYPE } from '../../calendar.utils';
 import { CalendarPageComponent } from './calendar-page.component';
+import { provideSignedInAs } from '../../../../core/auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -77,7 +78,7 @@ describe('CalendarPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CalendarPageComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);

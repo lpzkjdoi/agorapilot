@@ -76,7 +76,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
   - [x] Flyway (prérequis)
   - [x] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
   - [x] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
-  - [ ] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
+  - [x] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
   - [ ] Traçabilité : auteurs des publications, diffusions et levées de suspension
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25

@@ -56,6 +56,8 @@ export class CalendarMonthGridComponent {
   readonly today = input.required<string>();
   readonly now = input.required<Date>();
   readonly selectedDay = input<string | null>(null);
+  /** `occurrences:schedule` : sans lui, aucune pastille ne se déplace. */
+  readonly canSchedule = input(true);
 
   /** Bulle du jour sélectionné, fournie par la page. */
   readonly panel = input<TemplateRef<DayPanelContext> | null>(null);
@@ -84,7 +86,7 @@ export class CalendarMonthGridComponent {
   }
 
   protected movable(occurrence: Occurrence): boolean {
-    return isModifiable(occurrence, this.now());
+    return this.canSchedule() && isModifiable(occurrence, this.now());
   }
 
   protected select(day: CalendarDay, event?: Event): void {

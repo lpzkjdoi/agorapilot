@@ -18,7 +18,7 @@ describe('AppComponent', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: { active, user: signal(null), logout: vi.fn() } },
+        { provide: AuthService, useValue: { active, user: signal(null), logout: vi.fn(), can: () => true } },
       ],
     }).compileComponents();
   });

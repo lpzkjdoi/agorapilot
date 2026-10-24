@@ -6,6 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Campaign } from '../../campaign.model';
 import { CampaignsPageComponent } from './campaigns-page.component';
+import { provideSignedInAs, signInAs } from '../../../../core/auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
 
@@ -45,7 +46,7 @@ describe('CampaignsPageComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CampaignsPageComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
@@ -170,5 +171,12 @@ describe('CampaignsPageComponent', () => {
       expect(compiled.querySelector('app-create-campaign-modal')).not.toBeNull();
       expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être créée.');
     });
+  });
+
+  it('should list the campaigns without offering to create one, for a reader', () => {
+    signInAs(['campaigns:read']);
+    render();
+
+    expect(compiled.querySelector('.campaign-list-create')).toBeNull();
   });
 });

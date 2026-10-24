@@ -108,7 +108,8 @@ describe('PublicationCardComponent', () => {
   });
 
   it('should emit the publication on each of the three actions', async () => {
-    const fixture = await render(draft);
+    const verified: Publication = { ...draft, status: 'VERIFIED' };
+    const fixture = await render(verified);
     const component = fixture.componentInstance;
     const compiled = fixture.nativeElement as HTMLElement;
 
@@ -123,13 +124,14 @@ describe('PublicationCardComponent', () => {
     compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
     compiled.querySelector<HTMLButtonElement>('.action-campaign')?.click();
 
-    expect(xlsx).toHaveBeenCalledWith(draft);
-    expect(facebook).toHaveBeenCalledWith(draft);
-    expect(campaign).toHaveBeenCalledWith(draft);
+    expect(xlsx).toHaveBeenCalledWith(verified);
+    expect(facebook).toHaveBeenCalledWith(verified);
+    expect(campaign).toHaveBeenCalledWith(verified);
   });
 
   it('should emit the publication when asked to schedule it', async () => {
-    const fixture = await render(draft);
+    const verified: Publication = { ...draft, status: 'VERIFIED' };
+    const fixture = await render(verified);
     const schedule = vi.fn();
     fixture.componentInstance.schedule.subscribe(schedule);
 
@@ -137,7 +139,35 @@ describe('PublicationCardComponent', () => {
     expect(button?.textContent).toContain('Programmer');
     button?.click();
 
-    expect(schedule).toHaveBeenCalledWith(draft);
+    expect(schedule).toHaveBeenCalledWith(verified);
+  });
+
+  it('should lock publishing and scheduling a draft, saying why', async () => {
+    const fixture = await render(draft);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const facebook = compiled.querySelector<HTMLButtonElement>('.action-facebook')!;
+    const schedule = compiled.querySelector<HTMLButtonElement>('.action-schedule')!;
+
+    expect(facebook.disabled).toBe(true);
+    expect(facebook.title).toContain('À vérifier');
+    expect(schedule.disabled).toBe(true);
+    expect(schedule.title).toContain('À vérifier');
+  });
+
+  it('should offer only the actions the account may perform', async () => {
+    const fixture = TestBed.createComponent(PublicationCardComponent);
+    fixture.componentRef.setInput('publication', { ...draft, status: 'VERIFIED' });
+    for (const input of ['canEdit', 'canDelete', 'canPublish', 'canSchedule', 'canManageMedias', 'canAssignCampaign']) {
+      fixture.componentRef.setInput(input, false);
+    }
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    for (const selector of ['.action-edit', '.action-delete', '.action-facebook', '.action-schedule',
+                            '.action-medias', '.action-campaign']) {
+      expect(compiled.querySelector(selector)).toBeNull();
+    }
+    expect(compiled.querySelector('.action-xlsx')).not.toBeNull();
   });
 
   it('should show the loader and lock the Facebook button while publishing', async () => {
