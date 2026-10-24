@@ -71,27 +71,24 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ### À faire
 
-- [x] **Comptes applicatifs et droits** — terminé le 2026-10-24 : l'API n'est plus ouverte, chaque action exige un compte et son droit. Conception : [proposition](docs/proposals/2026-10-24-comptes-et-droits.md) (une personne = un compte, refus par défaut, droits fins `ressource:action` avec profils, mot de passe provisoire donné par l'administrateur) :
-  - [x] Décider du modèle d'accès : comptes applicatifs (2026-10-24)
-  - [x] Flyway (prérequis)
-  - [x] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
-  - [x] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
-  - [x] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
-  - [x] Traçabilité : auteurs des publications, diffusions et levées de suspension
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
 - [ ] Suspension Facebook — limites connues de la première version (cf. [changelog](docs/changelog/2026-10-16-suspension-canal-facebook.md#limites-connues)) :
   - [ ] Levée uniquement manuelle : un nouveau jeton posé par `POST /admin/facebook/bootstrap` ne lève pas une suspension pour jeton invalide (code 190), il faut aussi cliquer « Reprendre les diffusions » — la lever automatiquement après un bootstrap réussi
   - [ ] Diffusions retenues : passée leur heure, elles restent « programmées » dans le calendrier et ne peuvent être ni déplacées ni annulées tant qu'elles ne sont pas tranchées (levée, ou échec au-delà du retard maximal) — les signaler comme « en attente » et permettre de les annuler
-  - [ ] Pas d'alerte hors de l'application : la suspension ne se voit qu'en ouvrant AgoraPilot — prévenir par mail (après la gestion des utilisateurs, pour les destinataires)
+  - [ ] Pas d'alerte hors de l'application : la suspension ne se voit qu'en ouvrant AgoraPilot — prévenir par mail les comptes `channels:manage` (les comptes existent, mais sans adresse e-mail : à ajouter, avec un serveur d'envoi)
 - [ ] Reprendre par glisser-déposer une diffusion en échec vers un autre jour du calendrier
+- [ ] Tableau de bord : rendre cliquables le KPI « Diffusions en échec » (vers les diffusions concernées, ce qui demande un filtre par statut dans le calendrier) et les jours de « Cette semaine », dont le chevron ne mène nulle part
+- [ ] Restaurer une publication supprimée qui a été archivée pour son historique (aucune interface aujourd'hui)
+- [ ] Journal de sécurité : filtres (type, compte, période) et pagination — la page Comptes n'en montre que les 50 derniers événements
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [ ] Appliquer Prettier au code front et le vérifier en CI (installé, scripts `format` / `format:check` présents, mais 136 fichiers non conformes)
-- [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe)
+- [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe), avec `AGORAPILOT_ADMIN_USERNAME` / `AGORAPILOT_ADMIN_PASSWORD` : sans eux, une base locale vide n'a aucun compte
 - [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
 
 ### Fait
 
+- [x] **Comptes applicatifs et droits** (2026-10-24, cf. [proposition](docs/proposals/2026-10-24-comptes-et-droits.md)) : une personne = un compte, refus par défaut et droits fins `ressource:action` par endpoint, session côté serveur avec CSRF, premier administrateur au démarrage, page « Comptes » (profils, désactivation, mot de passe provisoire), seules les publications vérifiées partent, actions masquées selon les droits, auteurs des publications et diffusions, journal de sécurité et des actions sensibles
 - [x] Migrations de base de données versionnées (Flyway) : schéma de départ en `V1`, Hibernate en `validate`, préproduction inscrite d'office en version 1
 - [x] CRUD complet des publications : modification (texte, statut) et suppression, qui annule les diffusions programmées et archive une publication déjà diffusée
 - [x] Tableau de bord branché sur des données réelles (`GET /api/dashboard`) : campagnes actives, diffusions de la semaine, brouillons, échecs, et les cinq prochaines diffusions
