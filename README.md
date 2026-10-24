@@ -71,15 +71,13 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ### À faire
 
-- [ ] **Gestion des utilisateurs, de bout en bout** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard) :
-  - [ ] Décider du modèle d'accès : comptes applicatifs, VPN seul, ou les deux (décision en attente)
-  - [ ] Back : entité utilisateur (nom, e-mail, rôle, actif), mots de passe hachés, authentification Spring Security avec session ou jeton, rôles (au moins administrateur / rédacteur)
-  - [ ] Back : protéger `/api/**` et les endpoints `/admin/**` (Facebook, ordonnanceur), en remplaçant la chaîne de filtres permissive
-  - [ ] Back : création, désactivation et réinitialisation du mot de passe des comptes (endpoints administrateur), premier compte au démarrage
-  - [ ] Front : page de connexion, garde de routes, intercepteur HTTP (jeton ou cookie, redirection sur `401`), déconnexion
-  - [ ] Front : utilisateur connecté dans le bandeau, page d'administration des comptes
-  - [ ] Traçabilité : auteur et dernier modificateur des publications, auteur d'une programmation, d'une reprise ou d'une levée de suspension
-  - [ ] Tests à chaque étape (back et front) et documentation de mise en service en préprod
+- [ ] **Comptes applicatifs et droits** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard). Conception : [proposition](docs/proposals/2026-10-24-comptes-et-droits.md) (une personne = un compte, refus par défaut, droits fins `ressource:action` avec profils, mot de passe provisoire donné par l'administrateur) :
+  - [x] Décider du modèle d'accès : comptes applicatifs (2026-10-24)
+  - [ ] Flyway (prérequis, ci-dessous)
+  - [ ] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
+  - [ ] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
+  - [ ] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
+  - [ ] Traçabilité : auteurs des publications, diffusions et levées de suspension
 - [ ] Migrations de base de données versionnées (Flyway) plutôt que `ddl-auto: update` — deux `ALTER TABLE` manuels de contraintes ont déjà été nécessaires en septembre, et chaque nouvelle valeur d'enum en ajoute un
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
