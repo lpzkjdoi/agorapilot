@@ -80,9 +80,10 @@ describe('routes', () => {
     expect(component).toBeInstanceOf(DashboardPageComponent);
     expect(document.title).toBe('Dashboard');
 
-    // La page charge les occurrences de la semaine dès son initialisation ;
-    // la requête est consommée ici pour que `verify()` reste vert.
+    // La page charge la semaine et la synthèse dès son initialisation ;
+    // les requêtes sont consommées ici pour que `verify()` reste vert.
     httpTesting.expectOne('/api/occurrences/weekly');
+    httpTesting.expectOne('/api/dashboard');
     httpTesting.verify();
   });
 

@@ -8,6 +8,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { catchError, EMPTY, finalize } from "rxjs";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { OccurrencesService } from "../../../occurrences/occurrences.service";
+import { DashboardService } from "../../dashboard.service";
 import {
   DashboardKpiComponent,
 } from "../../components/kpi/dashboard-kpi.component";
@@ -33,8 +34,20 @@ import {
 })
 export class DashboardPageComponent {
   private readonly occurrencesService = inject(OccurrencesService);
+  private readonly dashboardService = inject(DashboardService);
 
   protected readonly loading = signal(true)
+  protected readonly summaryLoading = signal(true)
+
+  // En cas d'erreur, les compteurs restent à « – » plutôt que d'afficher des
+  // zéros trompeurs.
+  protected readonly summary = toSignal(this.dashboardService.getSummary()
+                                            .pipe(
+                                              catchError((err) => {
+                                                console.error('Failed to load dashboard summary', err);
+                                                return EMPTY;
+                                              }),
+                                              finalize(() => this.summaryLoading.set(false))))
 
   // `finalize` plutôt que `tap` : le loader s'arrête aussi quand le flux se
   // termine sans rien émettre, pas seulement sur une réponse ou une erreur.

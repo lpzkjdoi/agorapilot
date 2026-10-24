@@ -81,7 +81,6 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
   - [ ] Traçabilité : auteur et dernier modificateur des publications, auteur d'une programmation, d'une reprise ou d'une levée de suspension
   - [ ] Tests à chaque étape (back et front) et documentation de mise en service en préprod
 - [ ] Migrations de base de données versionnées (Flyway) plutôt que `ddl-auto: update` — deux `ALTER TABLE` manuels de contraintes ont déjà été nécessaires en septembre, et chaque nouvelle valeur d'enum en ajoute un
-- [ ] Tableau de bord branché sur des données réelles : les KPIs sont codés en dur (4, 6, 34, 48) et le panneau « Prochaines publications » est affiché sans données ; y montrer aussi les statuts, échecs compris
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] CRUD complet des publications : modification et suppression (seuls création, liste, programmation et rattachements existent)
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
@@ -97,6 +96,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 
 ### Fait
 
+- [x] Tableau de bord branché sur des données réelles (`GET /api/dashboard`) : campagnes actives, diffusions de la semaine, brouillons, échecs, et les cinq prochaines diffusions
 - [x] Suspension du canal Facebook quand le compte est bloqué (codes 368, 190) : plus d'appel tant que la suspension n'est pas levée, bandeau global avec bouton « Reprendre les diffusions »
 - [x] Reprise d'une diffusion en échec depuis le calendrier, et motif lisible des refus de Facebook
 - [x] Écran de programmation : bouton « Programmer » sur la carte, page Calendrier avec glisser-déposer, modification et annulation d'une diffusion
