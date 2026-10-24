@@ -729,4 +729,125 @@ describe('PublicationsPageComponent', () => {
       ]);
     });
   });
+
+  describe('modification', () => {
+    function openModal(index = 1) {
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      compiled.querySelectorAll<HTMLButtonElement>('.action-edit')[index].click();
+      fixture.detectChanges();
+
+      return { fixture, compiled };
+    }
+
+    function typeAndSubmit(fixture: ComponentFixture<PublicationsPageComponent>, compiled: HTMLElement, content: string) {
+      const textarea = compiled.querySelector('app-create-publication-modal textarea') as HTMLTextAreaElement;
+      textarea.value = content;
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      compiled.querySelector('app-create-publication-modal form')?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+    }
+
+    it('should open the modal prefilled with the publication that was clicked', () => {
+      const { compiled } = openModal();
+
+      expect(compiled.querySelector('#create-publication-title')?.textContent).toContain('Modifier la publication');
+      expect((compiled.querySelector('app-create-publication-modal textarea') as HTMLTextAreaElement).value)
+        .toBe('Conseil municipal reporté');
+      expect((compiled.querySelector('app-create-publication-modal #status') as HTMLInputElement).checked).toBe(false);
+    });
+
+    it('should PUT the new content and refresh the card', () => {
+      const { fixture, compiled } = openModal();
+
+      typeAndSubmit(fixture, compiled, 'Conseil municipal reporté au 12 novembre');
+
+      const request = httpTesting.expectOne('/api/publications/2');
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({ content: 'Conseil municipal reporté au 12 novembre', status: 'DRAFT' });
+
+      request.flush({ ...publications[1], content: 'Conseil municipal reporté au 12 novembre' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-create-publication-modal')).toBeNull();
+      expect(compiled.querySelectorAll('app-publication-card')[1].textContent).toContain('au 12 novembre');
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Publication enregistrée.' }),
+      ]);
+    });
+
+    it('should keep the modal open and warn when the call fails', () => {
+      const { fixture, compiled } = openModal();
+
+      typeAndSubmit(fixture, compiled, 'Conseil municipal reporté au 12 novembre');
+      httpTesting.expectOne('/api/publications/2').flush('boom', { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-create-publication-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'error', message: 'La publication n’a pas pu être enregistrée.' }),
+      ]);
+    });
+  });
+
+  describe('suppression', () => {
+    function confirmDelete(index = 1) {
+      const fixture = render();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const card = compiled.querySelectorAll('app-publication-card')[index];
+
+      card.querySelector<HTMLButtonElement>('.action-delete')!.click();
+      fixture.detectChanges();
+      card.querySelector<HTMLButtonElement>('.action-delete')!.click();
+      fixture.detectChanges();
+
+      return { fixture, compiled };
+    }
+
+    it('should DELETE the publication and remove its card', () => {
+      const { fixture, compiled } = confirmDelete();
+
+      const request = httpTesting.expectOne('/api/publications/2');
+      expect(request.request.method).toBe('DELETE');
+      request.flush(null, { status: 204, statusText: 'No Content' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelectorAll('app-publication-card').length).toBe(2);
+      expect(compiled.textContent).not.toContain('Conseil municipal reporté');
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Publication supprimée.' }),
+      ]);
+    });
+
+    it('should lock the delete button while the request is in flight', () => {
+      const { fixture, compiled } = confirmDelete();
+
+      const card = compiled.querySelectorAll('app-publication-card')[1];
+      expect(card.querySelector<HTMLButtonElement>('.action-delete')?.disabled).toBe(true);
+
+      httpTesting.expectOne('/api/publications/2').flush(null, { status: 204, statusText: 'No Content' });
+      fixture.detectChanges();
+    });
+
+    it('should keep the card and relay the reason of a 409', () => {
+      const { fixture, compiled } = confirmDelete();
+
+      httpTesting.expectOne('/api/publications/2').flush(
+        { message: 'La publication 2 a une diffusion en cours ou imminente.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+      fixture.detectChanges();
+
+      expect(compiled.querySelectorAll('app-publication-card').length).toBe(3);
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'La publication n’a pas pu être supprimée. La publication 2 a une diffusion en cours ou imminente.',
+        }),
+      ]);
+    });
+  });
 });

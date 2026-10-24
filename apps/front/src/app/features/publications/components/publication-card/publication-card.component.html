@@ -134,6 +134,19 @@
         </svg>
         {{ campaignName() ? 'Changer de campagne' : 'Ajouter à une campagne' }}
       </button>
+
+      @if (confirmingDelete()) {
+        <p class="manage-confirm" role="alert">Supprimer, et annuler ses diffusions programmées&nbsp;?</p>
+        <button type="button" class="action action-cancel" (click)="confirmingDelete.set(false)">Annuler</button>
+        <button type="button" class="action action-delete" [disabled]="deleting()" (click)="confirmDelete()">
+          Confirmer la suppression
+        </button>
+      } @else {
+        <button type="button" class="action action-edit" (click)="edit.emit(publication())">Modifier</button>
+        <button type="button" class="action action-delete" [disabled]="deleting()" (click)="confirmingDelete.set(true)">
+          {{ deleting() ? 'Suppression…' : 'Supprimer' }}
+        </button>
+      }
     </div>
   </div>
 </article>

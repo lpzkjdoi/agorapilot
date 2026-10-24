@@ -39,6 +39,9 @@ export interface Publication {
 
 export type CreatePublicationRequest = Omit<Publication, 'id' | 'createdAt' | 'campaign' | 'medias'>
 
+/** Corps de `PUT /api/publications/{id}` : remplacement complet du texte et du statut. */
+export type UpdatePublicationRequest = Pick<Publication, 'content' | 'status'>
+
 /** Corps de `PUT /api/publications/{id}/campaign` : `null` détache la publication. */
 export interface SetPublicationCampaignRequest {
   campaignId: number | null

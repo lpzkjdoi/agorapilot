@@ -6,6 +6,7 @@ import {
   inject,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { MediasService } from "../../../medias/medias.service";
@@ -27,11 +28,27 @@ export class PublicationCardComponent {
   /** Diffusion Facebook en cours : le bouton passe en attente et se verrouille. */
   readonly publishing = input(false);
 
+  /** Suppression en cours : les boutons de suppression se verrouillent. */
+  readonly deleting = input(false);
+
   readonly generateXlsx = output<Publication>();
   readonly manageMedias = output<Publication>();
   readonly publishOnFacebook = output<Publication>();
   readonly assignCampaign = output<Publication>();
   readonly schedule = output<Publication>();
+  readonly edit = output<Publication>();
+  readonly remove = output<Publication>();
+
+  /**
+   * Suppression en deux temps, comme dans la médiathèque : le geste reste sur
+   * la carte, sans `confirm()` natif.
+   */
+  protected readonly confirmingDelete = signal(false);
+
+  protected confirmDelete(): void {
+    this.confirmingDelete.set(false);
+    this.remove.emit(this.publication());
+  }
 
   readonly verified = computed(() => this.publication().status === 'VERIFIED');
   readonly campaignName = computed(() => this.publication().campaign?.name ?? null);

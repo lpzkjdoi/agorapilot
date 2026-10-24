@@ -49,11 +49,14 @@
             <app-publication-card
               [publication]="publication"
               [publishing]="publishing().has(publication.id)"
+              [deleting]="deleting().has(publication.id)"
               (generateXlsx)="onGenerateXlsx($event)"
               (manageMedias)="onManageMedias($event)"
               (publishOnFacebook)="onPublishOnFacebook($event)"
               (assignCampaign)="onAssignCampaign($event)"
               (schedule)="onSchedule($event)"
+              (edit)="onEdit($event)"
+              (remove)="onDelete($event)"
             />
           </li>
         }
@@ -67,6 +70,15 @@
     [creating]="creating()"
     (closed)="createModalOpen.set(false)"
     (submitted)="onCreate($event)"
+  />
+}
+
+@if (editingFor(); as publication) {
+  <app-create-publication-modal
+    [publication]="publication"
+    [creating]="saving()"
+    (closed)="editingFor.set(null)"
+    (submitted)="onEditSubmitted($event)"
   />
 }
 

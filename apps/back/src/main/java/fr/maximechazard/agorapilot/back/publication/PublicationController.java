@@ -6,6 +6,7 @@ import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationDe
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.SetPublicationCampaignRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.SetPublicationMediasRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.UpdatePublicationRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,12 @@ public class PublicationController {
 
     // -------------------------------- PUT --------------------------------
 
+    /** Remplace le texte et le statut ; les diffusions à venir partiront avec le nouveau texte. */
+    @PutMapping("/{id}")
+    public ResponseEntity<PublicationDTO> update(@PathVariable Long id, @RequestBody @Valid UpdatePublicationRequest request) {
+        return ResponseEntity.ok(publicationService.update(id, request));
+    }
+
     /**
      * Remplace la liste ordonnée des visuels rattachés à la publication.
      * <p>
@@ -73,5 +80,17 @@ public class PublicationController {
             @RequestBody @Valid SetPublicationCampaignRequest request
     ) {
         return new ResponseEntity<>(publicationService.setCampaign(id, request.getCampaignId()), HttpStatus.OK);
+    }
+
+    // -------------------------------- DELETE --------------------------------
+
+    /**
+     * Supprime la publication et annule ses diffusions programmées. Déjà
+     * diffusée, elle est archivée pour garder l'historique du calendrier.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        publicationService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

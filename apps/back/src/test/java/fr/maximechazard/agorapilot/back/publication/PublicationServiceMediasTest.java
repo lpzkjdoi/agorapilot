@@ -47,7 +47,7 @@ class PublicationServiceMediasTest {
     @BeforeEach
     void setUp() {
         service = new PublicationService(
-                publicationRepository, mediaRepository, campaignRepository, new PublicationMapper(new MediaMapper()));
+                publicationRepository, mediaRepository, campaignRepository, null, new PublicationMapper(new MediaMapper()));
         publication = new Publication("Marché de producteurs", PublicationStatus.DRAFT);
         publication.setId(PUBLICATION_ID);
     }
@@ -120,7 +120,7 @@ class PublicationServiceMediasTest {
 
     @Test
     void fails_on_an_unknown_publication() {
-        when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.empty());
+        when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.setMedias(PUBLICATION_ID, List.of(1L)))
                 .isInstanceOf(PublicationNotFoundException.class);
@@ -141,7 +141,7 @@ class PublicationServiceMediasTest {
     }
 
     private void givenPublication() {
-        when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication));
+        when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication));
     }
 
     /** À n'appeler que dans les cas qui vont réellement jusqu'à la sauvegarde. */

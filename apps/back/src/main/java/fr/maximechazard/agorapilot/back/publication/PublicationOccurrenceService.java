@@ -26,7 +26,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 @Service
 @RequiredArgsConstructor
@@ -68,7 +70,7 @@ public class PublicationOccurrenceService {
      */
     @Transactional
     public PublicationOccurrenceDTO create(CreatePublicationOccurrenceRequest request) {
-        Publication publication = publicationRepository.findById(request.getPublicationId())
+        Publication publication = publicationRepository.findByIdAndArchivedFalse(request.getPublicationId())
                 .orElseThrow(() -> new PublicationNotFoundException("Publication with id " + request.getPublicationId() + " does not exist."));
 
         PublicationOccurrence occurrence = new PublicationOccurrence();
@@ -150,6 +152,11 @@ public class PublicationOccurrenceService {
                     + " n'est pas en échec : seule une diffusion en échec peut être reprise.");
         }
 
+        if (Boolean.TRUE.equals(occurrence.getPublication().getArchived())) {
+            throw new OccurrenceNotModifiableException("La publication de la diffusion " + occurrenceId
+                    + " a été supprimée : elle ne peut plus être reprise.");
+        }
+
         for (PublicationDelivery delivery : occurrence.getDeliveries()) {
             if (delivery.getStatus() != DeliveryStatus.FAILED) {
                 continue;
@@ -186,6 +193,48 @@ public class PublicationOccurrenceService {
 
         publicationOccurrenceRepository.delete(occurrence);
         redistribute(day);
+    }
+
+    /**
+     * Prépare la suppression d'une publication : annule ses diffusions
+     * programmées — leurs jours sont répartis à nouveau — et retire ses échecs
+     * qui n'ont rien publié nulle part.
+     * <p>
+     * Tout ou rien : si une seule diffusion est en cours ou imminente, rien
+     * n'est touché, la suppression est refusée.
+     *
+     * @return vrai s'il reste des diffusions à garder comme historique (au moins
+     * un canal publié) : la publication doit alors être archivée, pas effacée
+     * @throws OccurrenceNotModifiableException une diffusion est en cours ou imminente
+     */
+    @Transactional
+    public boolean releaseOccurrencesOf(Publication publication) {
+        List<PublicationOccurrence> occurrences = publication.getOccurrences();
+
+        for (PublicationOccurrence occurrence : occurrences) {
+            if (occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED && !isModifiable(occurrence)) {
+                throw new OccurrenceNotModifiableException("La publication " + publication.getId()
+                        + " a une diffusion en cours ou imminente (moins de " + FROZEN_HORIZON.toMinutes()
+                        + " minutes) : réessayer une fois la diffusion passée.");
+            }
+        }
+
+        Set<LocalDate> days = new TreeSet<>();
+        occurrences.removeIf(occurrence -> {
+            if (occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED) {
+                days.add(occurrence.getScheduledAt().toLocalDate());
+                return true;
+            }
+
+            return occurrence.getStatus() == PublicationOccurrenceStatus.FAILED && !hasPublishedDelivery(occurrence);
+        });
+
+        // `orphanRemoval` traduit les retraits en DELETE au flush : il doit avoir
+        // lieu avant que la répartition ne relise les occurrences du jour.
+        publicationOccurrenceRepository.flush();
+        days.forEach(this::redistribute);
+
+        return !occurrences.isEmpty();
     }
 
     /** Les occurrences de {@code [from, to)}, dans l'ordre chronologique. */
@@ -309,16 +358,25 @@ public class PublicationOccurrenceService {
         PublicationOccurrence occurrence = publicationOccurrenceRepository.findById(occurrenceId)
                 .orElseThrow(() -> new OccurrenceNotFoundException("Occurrence with id " + occurrenceId + " does not exist."));
 
-        boolean untouched = occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED
-                && occurrence.getDeliveries().stream().allMatch(delivery -> delivery.getStatus() == DeliveryStatus.PENDING);
-
-        if (!untouched || !occurrence.getScheduledAt().isAfter(frozenUntil())) {
+        if (!isModifiable(occurrence)) {
             throw new OccurrenceNotModifiableException("La diffusion " + occurrenceId
                     + " est déjà traitée ou imminente (moins de " + FROZEN_HORIZON.toMinutes()
                     + " minutes) : elle ne peut plus être modifiée.");
         }
 
         return occurrence;
+    }
+
+    /** Programmée, aucun canal encore servi, et au-delà de l'horizon figé. */
+    private boolean isModifiable(PublicationOccurrence occurrence) {
+        boolean untouched = occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED
+                && occurrence.getDeliveries().stream().allMatch(delivery -> delivery.getStatus() == DeliveryStatus.PENDING);
+
+        return untouched && occurrence.getScheduledAt().isAfter(frozenUntil());
+    }
+
+    private static boolean hasPublishedDelivery(PublicationOccurrence occurrence) {
+        return occurrence.getDeliveries().stream().anyMatch(delivery -> delivery.getStatus() == DeliveryStatus.PUBLISHED);
     }
 
     private LocalDateTime frozenUntil() {

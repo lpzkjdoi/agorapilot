@@ -47,7 +47,7 @@ class PublicationServiceCampaignTest {
     @BeforeEach
     void setUp() {
         service = new PublicationService(
-                publicationRepository, mediaRepository, campaignRepository, new PublicationMapper(new MediaMapper()));
+                publicationRepository, mediaRepository, campaignRepository, null, new PublicationMapper(new MediaMapper()));
 
         publication = new Publication("Marché de producteurs", PublicationStatus.DRAFT);
         publication.setId(PUBLICATION_ID);
@@ -57,7 +57,7 @@ class PublicationServiceCampaignTest {
     }
 
     private void givenPublication() {
-        when(publicationRepository.findById(PUBLICATION_ID)).thenReturn(Optional.of(publication));
+        when(publicationRepository.findByIdAndArchivedFalse(PUBLICATION_ID)).thenReturn(Optional.of(publication));
     }
 
     private void givenSaveEchoesBack() {
@@ -121,7 +121,7 @@ class PublicationServiceCampaignTest {
 
     @Test
     void signaleUnePublicationInconnue() {
-        when(publicationRepository.findById(404L)).thenReturn(Optional.empty());
+        when(publicationRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.setCampaign(404L, CAMPAIGN_ID))
                 .isInstanceOf(PublicationNotFoundException.class);

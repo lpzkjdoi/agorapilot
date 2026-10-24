@@ -9,6 +9,7 @@ import {
   PublicationDelivery,
   SetPublicationCampaignRequest,
   SetPublicationMediasRequest,
+  UpdatePublicationRequest,
 } from "./publication.model";
 
 @Injectable({
@@ -24,6 +25,19 @@ export class PublicationsService {
 
   createPublication(request: CreatePublicationRequest): Observable<Publication> {
     return this.http.post<Publication>(this.url, request)
+  }
+
+  /** Remplace le texte et le statut ; les diffusions à venir partiront avec le nouveau texte. */
+  updatePublication(publicationId: number, request: UpdatePublicationRequest): Observable<Publication> {
+    return this.http.put<Publication>(`${ this.url }/${ publicationId }`, request);
+  }
+
+  /**
+   * Supprime une publication et annule ses diffusions programmées. Le back
+   * répond `409` si l'une d'elles est en cours ou imminente.
+   */
+  deletePublication(publicationId: number): Observable<void> {
+    return this.http.delete<void>(`${ this.url }/${ publicationId }`);
   }
 
   /**

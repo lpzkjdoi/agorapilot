@@ -1,11 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   HostListener,
   input,
   output,
 } from '@angular/core';
-import { CreatePublicationFormValue } from "../../publication.model";
+import { CreatePublicationFormValue, Publication } from "../../publication.model";
 import {
   PublicationFormComponent,
 } from "../publication-form/publication-form.component";
@@ -19,8 +20,17 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreatePublicationModalComponent {
-  /** Vrai tant que la requête de création est en vol. */
+  /** Vrai tant que la requête de création (ou d'enregistrement) est en vol. */
   readonly creating = input(false);
+
+  /** Publication à modifier ; absente, la modale crée une publication. */
+  readonly publication = input<Publication | null>(null);
+
+  protected readonly initialValue = computed<CreatePublicationFormValue | null>(() => {
+    const publication = this.publication();
+
+    return publication ? { content: publication.content, status: publication.status === 'VERIFIED' } : null;
+  });
 
   readonly closed = output<void>();
   readonly submitted = output<CreatePublicationFormValue>();

@@ -144,7 +144,8 @@
 }
 
 .action-xlsx:hover,
-.action-schedule:hover {
+.action-schedule:hover,
+.action-edit:hover {
   background-color: #EFF6FF;
   color: var(--color-brand-blue);
 }
@@ -196,4 +197,18 @@
   border-style: dashed;
   border-color: #D8B4FE;
   background-color: transparent;
+}
+
+/* Suppression et sa confirmation. */
+.manage-confirm,
+.action-delete {
+  color: #B91C1C;
+}
+
+.manage-confirm {
+  font-size: 13px;
+}
+
+.action-delete:hover:not(:disabled) {
+  background-color: #FEF2F2;
 }
