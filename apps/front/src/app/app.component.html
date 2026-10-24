@@ -1,7 +1,11 @@
-<div class="layout">
-  <app-navbar />
-  <main class="content">
-    <app-channel-suspension-banner />
-    <router-outlet />
-  </main>
-</div>
+@if (signedIn()) {
+  <div class="layout">
+    <app-navbar />
+    <main class="content">
+      <app-channel-suspension-banner />
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <router-outlet />
+}

@@ -1,14 +1,13 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationCampaignDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,8 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Contrat HTTP de {@code PUT /api/publications/{id}/campaign}.
  */
-@WebMvcTest(PublicationController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(PublicationController.class)
 class PublicationControllerCampaignTest {
 
     @Autowired

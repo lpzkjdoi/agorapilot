@@ -1,0 +1,38 @@
+<div class="auth-page">
+  <main class="auth-card">
+    <p class="auth-brand"><app-logo /> AgoraPilot</p>
+    <h1>Connexion</h1>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <label class="auth-field" for="username">
+        Pseudo
+        <input id="username" formControlName="username" autocomplete="username" autocapitalize="none"
+               spellcheck="false" />
+      </label>
+
+      <label class="auth-field" for="password">
+        Mot de passe
+        <input id="password" formControlName="password" type="password" autocomplete="current-password" />
+      </label>
+
+      <!-- Après un refus, le mot de passe est vidé : c'est le motif du refus qui compte. -->
+      @if (!error() && form.touched && form.invalid) {
+        <p class="auth-error" role="alert">Saisissez votre pseudo et votre mot de passe.</p>
+      }
+      @if (error(); as message) {
+        <p class="auth-error" role="alert">{{ message }}</p>
+      }
+
+      <button type="submit" class="auth-submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <app-loader size="sm" variant="dark" label="Connexion en cours…" />
+        }
+        Se connecter
+      </button>
+    </form>
+
+    <p class="auth-hint">
+      Pas de compte, ou mot de passe oublié ? Un administrateur d’AgoraPilot vous donnera un mot de passe provisoire.
+    </p>
+  </main>
+</div>

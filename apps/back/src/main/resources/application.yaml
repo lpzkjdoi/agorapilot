@@ -54,6 +54,17 @@ logging:
 
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      # Inactivité au-delà de laquelle la session expire ; la durée de vie
+      # maximale, activité ou non, est `agorapilot.security.session-max-age`.
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: strict
+        # `true` en préproduction (HTTPS) ; le développement local passe par
+        # http://localhost.
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 facebook:
   api-base-url: ${FACEBOOK_API_BASE_URL:https://graph.facebook.com}
@@ -68,6 +79,16 @@ frontend:
   url: ${FRONTEND_URL:http://localhost:4200}
 
 agorapilot:
+  security:
+    # Premier compte, créé au démarrage si la base n'en a aucun. Mot de passe
+    # provisoire : il faut le changer à la première connexion.
+    initial-admin:
+      username: ${AGORAPILOT_ADMIN_USERNAME:}
+      password: ${AGORAPILOT_ADMIN_PASSWORD:}
+    max-failed-attempts: 5
+    lock-duration: PT15M
+    session-max-age: PT12H
+
   scheduling:
     # Période de balayage des occurrences dues (durée ISO-8601). La granularité
     # de la planification ne dépasse pas cette valeur : une occurrence prévue à

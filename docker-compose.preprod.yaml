@@ -66,6 +66,11 @@ services:
       # l'autre, et toute nouvelle variable devrait être propagée jusqu'à
       # l'Environment GitHub `preprod`.
       MEDIA_ROOT: /var/lib/agorapilot/media
+      # Premier compte, administrateur, créé au démarrage si la base n'en a aucun.
+      # Mot de passe provisoire, à changer à la première connexion. Inutiles
+      # ensuite : sans eux, une base vide démarre simplement sans compte.
+      AGORAPILOT_ADMIN_USERNAME: ${AGORAPILOT_ADMIN_USERNAME:-}
+      AGORAPILOT_ADMIN_PASSWORD: ${AGORAPILOT_ADMIN_PASSWORD:-}
       # Fenêtre où sont réparties les diffusions Facebook programmées pour un
       # jour. Valeurs par défaut en place : rien à ajouter à l'Environment GitHub
       # `preprod` tant qu'on ne veut pas les changer.

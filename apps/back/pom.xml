@@ -66,6 +66,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Utilisateurs simulés et jeton CSRF dans MockMvc (with(user(...)), with(csrf())). -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Support MockMvc (@AutoConfigureMockMvc, @WebMvcTest) : depuis Spring
              Boot 4 il vit dans un module dédié, non tiré par starter-test. -->
         <dependency>

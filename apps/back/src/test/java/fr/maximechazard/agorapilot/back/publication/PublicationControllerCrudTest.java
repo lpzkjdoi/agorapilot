@@ -1,14 +1,13 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.requests.UpdatePublicationRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,8 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Contrat HTTP de {@code PUT} et {@code DELETE /api/publications/{id}}. */
-@WebMvcTest(PublicationController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(PublicationController.class)
 class PublicationControllerCrudTest {
 
     @Autowired

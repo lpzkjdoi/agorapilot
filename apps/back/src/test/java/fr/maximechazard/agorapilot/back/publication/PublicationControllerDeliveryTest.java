@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.DeliveryFailedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
@@ -7,9 +8,7 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDelive
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,8 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Couvre le contrat HTTP de {@code POST /api/publications/{id}/deliveries},
  * en particulier les codes d'erreur sur lesquels le front s'appuie.
  */
-@WebMvcTest(PublicationController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(PublicationController.class)
 class PublicationControllerDeliveryTest {
 
     private static final String BODY = "{\"channel\":\"FACEBOOK\"}";

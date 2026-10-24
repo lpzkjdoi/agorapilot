@@ -1,7 +1,7 @@
 # Comptes applicatifs et droits
 
 - **Date** : 2026-10-24
-- **Statut** : décisions de principe validées par Maxime, conception à relire avant mise en œuvre
+- **Statut** : conception validée ; étapes 1 (Flyway) et 2 (socle d'authentification) livrées
 - **Périmètre** : `apps/back` (sécurité, comptes, migrations), `apps/front` (connexion, garde, administration)
 
 ## Contexte

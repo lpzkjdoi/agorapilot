@@ -1,13 +1,52 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { of } from 'rxjs';
+import { CurrentUser } from '../../auth/auth.model';
+import { AuthService } from '../../auth/auth.service';
 import { NavbarComponent } from './navbar.component';
 
 describe('NavbarComponent', () => {
+  const user = signal<CurrentUser | null>(null);
+  const logout = vi.fn(() => of(undefined));
+
   beforeEach(async () => {
+    user.set(null);
+    logout.mockClear();
+
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: AuthService, useValue: { user, logout } }],
     }).compileComponents();
+  });
+
+  it('should show the signed-in username, linking to the password change', () => {
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: [] });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector('.navbar-username');
+    expect(link?.textContent?.trim()).toBe('camille');
+    expect(link?.getAttribute('href')).toBe('/mot-de-passe');
+  });
+
+  it('should log out and go to the login page', async () => {
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: [] });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.navbar-logout')!.click();
+
+    expect(logout).toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/connexion');
+  });
+
+  it('should show no account block without a signed-in user', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.navbar-account')).toBeNull();
   });
 
   it('should create', () => {

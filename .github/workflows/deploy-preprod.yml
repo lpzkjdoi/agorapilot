@@ -13,8 +13,9 @@
 #   Variables : PREPROD_HOST, PREPROD_ALLOWED_CIDRS, POSTGRES_DB, POSTGRES_USER,
 #               FACEBOOK_API_VERSION, FACEBOOK_CLIENT_ID, FACEBOOK_PAGE_ID, TZ,
 #               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
-#               PREPROD_PATH
-#   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY
+#               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative)
+#   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY,
+#               AGORAPILOT_ADMIN_PASSWORD (facultatif)
 #
 # ⚠️ `POSTGRES_PASSWORD` doit reprendre **le mot de passe déjà en place** sur le
 # VPS : PostgreSQL conserve celui fixé à l'initialisation du volume, une valeur
@@ -245,6 +246,8 @@ jobs:
           FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
           FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
           TZ: ${{ vars.TZ || 'Europe/Paris' }}
+          AGORAPILOT_ADMIN_USERNAME: ${{ vars.AGORAPILOT_ADMIN_USERNAME }}
+          AGORAPILOT_ADMIN_PASSWORD: ${{ secrets.AGORAPILOT_ADMIN_PASSWORD }}
           OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
@@ -272,6 +275,8 @@ jobs:
             printf 'FACEBOOK_CLIENT_SECRET=%s\n' "$FACEBOOK_CLIENT_SECRET"
             printf 'FACEBOOK_PAGE_ID=%s\n'      "$FACEBOOK_PAGE_ID"
             printf 'TZ=%s\n'                    "$TZ"
+            printf 'AGORAPILOT_ADMIN_USERNAME=%s\n' "$AGORAPILOT_ADMIN_USERNAME"
+            printf 'AGORAPILOT_ADMIN_PASSWORD=%s\n' "$AGORAPILOT_ADMIN_PASSWORD"
           } > env.preprod
 
       - name: Sauvegarder le .env existant

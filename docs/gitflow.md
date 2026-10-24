@@ -137,7 +137,7 @@ Reste à faire :
 
 Prérequis avant le premier déploiement prod :
 - ~~Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.~~ Fait le 2026-10-24.
-- Authentification applicative : la chaîne de filtres actuelle est permissive.
+- ~~Authentification applicative : la chaîne de filtres actuelle est permissive.~~ Socle livré le 2026-10-24 (comptes, sessions, refus par défaut) ; l'administration des comptes suit.
 - **Une image par environnement, assumée comme telle.** C'est déjà le cas de fait
   depuis le badge d'environnement : `build-info.ts` fige l'environnement servi
   dans le bundle front. Ce qu'il reste à en tirer relève de la **surface

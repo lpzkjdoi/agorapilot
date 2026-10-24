@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.media.dtos.MediaSummaryDTO;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaNotFoundException;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
@@ -7,9 +8,7 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.DuplicateMediaExc
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,8 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Contrat HTTP de {@code PUT /api/publications/{id}/medias}.
  */
-@WebMvcTest(PublicationController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(PublicationController.class)
 class PublicationControllerMediasTest {
 
     @Autowired

@@ -74,7 +74,7 @@ Démarre l'application Angular sur http://localhost:4200 (l'API est attendue sur
 - [ ] **Comptes applicatifs et droits** — aujourd'hui toute l'API est ouverte (`permitAll`) et l'accès ne repose que sur le réseau (préprod derrière WireGuard). Conception : [proposition](docs/proposals/2026-10-24-comptes-et-droits.md) (une personne = un compte, refus par défaut, droits fins `ressource:action` avec profils, mot de passe provisoire donné par l'administrateur) :
   - [x] Décider du modèle d'accès : comptes applicatifs (2026-10-24)
   - [x] Flyway (prérequis)
-  - [ ] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
+  - [x] Socle d'authentification back + front : compte, session, CSRF, `/api/me`, premier compte, `denyAll` et droits sur tous les endpoints, page de connexion, garde, intercepteur
   - [ ] Administration des comptes : `/api/users`, page « Comptes », journal `security_events`
   - [ ] Règles métier sur `VERIFIED` (seules les publications vérifiées se programment ou se diffusent) et actions masquées selon les droits
   - [ ] Traçabilité : auteurs des publications, diffusions et levées de suspension

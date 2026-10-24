@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.dashboard;
 
+import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
 import fr.maximechazard.agorapilot.back.publication.DeliveryStatus;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
@@ -9,8 +10,6 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,8 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Contrat HTTP de {@code /api/dashboard}. */
-@WebMvcTest(DashboardController.class)
-@ActiveProfiles("dev")
+@ApiControllerTest(DashboardController.class)
 class DashboardControllerTest {
 
     @Autowired

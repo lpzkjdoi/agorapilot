@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.config;
 
+import fr.maximechazard.agorapilot.back.account.exceptions.AuthenticationFailedException;
+import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
@@ -124,6 +126,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ChannelSuspendedException.class)
     public ResponseEntity<ApiError> handleChannelSuspendedException(ChannelSuspendedException exception) {
         return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity<ApiError> handleAuthenticationFailedException(AuthenticationFailedException exception) {
+        return build(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ApiError> handleInvalidPasswordException(InvalidPasswordException exception) {
+        return build(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {

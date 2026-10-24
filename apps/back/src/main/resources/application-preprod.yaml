@@ -31,4 +31,16 @@ management:
       probes:
         enabled: true
 
-# Swagger reste actif : c'est un environnement de préproduction, pas la prod.
+# Swagger n'est servi qu'en développement : la chaîne de sécurité le refuse
+# ailleurs, et il n'est même pas généré ici.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
