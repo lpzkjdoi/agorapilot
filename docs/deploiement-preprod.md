@@ -201,46 +201,29 @@ remplace la contrainte `CHECK` de la colonne. Elle n'est plus un `ALTER TABLE`
 La base de préproduction a été créée par Hibernate, avant Flyway. Au premier
 démarrage, Flyway constate qu'elle a des tables mais pas d'historique : il
 l'inscrit d'office en version 1 (`baseline-on-migrate`) et **ne rejoue pas** `V1`.
-Il faut donc que la base soit bien dans l'état décrit par `V1`. Avant de fusionner
-la PR qui introduit Flyway :
+Rien n'est à faire avant le déploiement : les données de préproduction sont
+jetables.
 
-1. **Sauvegarder la base** :
+Si le back refuse de démarrer (`validate` a trouvé un écart entre la base et les
+entités), ou si une migration future bute sur une contrainte au nom différent,
+il suffit de repartir d'une base vide, que Flyway reconstruit à partir de `V1` :
 
-   ```bash
-   docker compose -f docker-compose.preprod.yaml exec -T db \
-     pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > ~/agorapilot-avant-flyway.sql
-   ```
+```bash
+docker compose -f docker-compose.preprod.yaml down
+docker volume rm "$(docker volume ls -q | grep 'db-data$')"
+docker compose -f docker-compose.preprod.yaml up -d
+```
 
-2. **Comparer les contraintes** avec celles de `V1` :
+Après le déploiement, `flyway_schema_history` montre la version de la base :
 
-   ```bash
-   docker compose -f docker-compose.preprod.yaml exec -T db \
-     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At -c "
-       SELECT conrelid::regclass || ' ' || conname FROM pg_constraint
-       WHERE connamespace = 'public'::regnamespace ORDER BY 1"
-   ```
+```bash
+docker compose -f docker-compose.preprod.yaml exec -T db \
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT version, description, type, success FROM flyway_schema_history"
+```
 
-   Attendu, à l’ordre près : 22 lignes, une par contrainte déclarée dans
-   `V1__schema_initial.sql` (clés primaires `<table>_pkey`, contraintes d'enum
-   `<table>_<colonne>_check`, `medias_storage_key_key`,
-   `publication_medias_publication_id_media_id_key`, et les cinq clés étrangères
-   `fk…` d'Hibernate). Une contrainte d'enum renommée ou recréée à la main en
-   septembre se corrige avant le déploiement, avec un `ALTER TABLE … RENAME
-   CONSTRAINT`.
-
-   Les colonnes, elles, n'ont pas à être comparées à la main : si l'une manque
-   ou n'a pas le bon type, `validate` empêche le back de démarrer, et le
-   déploiement échoue sans rien modifier.
-
-3. **Après le déploiement**, l'historique doit montrer la ligne de référence :
-
-   ```bash
-   docker compose -f docker-compose.preprod.yaml exec -T db \
-     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-     -c "SELECT version, description, type, success FROM flyway_schema_history"
-   ```
-
-   Attendu : `1 | Schéma créé par Hibernate avant Flyway | BASELINE | t`.
+`1 | Schéma créé par Hibernate avant Flyway | BASELINE` sur l'ancienne base,
+`1 | schema initial | SQL` sur une base reconstruite.
 
 Les deux migrations manuelles de septembre (statut `FAILED` des occurrences,
 statut `IN_PROGRESS` des livraisons) sont déjà passées et intégrées à `V1`, qui
