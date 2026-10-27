@@ -63,6 +63,20 @@ export class PublicationCardComponent {
   readonly verified = computed(() => this.publication().status === 'VERIFIED');
   readonly campaignName = computed(() => this.publication().campaign?.name ?? null);
 
+  /**
+   * « modifiée par bruno », ou « modifiée » si c'est l'auteur lui-même ; rien si
+   * la publication n'a pas bougé depuis sa création.
+   */
+  readonly modification = computed(() => {
+    const publication = this.publication();
+
+    if (!publication.updatedBy || publication.updatedAt === publication.createdAt) {
+      return null;
+    }
+
+    return publication.updatedBy === publication.createdBy ? 'modifiée' : `modifiée par ${ publication.updatedBy }`;
+  });
+
   readonly mediaCount = computed(() => this.publication().medias?.length ?? 0);
 
   /**

@@ -52,7 +52,8 @@ class CampaignControllerTest {
                         "Rendez-vous samedi",
                         PublicationStatus.VERIFIED,
                         List.of(),
-                        new PublicationCampaignDTO(3L, "Marché de Noël")
+                        new PublicationCampaignDTO(3L, "Marché de Noël"),
+                        null, null, null, null
                 ))
         );
     }

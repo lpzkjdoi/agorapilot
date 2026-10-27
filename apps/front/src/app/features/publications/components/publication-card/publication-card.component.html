@@ -33,6 +33,12 @@
         {{ createdAt | date: 'd MMMM y' : undefined : 'fr-FR' }}
         •
         {{ createdAt | date: 'HH:mm' : undefined : 'fr-FR' }}
+        @if (publication().createdBy; as author) {
+          par {{ author }}
+        }
+        @if (modification(); as modified) {
+          • {{ modified }}
+        }
       </p>
     }
 

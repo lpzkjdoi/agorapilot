@@ -300,7 +300,12 @@ Deux garde-fous s'ajoutent au droit `users:manage` :
 - **on ne donne ni ne retire que des droits qu'on détient soi-même**.
 
 Le **journal de sécurité**, en bas de la même page, liste les connexions, les
-refus, les verrouillages et toutes les actions d'administration.
+refus, les verrouillages et toutes les actions d'administration. Il garde aussi
+la trace des actions qui ne laissent pas de ligne ailleurs : diffusions
+déplacées, reprises ou annulées, publications supprimées, canaux suspendus
+(par l'ordonnanceur) et repris. Les cartes de publication indiquent leur auteur
+et leur dernier modificateur, et la bulle du calendrier qui a programmé chaque
+diffusion.
 
 ### Sessions
 

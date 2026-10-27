@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.account.events;
 
+import fr.maximechazard.agorapilot.back.account.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,12 @@ public class SecurityEventService {
 
     private final SecurityEventRepository repository;
     private final Clock clock;
+
+    /** Une action du compte connecté, ou du système hors requête (acteur vide). */
+    @Transactional
+    public void recordAction(SecurityEventType type, String details) {
+        record(type, CurrentUser.username().orElse(null), null, details);
+    }
 
     /** Écrit dans la transaction de l'appelant : une action annulée ne laisse pas de trace trompeuse. */
     @Transactional

@@ -1,5 +1,6 @@
 package fr.maximechazard.agorapilot.back.publisher.suspension;
 
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +37,7 @@ class ChannelSuspensionServiceTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-10-16T12:05:00Z"), PARIS);
-        service = new ChannelSuspensionService(repository, clock);
+        service = new ChannelSuspensionService(repository, mock(SecurityEventService.class), clock);
     }
 
     private ChannelSuspension existing() {

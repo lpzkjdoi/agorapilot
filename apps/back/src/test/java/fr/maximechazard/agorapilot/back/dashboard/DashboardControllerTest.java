@@ -38,8 +38,10 @@ class DashboardControllerTest {
                 LocalDateTime.of(2026, 10, 25, 18, 30),
                 false,
                 PublicationOccurrenceStatus.SCHEDULED,
-                new PublicationDTO(3L, "Marché de Noël samedi", PublicationStatus.VERIFIED, List.of(), null),
-                List.of(new PublicationDeliveryDTO(4L, 9L, DeliveryChannel.FACEBOOK, DeliveryStatus.PENDING, null, null, null)));
+                new PublicationDTO(3L, "Marché de Noël samedi", PublicationStatus.VERIFIED, List.of(), null,
+                        null, null, null, null),
+                List.of(new PublicationDeliveryDTO(4L, 9L, DeliveryChannel.FACEBOOK, DeliveryStatus.PENDING, null, null, null)),
+                "camille");
         when(dashboardService.getSummary()).thenReturn(new DashboardDTO(2, 6, 3, 1, List.of(upcoming)));
 
         mockMvc.perform(get("/api/dashboard"))

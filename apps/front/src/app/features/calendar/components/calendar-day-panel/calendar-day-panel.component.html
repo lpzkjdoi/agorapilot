@@ -35,6 +35,9 @@
           >{{ statusLabels[occurrence.status] }}</span>
           <span class="day-panel-time">
             {{ time(occurrence) }} · {{ occurrence.pinned ? 'heure fixe' : 'heure auto' }}
+            @if (occurrence.createdBy) {
+              · programmée par {{ occurrence.createdBy }}
+            }
           </span>
         </div>
 

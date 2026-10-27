@@ -94,7 +94,24 @@ describe('PublicationCardComponent', () => {
     );
   });
 
-  it('should not render the date line while the API does not expose `createdAt`', async () => {
+  it('should name the author, and whoever modified it since', async () => {
+    const created = await render({ ...draft, createdAt: '2026-03-20T10:30:00', createdBy: 'camille',
+                                   updatedAt: '2026-03-20T10:30:00', updatedBy: 'camille' });
+    expect((created.nativeElement as HTMLElement).querySelector('.date')?.textContent).toContain('par camille');
+    expect((created.nativeElement as HTMLElement).querySelector('.date')?.textContent).not.toContain('modifiée');
+
+    const modified = await render({ ...draft, createdAt: '2026-03-20T10:30:00', createdBy: 'camille',
+                                    updatedAt: '2026-03-21T09:00:00', updatedBy: 'bruno' });
+    expect((modified.nativeElement as HTMLElement).querySelector('.date')?.textContent).toContain('modifiée par bruno');
+
+    const byAuthor = await render({ ...draft, createdAt: '2026-03-20T10:30:00', createdBy: 'camille',
+                                    updatedAt: '2026-03-21T09:00:00', updatedBy: 'camille' });
+    const text = (byAuthor.nativeElement as HTMLElement).querySelector('.date')?.textContent ?? '';
+    expect(text).toContain('modifiée');
+    expect(text).not.toContain('modifiée par');
+  });
+
+  it('should not render the date line for a publication without creation date', async () => {
     const fixture = await render(draft);
     expect((fixture.nativeElement as HTMLElement).querySelector('.date')).toBeNull();
   });

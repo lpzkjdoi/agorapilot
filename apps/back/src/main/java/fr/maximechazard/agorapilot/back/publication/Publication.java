@@ -6,7 +6,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -59,6 +61,16 @@ public class Publication {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    /** Pseudo de l'auteur ; vide pour ce qui précède la traçabilité. */
+    @CreatedBy
+    @Column(updatable = false, length = 32)
+    private String createdBy;
+
+    /** Pseudo du dernier à l'avoir modifiée (texte, statut, visuels, campagne, suppression). */
+    @LastModifiedBy
+    @Column(length = 32)
+    private String updatedBy;
 
     public Publication(String content, PublicationStatus status) {
         this.content = content;

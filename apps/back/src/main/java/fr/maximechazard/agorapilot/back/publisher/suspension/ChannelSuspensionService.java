@@ -1,6 +1,8 @@
 package fr.maximechazard.agorapilot.back.publisher.suspension;
 
 import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class ChannelSuspensionService {
     private static final DateTimeFormatter SINCE = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
 
     private final ChannelSuspensionRepository channelSuspensionRepository;
+    private final SecurityEventService events;
     private final Clock clock;
 
     public Optional<ChannelSuspension> find(DeliveryChannel channel) {
@@ -55,6 +58,7 @@ public class ChannelSuspensionService {
 
         log.warn("Canal {} suspendu : {}", channel, reason);
         channelSuspensionRepository.save(new ChannelSuspension(channel, reason, LocalDateTime.now(clock)));
+        events.record(SecurityEventType.CHANNEL_SUSPENDED, null, null, channel + " : " + reason);
     }
 
     /** Lève la suspension ; sans effet si le canal n'est pas suspendu. */
@@ -64,6 +68,8 @@ public class ChannelSuspensionService {
             log.info("Suspension du canal {} levée (en place depuis le {}).",
                     channel, suspension.getSuspendedAt().format(SINCE));
             channelSuspensionRepository.delete(suspension);
+            events.recordAction(SecurityEventType.CHANNEL_RESUMED,
+                    channel + " : suspendu depuis le " + suspension.getSuspendedAt().format(SINCE));
         });
     }
 

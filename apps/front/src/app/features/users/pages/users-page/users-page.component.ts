@@ -13,7 +13,14 @@ import {
   TemporaryPasswordModalComponent,
 } from "../../components/temporary-password-modal/temporary-password-modal.component";
 import { matchingProfile } from "../../permissions";
-import { Account, EVENT_LABELS, SecurityEvent, STATUS_LABELS, TemporaryPassword } from "../../user.model";
+import {
+  Account,
+  EVENT_LABELS,
+  SecurityEvent,
+  SecurityEventType,
+  STATUS_LABELS,
+  TemporaryPassword,
+} from "../../user.model";
 import { UsersService } from "../../users.service";
 
 interface PendingAction {
@@ -42,6 +49,8 @@ export class UsersPageComponent {
 
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly eventLabels = EVENT_LABELS;
+  /** Événements qui appellent l'attention, affichés en rouge. */
+  protected readonly alerts = new Set<SecurityEventType>(['LOGIN_FAILED', 'ACCOUNT_LOCKED', 'CHANNEL_SUSPENDED']);
 
   protected readonly accounts = signal<Account[]>([]);
   protected readonly events = signal<SecurityEvent[]>([]);

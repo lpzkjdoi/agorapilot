@@ -35,7 +35,13 @@ export type SecurityEventType =
   | 'ACCOUNT_CREATED'
   | 'PERMISSIONS_CHANGED'
   | 'ACCOUNT_DISABLED'
-  | 'PASSWORD_RESET';
+  | 'PASSWORD_RESET'
+  | 'PUBLICATION_DELETED'
+  | 'OCCURRENCE_RESCHEDULED'
+  | 'OCCURRENCE_RETRIED'
+  | 'OCCURRENCE_CANCELLED'
+  | 'CHANNEL_SUSPENDED'
+  | 'CHANNEL_RESUMED';
 
 /** Reflète `SecurityEventDTO` (`GET /api/security-events`). */
 export interface SecurityEvent {
@@ -62,4 +68,10 @@ export const EVENT_LABELS: Record<SecurityEventType, string> = {
   PERMISSIONS_CHANGED: 'Droits modifiés',
   ACCOUNT_DISABLED: 'Compte désactivé',
   PASSWORD_RESET: 'Mot de passe réinitialisé',
+  PUBLICATION_DELETED: 'Publication supprimée',
+  OCCURRENCE_RESCHEDULED: 'Diffusion déplacée',
+  OCCURRENCE_RETRIED: 'Diffusion reprise',
+  OCCURRENCE_CANCELLED: 'Diffusion annulée',
+  CHANNEL_SUSPENDED: 'Canal suspendu',
+  CHANNEL_RESUMED: 'Canal repris',
 };

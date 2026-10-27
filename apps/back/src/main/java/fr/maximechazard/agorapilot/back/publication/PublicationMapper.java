@@ -30,7 +30,11 @@ public class PublicationMapper {
                 publication.getContent(),
                 publication.getStatus(),
                 medias,
-                campaign == null ? null : new PublicationCampaignDTO(campaign.getId(), campaign.getName())
+                campaign == null ? null : new PublicationCampaignDTO(campaign.getId(), campaign.getName()),
+                publication.getCreatedAt(),
+                publication.getCreatedBy(),
+                publication.getUpdatedAt(),
+                publication.getUpdatedBy()
         );
     }
 }

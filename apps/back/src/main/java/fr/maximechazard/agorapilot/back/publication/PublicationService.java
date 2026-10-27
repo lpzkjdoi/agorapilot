@@ -14,6 +14,8 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.VerificationNotAl
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.UpdatePublicationRequest;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
+import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class PublicationService {
     private final MediaRepository mediaRepository;
     private final CampaignRepository campaignRepository;
     private final PublicationOccurrenceService publicationOccurrenceService;
+    private final SecurityEventService events;
     private final PublicationMapper mapper;
 
     /**
@@ -83,7 +86,7 @@ public class PublicationService {
             publication.setStatus(PublicationStatus.DRAFT);
         }
 
-        return mapper.toDTO(publicationRepository.save(publication));
+        return mapper.toDTO(saveAndAudit(publication));
     }
 
     /**
@@ -103,6 +106,8 @@ public class PublicationService {
         Publication publication = findOrThrow(publicationId);
 
         boolean hasHistory = publicationOccurrenceService.releaseOccurrencesOf(publication);
+        events.recordAction(SecurityEventType.PUBLICATION_DELETED, "Publication " + publication.getId() + " "
+                + excerpt(publication) + (hasHistory ? " : déjà diffusée, archivée avec son historique" : ""));
 
         if (hasHistory) {
             publication.setArchived(true);
@@ -170,7 +175,7 @@ public class PublicationService {
             publication.setStatus(PublicationStatus.DRAFT);
         }
 
-        return mapper.toDTO(publicationRepository.save(publication));
+        return mapper.toDTO(saveAndAudit(publication));
     }
 
     /**
@@ -190,7 +195,23 @@ public class PublicationService {
 
         publication.setCampaign(campaign);
 
-        return mapper.toDTO(publicationRepository.save(publication));
+        return mapper.toDTO(saveAndAudit(publication));
+    }
+
+    private static final int EXCERPT_LENGTH = 60;
+
+    /** Le début du texte, entre guillemets : de quoi reconnaître la publication dans le journal. */
+    static String excerpt(Publication publication) {
+        String content = publication.getContent().strip().replaceAll("\\s+", " ");
+        return "« " + (content.length() <= EXCERPT_LENGTH ? content : content.substring(0, EXCERPT_LENGTH) + "…") + " »";
+    }
+
+    /**
+     * L'audit d'une modification ({@code updatedBy}, {@code updatedAt}) n'est posé
+     * qu'à l'écriture en base : sans elle, la réponse montrerait l'ancien auteur.
+     */
+    private Publication saveAndAudit(Publication publication) {
+        return publicationRepository.saveAndFlush(publication);
     }
 
     /** Une publication archivée est traitée comme absente. */

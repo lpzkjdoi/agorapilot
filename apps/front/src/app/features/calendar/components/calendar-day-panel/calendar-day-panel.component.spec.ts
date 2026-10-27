@@ -136,4 +136,12 @@ describe('CalendarDayPanelComponent', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.day-panel-edit')).toHaveLength(0);
   });
+
+  it('should say who scheduled the delivery, when known', () => {
+    render([occurrence({ createdBy: 'camille' }), occurrence({ id: 2 })]);
+
+    const times = element.querySelectorAll('.day-panel-time');
+    expect(times[0].textContent).toContain('programmée par camille');
+    expect(times[1].textContent).not.toContain('programmée par');
+  });
 });
