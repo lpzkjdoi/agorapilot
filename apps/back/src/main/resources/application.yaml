@@ -72,8 +72,16 @@ facebook:
   client-secret: ${FACEBOOK_CLIENT_SECRET:}
   client-id: ${FACEBOOK_CLIENT_ID:}
   page-id: ${FACEBOOK_PAGE_ID:}
-  # Pas de access-token : le token de page vit en base (table facebook_tokens),
-  # alimenté par POST /admin/facebook/bootstrap.
+  # Pas de access-token : le token de page vit en base, posé soit par la
+  # connexion depuis l'interface (table facebook_connections), soit par le
+  # bootstrap historique POST /admin/facebook/bootstrap (table facebook_tokens).
+  connection:
+    # `connection` : le jeton connecté depuis la page « Canal Facebook » publie ;
+    # faute de connexion, le jeton historique sert encore. `legacy` : retour
+    # arrière, seul le mécanisme historique publie, connexion et contrôle coupés.
+    token-source: ${FACEBOOK_TOKEN_SOURCE:connection}
+    # Contrôle quotidien du jeton connecté, avant la fenêtre de publication.
+    check-cron: ${FACEBOOK_CONNECTION_CHECK_CRON:0 0 7 * * *}
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:4200}

@@ -41,7 +41,8 @@ export type SecurityEventType =
   | 'OCCURRENCE_RETRIED'
   | 'OCCURRENCE_CANCELLED'
   | 'CHANNEL_SUSPENDED'
-  | 'CHANNEL_RESUMED';
+  | 'CHANNEL_RESUMED'
+  | 'FACEBOOK_CONNECTED';
 
 /** Reflète `SecurityEventDTO` (`GET /api/security-events`). */
 export interface SecurityEvent {
@@ -74,4 +75,5 @@ export const EVENT_LABELS: Record<SecurityEventType, string> = {
   OCCURRENCE_CANCELLED: 'Diffusion annulée',
   CHANNEL_SUSPENDED: 'Canal suspendu',
   CHANNEL_RESUMED: 'Canal repris',
+  FACEBOOK_CONNECTED: 'Page Facebook connectée',
 };

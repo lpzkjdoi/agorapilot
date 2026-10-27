@@ -20,5 +20,7 @@ public enum SecurityEventType {
     OCCURRENCE_CANCELLED,
     /** Par l'ordonnanceur, sans acteur, après un refus bloquant du canal. */
     CHANNEL_SUSPENDED,
-    CHANNEL_RESUMED
+    CHANNEL_RESUMED,
+    /** Page Facebook (re)connectée depuis l'interface, par le compte qui l'a demandé. */
+    FACEBOOK_CONNECTED
 }

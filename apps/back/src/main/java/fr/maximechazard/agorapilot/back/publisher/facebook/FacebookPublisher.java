@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class FacebookPublisher implements Publisher {
-    private final FacebookTokenService facebookTokenService;
+    private final FacebookPageTokenProvider pageTokenProvider;
     private final FacebookClient facebookClient;
     private final PublicationDeliveryRepository publicationDeliveryRepository;
     private final PublishableImageFactory publishableImageFactory;
@@ -40,7 +40,7 @@ public class FacebookPublisher implements Publisher {
                 .orElseThrow(() -> new IllegalStateException("Facebook delivery not found for occurrence " + occurrence.getId()));
 
         try {
-            String token = facebookTokenService.getCurrentPageToken();
+            String token = pageTokenProvider.currentPageToken();
 
             Publication publication = occurrence.getPublication();
             PreparedImages prepared = publishableImageFactory.prepare(

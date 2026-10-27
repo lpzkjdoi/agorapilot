@@ -348,7 +348,84 @@ Pour fermer la session :
 curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" $B/api/auth/logout
 ```
 
+## Connexion du canal Facebook (depuis l'interface)
+
+La page **« Canal Facebook »** (`/canal-facebook`, droit `channels:manage`)
+remplace le bootstrap à la main décrit plus bas. Elle passe par le flux OAuth de
+Facebook Login : le bouton « Connecter la Page Facebook » envoie le navigateur
+sur la boîte de dialogue de Facebook, qui le ramène sur AgoraPilot avec un code
+que le back échange contre le jeton de la Page `FACEBOOK_PAGE_ID`.
+
+### Prérequis côté Meta (une fois par environnement)
+
+Dans l'app Meta (`FACEBOOK_CLIENT_ID`) → Facebook Login → Paramètres, ajouter aux
+**« Valid OAuth Redirect URIs »** :
+
+```
+https://<PREPROD_HOST>/api/channels/facebook/callback
+```
+
+Sans cela, Facebook refuse la connexion (« URL bloquée »). Le VPN ne gêne pas :
+la redirection passe par le navigateur, jamais par les serveurs de Facebook.
+
+La personne qui connecte doit administrer la Page et, tant que l'app n'a pas
+d'accès avancé, avoir un rôle dans l'app Meta.
+
+### Ce que fait la connexion
+
+- jeton de Page permanent stocké dans `facebook_connections` (une ligne, remplacée
+  à chaque reconnexion) ; jamais renvoyé au front ;
+- suspension Facebook levée automatiquement ;
+- entrée « Page Facebook connectée » dans le journal de sécurité, au nom de la
+  personne qui a cliqué.
+
+Le retour de Facebook (`GET /api/channels/facebook/callback`) est **public** : le
+cookie de session (`SameSite=strict`) n'accompagne pas une navigation venue de
+facebook.com. C'est le `state` OAuth, à usage unique, valable 10 minutes et
+stocké dans `facebook_oauth_states`, qui identifie la demande et son auteur.
+
+### Contrôle quotidien
+
+Chaque matin à 7 h (`FACEBOOK_CONNECTION_CHECK_CRON`, défaut `0 0 7 * * *`), le
+back interroge `debug_token`. Un jeton invalide, ou sans `pages_manage_posts`,
+**suspend le canal** avant la fenêtre de publication, avec un bandeau qui renvoie
+vers « Canal Facebook ». Facebook injoignable ne suspend rien (résultat
+« Indéterminé »). Le bouton « Contrôler maintenant » fait la même chose à la
+demande.
+
+### Bascule et retour arrière
+
+L'ancien mécanisme est intact ; la variable `FACEBOOK_TOKEN_SOURCE` choisit :
+
+| Valeur | Jeton qui publie | Connexion / contrôle |
+|---|---|---|
+| `connection` (défaut) | le jeton connecté ; **à défaut**, le jeton historique de `facebook_tokens` | actifs |
+| `legacy` | le jeton historique seul, comme avant | désactivés (la page l'indique) |
+
+La bascule ne coupe donc rien : tant que personne n'a connecté la Page, le jeton
+posé par le bootstrap continue de publier.
+
+**Revenir en arrière** sans toucher au code : définir la variable
+`FACEBOOK_TOKEN_SOURCE=legacy` dans l'Environment GitHub `preprod`, puis relancer
+« Deploy preprod » (`workflow_dispatch`). Les tables `facebook_connections` et
+`facebook_oauth_states` restent en place, ignorées.
+
+**Annuler la PR elle-même** (revert) reste possible : Flyway ignore une migration
+appliquée plus récente que le code (`V5`), et Hibernate des tables qu'il ne
+connaît pas. Seule précaution : supprimer d'abord les lignes du journal de type
+`FACEBOOK_CONNECTED`, que l'ancien code ne saurait pas lire (la page « Comptes »
+échouerait) :
+
+```sql
+DELETE FROM security_events WHERE type = 'FACEBOOK_CONNECTED';
+```
+
 ## Endpoints d'administration Facebook
+
+> Mécanisme historique, conservé le temps de valider la connexion depuis
+> l'interface (cf. section précédente) ; il sert encore quand
+> `FACEBOOK_TOKEN_SOURCE=legacy` ou tant qu'aucune Page n'a été connectée.
+
 
 `FacebookAdminController` expose `POST /admin/facebook/bootstrap` et
 `GET /admin/facebook/token/status`, réservés aux comptes qui ont le droit
@@ -483,8 +560,9 @@ désormais la source de vérité, via un Environment `preprod`
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
 
 `PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
-`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`
-et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
+`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`,
+`FACEBOOK_TOKEN_SOURCE` (défaut `connection`, cf.
+[Bascule et retour arrière](#bascule-et-retour-arrière)) et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
 et leur absence fait échouer le déploiement avec un message nommant la clé.
 
 `PREPROD_SSH_KNOWN_HOSTS` contient l'empreinte du serveur, obtenue par :
@@ -530,3 +608,6 @@ manuel : restaurer `.env.bak`, et redéployer un tag antérieur en fixant
   prématurément (mot de passe changé, permission révoquée, revue d'app), rien ne
   le détecte : on ne l'apprend qu'au premier échec de publication. Un appel
   périodique à `debug_token` pour contrôler `is_valid` comblerait ce trou.
+  **Comblé pour le jeton connecté depuis l'interface** (contrôle quotidien, cf.
+  [Connexion du canal Facebook](#connexion-du-canal-facebook-depuis-linterface)) ;
+  reste vrai du jeton historique, à supprimer avec le bootstrap.

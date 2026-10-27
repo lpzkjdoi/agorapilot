@@ -54,13 +54,17 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      # Utilisé par la configuration CORS du back. Le front étant servi sur la
-      # même origine, cette valeur ne sert plus qu'aux appels hors navigateur.
+      # Origine publique de l'application : CORS, et adresse de retour de la
+      # connexion Facebook (`<FRONTEND_URL>/api/channels/facebook/callback`, à
+      # déclarer dans les « Valid OAuth Redirect URIs » de l'app Meta).
       FRONTEND_URL: https://${PREPROD_HOST:?PREPROD_HOST est requis}
       FACEBOOK_API_VERSION: ${FACEBOOK_API_VERSION:-v25.0}
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
       FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
+      # Retour arrière de la connexion depuis l'interface : `legacy` rend la
+      # main au seul bootstrap historique. Cf. docs/deploiement-preprod.md.
+      FACEBOOK_TOKEN_SOURCE: ${FACEBOOK_TOKEN_SOURCE:-connection}
       # Racine de la médiathèque, sur le volume `media-data` ci-dessous. Chemin
       # figé plutôt que variabilisé : il n'a pas à changer d'un environnement à
       # l'autre, et toute nouvelle variable devrait être propagée jusqu'à

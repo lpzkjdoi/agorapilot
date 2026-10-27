@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -23,7 +24,7 @@ export const SUSPENSIONS_REFRESH_MS = 60_000;
  */
 @Component({
   selector: 'app-channel-suspension-banner',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './channel-suspension-banner.component.html',
   styleUrl: './channel-suspension-banner.component.css',
   standalone: true,

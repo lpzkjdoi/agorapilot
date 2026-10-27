@@ -54,6 +54,7 @@ describe('routes', () => {
       'publications',
       'medias',
       'comptes',
+      'canal-facebook',
       'aucun-droit',
     ]);
   });
@@ -61,6 +62,16 @@ describe('routes', () => {
   it('should keep the accounts page for the accounts administrators', async () => {
     const harness = await RouterTestingHarness.create();
     const navigation = harness.navigateByUrl('/comptes');
+    (await meRequest()).flush({ username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] });
+    await navigation;
+
+    expect(TestBed.inject(Router).url).toBe('/dashboard');
+    httpTesting.match(() => true).forEach((request) => request.flush({}));
+  });
+
+  it('should keep the Facebook channel page for the accounts managing the channels', async () => {
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/canal-facebook');
     (await meRequest()).flush({ username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] });
     await navigation;
 

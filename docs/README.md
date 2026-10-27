@@ -62,4 +62,5 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-10-24 | [Administration des comptes et journal de sécurité](./changelog/2026-10-24-administration-comptes.md) | _voir PR_ |
 | 2026-10-24 | [Vérification des publications et actions selon les droits](./changelog/2026-10-24-verification-et-droits.md) | _voir PR_ |
 | 2026-10-24 | [Traçabilité : auteurs et journal des actions](./changelog/2026-10-24-tracabilite.md) | _voir PR_ |
+| 2026-10-27 | [Connexion du canal Facebook depuis l'interface](./changelog/2026-10-27-connexion-facebook-interface.md) | _voir PR_ |
 | 2026-10-27 | [Jalon v1.0 : ce qui manque pour la mise en production](./changelog/2026-10-27-jalon-v1.md) | _voir PR_ |

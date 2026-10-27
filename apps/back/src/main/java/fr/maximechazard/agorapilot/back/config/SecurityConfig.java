@@ -91,7 +91,11 @@ public class SecurityConfig {
         // ---- Public
         auth.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
             // Healthcheck du conteneur, dont dépend le démarrage du front.
-            .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll();
+            .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+            // Retour de la boîte de dialogue Facebook : la navigation vient de
+            // facebook.com, sans cookie de session (SameSite=strict). Le `state`
+            // à usage unique tient lieu d'authentification et de jeton CSRF.
+            .requestMatchers(HttpMethod.GET, "/api/channels/facebook/callback").permitAll();
 
         if (dev) {
             auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
@@ -120,6 +124,9 @@ public class SecurityConfig {
             // ---- Canaux
             .requestMatchers(HttpMethod.GET, "/api/channels/suspensions").hasAuthority(PUBLICATIONS_READ.code())
             .requestMatchers(HttpMethod.DELETE, "/api/channels/*/suspension").hasAuthority(CHANNELS_MANAGE.code())
+            .requestMatchers(HttpMethod.GET, "/api/channels/facebook/connection").hasAuthority(CHANNELS_MANAGE.code())
+            .requestMatchers(HttpMethod.POST, "/api/channels/facebook/connection", "/api/channels/facebook/connection/check")
+                .hasAuthority(CHANNELS_MANAGE.code())
             .requestMatchers("/admin/**").hasAuthority(CHANNELS_MANAGE.code())
 
             // ---- Campagnes

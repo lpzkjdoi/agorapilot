@@ -13,7 +13,9 @@
 #   Variables : PREPROD_HOST, PREPROD_ALLOWED_CIDRS, POSTGRES_DB, POSTGRES_USER,
 #               FACEBOOK_API_VERSION, FACEBOOK_CLIENT_ID, FACEBOOK_PAGE_ID, TZ,
 #               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
-#               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative)
+#               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative),
+#               FACEBOOK_TOKEN_SOURCE (facultative : `connection` par défaut,
+#               `legacy` pour revenir au bootstrap historique)
 #   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY,
 #               AGORAPILOT_ADMIN_PASSWORD (facultatif)
 #
@@ -245,6 +247,7 @@ jobs:
           FACEBOOK_CLIENT_ID: ${{ vars.FACEBOOK_CLIENT_ID }}
           FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
           FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
+          FACEBOOK_TOKEN_SOURCE: ${{ vars.FACEBOOK_TOKEN_SOURCE || 'connection' }}
           TZ: ${{ vars.TZ || 'Europe/Paris' }}
           AGORAPILOT_ADMIN_USERNAME: ${{ vars.AGORAPILOT_ADMIN_USERNAME }}
           AGORAPILOT_ADMIN_PASSWORD: ${{ secrets.AGORAPILOT_ADMIN_PASSWORD }}
@@ -274,6 +277,7 @@ jobs:
             printf 'FACEBOOK_CLIENT_ID=%s\n'    "$FACEBOOK_CLIENT_ID"
             printf 'FACEBOOK_CLIENT_SECRET=%s\n' "$FACEBOOK_CLIENT_SECRET"
             printf 'FACEBOOK_PAGE_ID=%s\n'      "$FACEBOOK_PAGE_ID"
+            printf 'FACEBOOK_TOKEN_SOURCE=%s\n' "$FACEBOOK_TOKEN_SOURCE"
             printf 'TZ=%s\n'                    "$TZ"
             printf 'AGORAPILOT_ADMIN_USERNAME=%s\n' "$AGORAPILOT_ADMIN_USERNAME"
             printf 'AGORAPILOT_ADMIN_PASSWORD=%s\n' "$AGORAPILOT_ADMIN_PASSWORD"

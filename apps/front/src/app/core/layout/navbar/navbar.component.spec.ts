@@ -67,6 +67,18 @@ describe('NavbarComponent', () => {
     expect(compiled.querySelector('[routerLink="/comptes"]')).not.toBeNull();
   });
 
+  it('should show the Canal Facebook entry only to accounts managing the channels', () => {
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ['publications:read'] });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[routerLink="/canal-facebook"]')).toBeNull();
+
+    user.set({ username: 'camille', status: 'ACTIVE', permissions: ['channels:manage'] });
+    fixture.detectChanges();
+    expect(compiled.querySelector('[routerLink="/canal-facebook"]')).not.toBeNull();
+  });
+
   it('should show no account block without a signed-in user', () => {
     user.set(null);
     const fixture = TestBed.createComponent(NavbarComponent);
@@ -133,8 +145,8 @@ describe('NavbarComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     const buttons = compiled.querySelectorAll('.navbar-nav-button');
-    // Les cinq pages, plus « Comptes » pour un compte qui a tous les droits.
-    expect(buttons.length).toBe(6);
+    // Les cinq pages, plus « Canal Facebook » et « Comptes » pour un compte qui a tous les droits.
+    expect(buttons.length).toBe(7);
 
     const publications = buttons[3];
     expect(publications.textContent).toContain('Publications');

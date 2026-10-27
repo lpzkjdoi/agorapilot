@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 class FacebookPublisherTest {
 
     @Mock
-    private FacebookTokenService tokenService;
+    private FacebookPageTokenProvider tokenService;
     @Mock
     private FacebookClient facebookClient;
     @Mock
@@ -76,7 +76,7 @@ class FacebookPublisherTest {
 
         PublishableImage image = new PublishableImage("a.png", "image/png", null,
                 "x".getBytes(StandardCharsets.UTF_8));
-        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(tokenService.currentPageToken()).thenReturn("page-token");
         when(imageFactory.prepare(List.of(media), FacebookClient.MAX_PHOTOS_PER_POST))
                 .thenReturn(new PreparedImages(List.of(image), List.of()));
         when(facebookClient.publish(eq("Marché samedi"), eq(List.of(image)), eq("page-token")))
@@ -91,7 +91,7 @@ class FacebookPublisherTest {
 
     @Test
     void publishes_without_image_when_nothing_is_attached() {
-        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(tokenService.currentPageToken()).thenReturn("page-token");
         when(imageFactory.prepare(List.of(), FacebookClient.MAX_PHOTOS_PER_POST))
                 .thenReturn(new PreparedImages(List.of(), List.of()));
         when(facebookClient.publish(any(), any(), any())).thenReturn(new FacebookPostResponse("123_000"));
@@ -108,7 +108,7 @@ class FacebookPublisherTest {
         pdf.setFileType(MediaFileType.PDF);
         occurrence.getPublication().getMedias().add(new PublicationMedia(occurrence.getPublication(), pdf, 0));
 
-        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(tokenService.currentPageToken()).thenReturn("page-token");
         when(imageFactory.prepare(any(), anyInt()))
                 .thenReturn(new PreparedImages(List.of(), List.of("programme.pdf (un PDF n'est pas publiable)")));
         when(facebookClient.publish(any(), eq(List.of()), any()))
@@ -121,7 +121,7 @@ class FacebookPublisherTest {
 
     @Test
     void records_the_failure_rather_than_propagating_it() {
-        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(tokenService.currentPageToken()).thenReturn("page-token");
         when(imageFactory.prepare(any(), anyInt())).thenReturn(new PreparedImages(List.of(), List.of()));
         when(facebookClient.publish(any(), any(), any())).thenThrow(new IllegalStateException("Graph a refusé"));
 
@@ -217,7 +217,7 @@ class FacebookPublisherTest {
     }
 
     private void failWith(RuntimeException error) {
-        when(tokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(tokenService.currentPageToken()).thenReturn("page-token");
         when(imageFactory.prepare(any(), anyInt())).thenReturn(new PreparedImages(List.of(), List.of()));
         when(facebookClient.publish(any(), any(), any())).thenThrow(error);
     }
