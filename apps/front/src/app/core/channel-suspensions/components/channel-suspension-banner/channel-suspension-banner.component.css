@@ -61,6 +61,17 @@
   cursor: pointer;
 }
 
+.suspension-reconnect {
+  flex: none;
+  align-self: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid #1E3A8A;
+  border-radius: var(--radius-sm);
+  color: #1E3A8A;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .suspension-lift:disabled {
   cursor: progress;
   opacity: 0.6;

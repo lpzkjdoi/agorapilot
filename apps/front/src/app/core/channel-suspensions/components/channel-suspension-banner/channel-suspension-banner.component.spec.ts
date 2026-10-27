@@ -3,6 +3,7 @@ import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { NotificationService } from '../../../notifications/notification.service';
 import { ChannelSuspension } from '../../channel-suspension.model';
 import {
@@ -28,7 +29,7 @@ describe('ChannelSuspensionBannerComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [ChannelSuspensionBannerComponent],
-      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
@@ -64,6 +65,12 @@ describe('ChannelSuspensionBannerComponent', () => {
     );
     expect(compiled.querySelector('.suspension-reason')?.textContent).toBe(facebook.reason);
     expect(compiled.querySelector('.suspension-hint')?.textContent).toContain('Réglez le problème sur Facebook');
+  });
+
+  it('should link to the channel page to reconnect Facebook', () => {
+    const compiled = render([facebook]).nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.suspension-reconnect')?.getAttribute('href')).toBe('/canal-facebook');
   });
 
   it('should poll the back, a suspension happening during a scheduler run', () => {
@@ -136,6 +143,7 @@ describe('ChannelSuspensionBannerComponent', () => {
 
       expect(compiled.querySelector('.suspension-banner')).not.toBeNull();
       expect(compiled.querySelector('.suspension-lift')).toBeNull();
+      expect(compiled.querySelector('.suspension-reconnect')).toBeNull();
       expect(compiled.querySelector('.suspension-hint')?.textContent).toContain('Gérer les canaux');
     });
 

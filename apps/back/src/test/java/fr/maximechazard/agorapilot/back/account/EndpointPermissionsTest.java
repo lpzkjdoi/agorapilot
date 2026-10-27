@@ -41,6 +41,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -122,6 +123,9 @@ class EndpointPermissionsTest {
 
                 new Endpoint(HttpMethod.GET, "/api/channels/suspensions", PUBLICATIONS_READ),
                 new Endpoint(HttpMethod.DELETE, "/api/channels/FACEBOOK/suspension", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.GET, "/api/channels/facebook/connection", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection/check", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.GET, "/admin/scheduler/status", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.GET, "/admin/facebook/token/status", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.POST, "/admin/facebook/bootstrap?shortLivedToken=x", CHANNELS_MANAGE),
@@ -188,6 +192,18 @@ class EndpointPermissionsTest {
                        .with(user("test").authorities(new SimpleGrantedAuthority(PUBLICATIONS_WRITE.code())))
                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"Marché\"}"))
                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Le retour de Facebook arrive sans cookie de session (SameSite=strict) : il
+     * est public, et c'est le `state` qui l'authentifie. Sans `state` connu, il
+     * renvoie vers le front avec un motif d'échec, sans rien connecter.
+     */
+    @Test
+    void lets_the_facebook_callback_through_without_a_session() throws Exception {
+        mockMvc.perform(get("/api/channels/facebook/callback").param("state", "inconnu").param("code", "x"))
+               .andExpect(status().isFound())
+               .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/canal-facebook?connexion=erreur")));
     }
 
     @Test

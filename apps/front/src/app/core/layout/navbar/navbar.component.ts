@@ -29,6 +29,7 @@ export class NavbarComponent {
   protected readonly canReadPublications = computed(() => this.auth.can('publications:read'));
   protected readonly canReadCampaigns = computed(() => this.auth.can('campaigns:read'));
   protected readonly canReadMedias = computed(() => this.auth.can('medias:read'));
+  protected readonly canManageChannels = computed(() => this.auth.can('channels:manage'));
   protected readonly canManageAccounts = computed(() => this.auth.can('users:manage'));
 
   protected onLogout(): void {

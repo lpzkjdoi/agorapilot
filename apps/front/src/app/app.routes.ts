@@ -72,6 +72,13 @@ export const routes: Routes = [
           .then((m) => m.UsersPageComponent),
       },
       {
+        title: "Canal Facebook",
+        path: 'canal-facebook',
+        canActivate: [permissionGuard('channels:manage')],
+        loadComponent: () => import("./features/facebook-channel/pages/facebook-channel-page/facebook-channel-page.component")
+          .then((m) => m.FacebookChannelPageComponent),
+      },
+      {
         title: "Aucun droit",
         path: 'aucun-droit',
         loadComponent: () => import("./features/auth/pages/no-access-page/no-access-page.component")

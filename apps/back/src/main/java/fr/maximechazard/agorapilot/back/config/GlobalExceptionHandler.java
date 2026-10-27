@@ -20,6 +20,7 @@ import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotFou
 import fr.maximechazard.agorapilot.back.publication.exceptions.PublicationNotVerifiedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.VerificationNotAllowedException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.UnsupportedDeliveryChannelException;
+import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookConnectionDisabledException;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspendedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -130,6 +131,11 @@ public class GlobalExceptionHandler {
     /** Rien n'a été tenté : c'est l'état du canal qui s'oppose à la demande, d'où un 409. */
     @ExceptionHandler(ChannelSuspendedException.class)
     public ResponseEntity<ApiError> handleChannelSuspendedException(ChannelSuspendedException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(FacebookConnectionDisabledException.class)
+    public ResponseEntity<ApiError> handleFacebookConnectionDisabledException(FacebookConnectionDisabledException exception) {
         return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 
