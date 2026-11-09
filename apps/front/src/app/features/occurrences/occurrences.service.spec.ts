@@ -95,6 +95,22 @@ describe('OccurrencesService', () => {
     request.flush({});
   });
 
+  it('should POST several dates at once on /api/occurrences/batch', () => {
+    const body = {
+      publicationId: 7,
+      channels: ['FACEBOOK' as const],
+      slots: [{ date: '2026-11-11' }, { scheduledAt: '2026-12-04T17:45:00' }],
+    };
+    let received: unknown;
+    service.createAll(body).subscribe((occurrences) => received = occurrences);
+
+    const request = httpTesting.expectOne('/api/occurrences/batch');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    request.flush([]);
+    expect(received).toEqual([]);
+  });
+
   it('should PUT the new day and time on /api/occurrences/{id}/schedule', () => {
     service.reschedule(4, { date: '2026-10-04', time: null }).subscribe();
 

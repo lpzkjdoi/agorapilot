@@ -21,7 +21,7 @@ import {
   ScheduleOccurrenceModalComponent,
 } from "../../../occurrences/components/schedule-occurrence-modal/schedule-occurrence-modal.component";
 import { Occurrence, ScheduleFormValue } from "../../../occurrences/occurrence.model";
-import { apiErrorMessage, toCreateOccurrenceRequest } from "../../../occurrences/occurrence.utils";
+import { apiErrorMessage, toCreateOccurrencesRequest } from "../../../occurrences/occurrence.utils";
 import { OccurrencesService } from "../../../occurrences/occurrences.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
@@ -395,18 +395,20 @@ export class PublicationsPageComponent {
 
     this.scheduling.set(true);
 
-    this.occurrencesService.create(toCreateOccurrenceRequest(publication.id, value)).subscribe({
-      next: (occurrence) => {
+    this.occurrencesService.createAll(toCreateOccurrencesRequest(publication.id, value)).subscribe({
+      next: (occurrences) => {
         this.scheduling.set(false);
         this.schedulingFor.set(null);
-        this.notifications.success(PublicationsPageComponent.scheduledMessage(occurrence));
+        this.notifications.success(PublicationsPageComponent.scheduledMessage(occurrences));
       },
       error: (err: HttpErrorResponse) => {
         console.error('Programmation impossible', err);
         this.scheduling.set(false);
         // La modale reste ouverte : le motif (fenêtre du jour close, heure
         // passée…) invite à corriger la saisie plutôt qu'à tout recommencer.
-        this.notifications.error(apiErrorMessage(err, 'La diffusion n’a pas pu être programmée.'));
+        this.notifications.error(apiErrorMessage(err, value.slots.length > 1
+          ? 'Aucune diffusion n’a été programmée.'
+          : 'La diffusion n’a pas pu être programmée.'));
       },
     });
   }
@@ -414,13 +416,22 @@ export class PublicationsPageComponent {
   /**
    * L'heure retenue par le back est annoncée tout de suite ; si elle est
    * automatique, on prévient qu'elle suivra les autres programmations du jour.
+   * Plusieurs dates sont résumées par leurs jours, dans l'ordre du calendrier.
    */
-  private static scheduledMessage(occurrence: Occurrence): string {
-    const when = formatDate(occurrence.scheduledAt, "EEEE d MMMM 'à' HH:mm", 'fr-FR');
+  private static scheduledMessage(occurrences: Occurrence[]): string {
+    const adjusts = occurrences.some((occurrence) => !occurrence.pinned)
+      ? ' — l’heure s’ajustera si d’autres publications sont programmées ce jour-là.'
+      : '.';
 
-    return occurrence.pinned
-      ? `Diffusion programmée le ${ when }.`
-      : `Diffusion programmée le ${ when } — l’heure s’ajustera si d’autres publications sont programmées ce jour-là.`;
+    if (occurrences.length === 1) {
+      const when = formatDate(occurrences[0].scheduledAt, "EEEE d MMMM 'à' HH:mm", 'fr-FR');
+
+      return `Diffusion programmée le ${ when }${ adjusts }`;
+    }
+
+    const days = occurrences.map((occurrence) => formatDate(occurrence.scheduledAt, 'dd/MM/yyyy', 'fr-FR'));
+
+    return `${ occurrences.length } diffusions programmées : ${ days.join(', ') }${ adjusts }`;
   }
 
   private loadPublications(): void {

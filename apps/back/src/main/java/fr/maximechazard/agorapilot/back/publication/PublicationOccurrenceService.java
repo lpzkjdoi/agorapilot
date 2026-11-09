@@ -12,6 +12,7 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeli
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccurrenceRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrencesRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
@@ -79,20 +80,76 @@ public class PublicationOccurrenceService {
      */
     @Transactional
     public PublicationOccurrenceDTO create(CreatePublicationOccurrenceRequest request) {
-        Publication publication = publicationRepository.findByIdAndArchivedFalse(request.getPublicationId())
-                .orElseThrow(() -> new PublicationNotFoundException("Publication with id " + request.getPublicationId() + " does not exist."));
+        Publication publication = findSchedulable(request.getPublicationId());
+        checkPublishers(request.getChannels());
+
+        return publicationOccurrenceMapper.toDTO(
+                schedule(publication, request.getChannels(), request.getDate(), request.getScheduledAt()));
+    }
+
+    /**
+     * Programme une publication à plusieurs dates d'un coup, avec les mêmes règles
+     * que {@link #create} pour chacune.
+     * <p>
+     * Tout ou rien : une seule date refusée (jour passé, fenêtre close) annule la
+     * transaction entière, et le motif nomme le jour fautif. Mieux vaut corriger
+     * la saisie que retrouver une programmation à trous.
+     *
+     * @return les diffusions créées, dans l'ordre des dates demandées
+     * @throws PublicationNotFoundException        la publication n'existe pas
+     * @throws PublicationNotVerifiedException     la publication n'est pas vérifiée
+     * @throws UnsupportedDeliveryChannelException un des canaux n'a pas de publisher
+     * @throws InvalidScheduleException            une des dates ne peut pas l'accueillir
+     */
+    @Transactional
+    public List<PublicationOccurrenceDTO> createAll(CreatePublicationOccurrencesRequest request) {
+        Publication publication = findSchedulable(request.getPublicationId());
+        checkPublishers(request.getChannels());
+
+        List<PublicationOccurrence> created = request.getSlots().stream()
+                .map(slot -> schedule(publication, request.getChannels(), slot.getDate(), slot.getScheduledAt()))
+                .toList();
+
+        // Converties à la fin : une date ajoutée plus tard le même jour a pu
+        // déplacer une diffusion automatique déjà créée.
+        return created.stream().map(publicationOccurrenceMapper::toDTO).toList();
+    }
+
+    /**
+     * @throws PublicationNotFoundException    la publication n'existe pas
+     * @throws PublicationNotVerifiedException la publication n'est pas vérifiée
+     */
+    private Publication findSchedulable(Long publicationId) {
+        Publication publication = publicationRepository.findByIdAndArchivedFalse(publicationId)
+                .orElseThrow(() -> new PublicationNotFoundException("Publication with id " + publicationId + " does not exist."));
 
         if (publication.getStatus() != PublicationStatus.VERIFIED) {
             throw new PublicationNotVerifiedException(publication.getId());
         }
 
-        PublicationOccurrence occurrence = new PublicationOccurrence();
+        return publication;
+    }
 
-        for (DeliveryChannel channel : request.getChannels()) {
+    /** @throws UnsupportedDeliveryChannelException un des canaux n'a pas de publisher */
+    private void checkPublishers(Set<DeliveryChannel> channels) {
+        for (DeliveryChannel channel : channels) {
             if (publisherRegistry.forChannel(channel).isEmpty()) {
                 throw new UnsupportedDeliveryChannelException("No publisher available for channel " + channel + ".");
             }
+        }
+    }
 
+    /**
+     * Crée une occurrence épinglée à {@code scheduledAt}, ou automatique le jour
+     * {@code date} — exactement l'un des deux.
+     *
+     * @throws InvalidScheduleException jour passé, ou fenêtre du jour close
+     */
+    private PublicationOccurrence schedule(Publication publication, Set<DeliveryChannel> channels,
+                                           LocalDate date, LocalDateTime scheduledAt) {
+        PublicationOccurrence occurrence = new PublicationOccurrence();
+
+        for (DeliveryChannel channel : channels) {
             PublicationDelivery delivery = new PublicationDelivery();
             delivery.setChannel(channel);
             occurrence.addDelivery(delivery);
@@ -100,17 +157,17 @@ public class PublicationOccurrenceService {
 
         occurrence.setPublication(publication);
 
-        if (request.getDate() == null) {
-            occurrence.setScheduledAt(request.getScheduledAt());
+        if (date == null) {
+            occurrence.setScheduledAt(scheduledAt);
             occurrence.setPinned(true);
-            return publicationOccurrenceMapper.toDTO(publicationOccurrenceRepository.save(occurrence));
+            return publicationOccurrenceRepository.save(occurrence);
         }
 
-        placeLastInWindow(occurrence, request.getDate());
+        placeLastInWindow(occurrence, date);
         PublicationOccurrence saved = publicationOccurrenceRepository.save(occurrence);
-        redistribute(request.getDate());
+        redistribute(date);
 
-        return publicationOccurrenceMapper.toDTO(saved);
+        return saved;
     }
 
     /**

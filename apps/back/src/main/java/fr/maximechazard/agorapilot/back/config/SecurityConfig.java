@@ -115,7 +115,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/publications/*/deliveries").hasAuthority(PUBLICATIONS_PUBLISH.code())
 
             .requestMatchers(HttpMethod.GET, "/api/occurrences", "/api/occurrences/weekly").hasAuthority(PUBLICATIONS_READ.code())
-            .requestMatchers(HttpMethod.POST, "/api/occurrences", "/api/occurrences/*/retry").hasAuthority(OCCURRENCES_SCHEDULE.code())
+            .requestMatchers(HttpMethod.POST, "/api/occurrences", "/api/occurrences/batch",
+                    "/api/occurrences/*/retry").hasAuthority(OCCURRENCES_SCHEDULE.code())
             .requestMatchers(HttpMethod.PUT, "/api/occurrences/*/schedule").hasAuthority(OCCURRENCES_SCHEDULE.code())
             .requestMatchers(HttpMethod.DELETE, "/api/occurrences/*").hasAuthority(OCCURRENCES_SCHEDULE.code())
 

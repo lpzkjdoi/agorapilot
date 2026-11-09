@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import {
-  CreateOccurrenceRequest,
+  CreateOccurrencesRequest,
   Occurrence,
+  OccurrenceSlot,
   ScheduleFormValue,
+  ScheduleSlotValue,
 } from "./occurrence.model";
 
 /**
@@ -59,10 +61,12 @@ export function failureReason(occurrence: Occurrence): string | null {
 }
 
 /** Heure vide : programmation « pour un jour », heure choisie par le back. */
-export function toCreateOccurrenceRequest(publicationId: number, value: ScheduleFormValue): CreateOccurrenceRequest {
-  return value.time
-    ? { publicationId, channels: value.channels, scheduledAt: `${ value.date }T${ value.time }:00` }
-    : { publicationId, channels: value.channels, date: value.date };
+export function toOccurrenceSlot(slot: ScheduleSlotValue): OccurrenceSlot {
+  return slot.time ? { scheduledAt: `${ slot.date }T${ slot.time }:00` } : { date: slot.date };
+}
+
+export function toCreateOccurrencesRequest(publicationId: number, value: ScheduleFormValue): CreateOccurrencesRequest {
+  return { publicationId, channels: value.channels, slots: value.slots.map(toOccurrenceSlot) };
 }
 
 /**
