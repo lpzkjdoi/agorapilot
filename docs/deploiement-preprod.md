@@ -358,6 +358,9 @@ que le back échange contre le jeton de la Page `FACEBOOK_PAGE_ID`.
 
 ### Prérequis côté Meta (une fois par environnement)
 
+Le pas-à-pas complet (création de l'app, permissions, rôles, mode Live,
+dépannage) est dans [`configuration-meta.md`](./configuration-meta.md). L'essentiel :
+
 Dans l'app Meta (`FACEBOOK_CLIENT_ID`) → Facebook Login → Paramètres, ajouter aux
 **« Valid OAuth Redirect URIs »** :
 

@@ -6,6 +6,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 - [`gitflow.md`](./gitflow.md) — modèle de branches, cycle de contribution, versionnage et conventions CI/CD. Référence mise à jour quand le processus évolue.
 - [`deploiement-preprod.md`](./deploiement-preprod.md) — runbook de la préproduction sur VPS : prérequis, variables d'environnement, commandes de déploiement et vérifications.
+- [`configuration-meta.md`](./configuration-meta.md) — configurer l'app Meta du canal Facebook (identifiants, URI de redirection, permissions, rôles, mode Live) et dépanner la connexion de la Page.
 - [`changelog/`](./changelog) — un compte-rendu par tâche/évolution significative : contexte, changements, vérification effectuée, lien vers le commit correspondant. Une nouvelle entrée est ajoutée à chaque tâche de développement.
 - [`proposals/`](./proposals) — propositions d'architecture validées sur le principe mais pas encore mises en œuvre, à ressortir le moment venu.
 
@@ -65,3 +66,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-10-27 | [Connexion du canal Facebook depuis l'interface](./changelog/2026-10-27-connexion-facebook-interface.md) | _voir PR_ |
 | 2026-10-27 | [Jalon v1.0 : ce qui manque pour la mise en production](./changelog/2026-10-27-jalon-v1.md) | _voir PR_ |
 | 2026-11-09 | [Programmer une publication à plusieurs dates](./changelog/2026-11-09-programmation-multi-dates.md) | _voir PR_ |
+| 2026-11-09 | [Documenter la configuration de l'app Meta](./changelog/2026-11-09-documentation-configuration-meta.md) | _voir PR_ |

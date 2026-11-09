@@ -85,7 +85,7 @@ ne rien perdre.
   - [x] page « Canal Facebook » (`channels:manage`) : état du jeton (valide, permissions, connecté par qui et quand, dernier contrôle) et bouton « Connecter / Reconnecter avec Facebook » via le flux OAuth de Facebook Login — attention, le cookie de session est en `SameSite=strict` et ne revient pas au callback depuis facebook.com : `state` à usage unique stocké côté serveur
   - [x] contrôle quotidien `debug_token` du jeton de Page (`is_valid`, `pages_manage_posts`, `data_access_expires_at`), résultat conservé en base : un jeton invalidé (mot de passe changé, rôle sur la Page perdu, autorisation retirée) suspend le canal **avant** qu'une diffusion n'échoue
   - [x] levée automatique de la suspension après une connexion réussie
-  - [ ] valider la connexion en préproduction (URI de redirection à déclarer dans l'app Meta)
+  - [x] valider la connexion en préproduction (2026-11-09 ; configuration Meta : [`configuration-meta.md`](docs/configuration-meta.md))
   - [ ] suppression du jeton utilisateur stocké, de `renewIfNeeded()` et de `POST /admin/facebook/bootstrap` ; expiration nullable (permanent) au lieu de la fausse valeur à dix ans
   - [ ] option : champ pour saisir un jeton de **System User** du Business Manager Meta, qui ne dépend d'aucun compte personnel
 - [ ] **App Meta en mode Live sur la vraie Page** : en mode développement, les posts ne sont visibles que des comptes ayant un rôle dans l'app (à confirmer dans la console Meta, comme le besoin ou non d'App Review pour `pages_manage_posts`)
