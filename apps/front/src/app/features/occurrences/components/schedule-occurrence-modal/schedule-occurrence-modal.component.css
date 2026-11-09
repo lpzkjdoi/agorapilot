@@ -22,10 +22,54 @@
   gap: 1rem;
 }
 
+.schedule-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* Une longue série défile dans la modale plutôt que de la pousser hors écran. */
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
 .schedule-when {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2rem;
+  align-items: end;
   gap: 1rem;
+}
+
+.schedule-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-ui-text-muted);
+  cursor: pointer;
+}
+
+.schedule-remove:hover {
+  color: var(--color-status-danger);
+}
+
+.schedule-add {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-brand-blue);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.schedule-remove:focus-visible,
+.schedule-add:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 2px;
 }
 
 .schedule-field {

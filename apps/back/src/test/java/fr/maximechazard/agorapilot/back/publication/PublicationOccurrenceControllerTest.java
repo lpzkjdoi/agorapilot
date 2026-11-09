@@ -205,6 +205,84 @@ class PublicationOccurrenceControllerTest {
     }
 
     @Nested
+    class Batch {
+
+        private static final String BODY = """
+                {"publicationId":1,"channels":["FACEBOOK"],
+                 "slots":[{"date":"2099-11-11"},{"scheduledAt":"2099-12-04T17:45:00"},{"date":"2100-02-05"}]}""";
+
+        @Test
+        void returns_201_and_every_scheduled_occurrence() throws Exception {
+            when(publicationOccurrenceService.createAll(any())).thenReturn(List.of(
+                    occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING),
+                    occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING),
+                    occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING)));
+
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content(BODY))
+                   .andExpect(status().isCreated())
+                   .andExpect(jsonPath("$.length()").value(3))
+                   .andExpect(jsonPath("$[0].status").value("SCHEDULED"));
+        }
+
+        @Test
+        void rejects_an_empty_list_of_dates() throws Exception {
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"publicationId":1,"channels":["FACEBOOK"],"slots":[]}"""))
+                   .andExpect(status().isBadRequest());
+
+            verify(publicationOccurrenceService, never()).createAll(any());
+        }
+
+        /** Chaque date est validée comme une programmation seule : ni passée, ni sous deux formes. */
+        @Test
+        void validates_each_date() throws Exception {
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"publicationId":1,"channels":["FACEBOOK"],
+                                    "slots":[{"date":"2099-11-11"},{"scheduledAt":"2020-12-04T17:45:00"}]}"""))
+                   .andExpect(status().isBadRequest());
+
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"publicationId":1,"channels":["FACEBOOK"],
+                                    "slots":[{"date":"2099-11-11","scheduledAt":"2099-11-11T17:45:00"}]}"""))
+                   .andExpect(status().isBadRequest());
+
+            verify(publicationOccurrenceService, never()).createAll(any());
+        }
+
+        @Test
+        void rejects_the_same_date_twice() throws Exception {
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"publicationId":1,"channels":["FACEBOOK"],
+                                    "slots":[{"date":"2099-11-11"},{"date":"2099-11-11"}]}"""))
+                   .andExpect(status().isBadRequest());
+
+            verify(publicationOccurrenceService, never()).createAll(any());
+        }
+
+        @Test
+        void returns_400_with_the_reason_of_the_refused_date() throws Exception {
+            when(publicationOccurrenceService.createAll(any()))
+                    .thenThrow(new InvalidScheduleException("Plus aucune publication possible le 2099-11-11"));
+
+            mockMvc.perform(post("/api/occurrences/batch")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content(BODY))
+                   .andExpect(status().isBadRequest())
+                   .andExpect(jsonPath("$.message").value("Plus aucune publication possible le 2099-11-11"));
+        }
+    }
+
+    @Nested
     class Range {
 
         @Test

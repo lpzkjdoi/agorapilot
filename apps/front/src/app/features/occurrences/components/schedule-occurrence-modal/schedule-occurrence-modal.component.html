@@ -9,7 +9,7 @@
 <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="schedule-title">
   <header class="modal-header">
     <div>
-      <h2 id="schedule-title">Programmer une diffusion</h2>
+      <h2 id="schedule-title">Programmer des diffusions</h2>
       <p class="modal-subtitle schedule-publication">{{ publication().content }}</p>
     </div>
     <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
@@ -27,25 +27,56 @@
   </header>
 
   <form class="schedule-form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="schedule-when">
-      <div class="schedule-field">
-        <label for="schedule-date">Jour</label>
-        <input id="schedule-date" formControlName="date" type="date" [min]="minDate">
-        @if (form.controls.date.touched && form.controls.date.invalid) {
-          <p class="schedule-error">Choisissez un jour.</p>
-        }
-      </div>
+    <div class="schedule-slots" formArrayName="slots">
+      @for (slot of slots.controls; track slot; let i = $index) {
+        <div class="schedule-when" [formGroupName]="i">
+          <div class="schedule-field">
+            <label [for]="'schedule-date-' + i">Jour</label>
+            <input [id]="'schedule-date-' + i" formControlName="date" type="date" [min]="minDate">
+            @if (slot.controls.date.touched && slot.controls.date.invalid) {
+              <p class="schedule-error">Choisissez un jour.</p>
+            }
+          </div>
 
-      <div class="schedule-field">
-        <label for="schedule-time">Heure (facultatif)</label>
-        <input id="schedule-time" formControlName="time" type="time">
-      </div>
+          <div class="schedule-field">
+            <label [for]="'schedule-time-' + i">Heure (facultatif)</label>
+            <input [id]="'schedule-time-' + i" formControlName="time" type="time">
+          </div>
+
+          @if (slots.length > 1) {
+            <button type="button"
+                    class="schedule-remove"
+                    [attr.aria-label]="'Retirer la date ' + (i + 1)"
+                    (click)="removeSlot(i)">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   height="18px"
+                   viewBox="0 -960 960 960"
+                   width="18px"
+                   fill="currentColor"
+                   aria-hidden="true"
+              >
+                <path
+                  d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+              </svg>
+            </button>
+          }
+        </div>
+      }
+
+      @if (slots.hasError('duplicate')) {
+        <p class="schedule-error">Une même date figure deux fois.</p>
+      }
+
+      @if (slots.length < maxSlots) {
+        <button type="button" class="schedule-add" (click)="addSlot()">+ Ajouter une date</button>
+      }
     </div>
 
     <p class="schedule-hint">
       Sans heure, la diffusion est placée automatiquement dans la fenêtre de
       publication du jour, répartie avec les autres publications. Une heure
-      saisie est fixée et ne bougera plus.
+      saisie est fixée et ne bougera plus. Si une date ne peut pas être
+      retenue, aucune n'est programmée.
     </p>
 
     <fieldset class="schedule-field">

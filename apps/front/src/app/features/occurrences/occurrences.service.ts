@@ -4,6 +4,7 @@ import { Observable } from "rxjs";
 import { environment } from "../../../environments/environment";
 import {
   CreateOccurrenceRequest,
+  CreateOccurrencesRequest,
   Occurrence,
   RescheduleOccurrenceRequest,
   WeeklyOccurrences,
@@ -29,6 +30,14 @@ export class OccurrencesService {
   /** Programme une diffusion ; le back répond avec l'heure retenue. */
   create(request: CreateOccurrenceRequest): Observable<Occurrence> {
     return this.http.post<Occurrence>(this.url, request);
+  }
+
+  /**
+   * Programme une publication à plusieurs dates d'un coup. Tout ou rien : une
+   * date refusée n'en programme aucune, et le motif la nomme.
+   */
+  createAll(request: CreateOccurrencesRequest): Observable<Occurrence[]> {
+    return this.http.post<Occurrence[]>(this.url + "/batch", request);
   }
 
   /**

@@ -82,9 +82,10 @@ ne rien perdre.
 - [ ] **Prérequis prod de `gitflow.md`** : `nginx.prod.conf` sans le proxy Swagger, tags d'image porteurs de l'environnement (`preprod-<sha>` / `prod-<version>`), images de base épinglées par digest
 - [ ] **Sauvegardes** automatiques et hors du VPS des deux volumes non reconstructibles (`db-data` **et** `media-data`), avec rétention, et une restauration testée au moins une fois
 - [ ] **Connexion du canal Facebook depuis l'interface** : remplace le bootstrap à la main (Graph Explorer + `curl` sur la boucle locale du VPS) et le renouvellement actuel, qui ne se déclenche jamais (jeton de Page permanent) et dont le chemin de secours repose sur un jeton utilisateur expiré au bout d'environ 60 jours :
-  - [ ] page « Canal Facebook » (`channels:manage`) : état du jeton (valide, permissions, connecté par qui et quand, dernier contrôle) et bouton « Connecter / Reconnecter avec Facebook » via le flux OAuth de Facebook Login — attention, le cookie de session est en `SameSite=strict` et ne revient pas au callback depuis facebook.com : `state` à usage unique stocké côté serveur
-  - [ ] contrôle quotidien `debug_token` du jeton de Page (`is_valid`, `pages_manage_posts`, `data_access_expires_at`), résultat conservé en base : un jeton invalidé (mot de passe changé, rôle sur la Page perdu, autorisation retirée) suspend le canal **avant** qu'une diffusion n'échoue
-  - [ ] levée automatique de la suspension après une connexion réussie
+  - [x] page « Canal Facebook » (`channels:manage`) : état du jeton (valide, permissions, connecté par qui et quand, dernier contrôle) et bouton « Connecter / Reconnecter avec Facebook » via le flux OAuth de Facebook Login — attention, le cookie de session est en `SameSite=strict` et ne revient pas au callback depuis facebook.com : `state` à usage unique stocké côté serveur
+  - [x] contrôle quotidien `debug_token` du jeton de Page (`is_valid`, `pages_manage_posts`, `data_access_expires_at`), résultat conservé en base : un jeton invalidé (mot de passe changé, rôle sur la Page perdu, autorisation retirée) suspend le canal **avant** qu'une diffusion n'échoue
+  - [x] levée automatique de la suspension après une connexion réussie
+  - [ ] valider la connexion en préproduction (URI de redirection à déclarer dans l'app Meta)
   - [ ] suppression du jeton utilisateur stocké, de `renewIfNeeded()` et de `POST /admin/facebook/bootstrap` ; expiration nullable (permanent) au lieu de la fausse valeur à dix ans
   - [ ] option : champ pour saisir un jeton de **System User** du Business Manager Meta, qui ne dépend d'aucun compte personnel
 - [ ] **App Meta en mode Live sur la vraie Page** : en mode développement, les posts ne sont visibles que des comptes ayant un rôle dans l'app (à confirmer dans la console Meta, comme le besoin ou non d'App Review pour `pages_manage_posts`)
@@ -103,6 +104,12 @@ ne rien perdre.
 
 ### Après la v1.0
 
+- [ ] **Programmation par fréquence** (chaque lundi, tous les mois, tous les 3 mois…), calquée sur la répétition des Rappels iOS/macOS. La programmation à plusieurs dates est faite (cf. [changelog](docs/changelog/2026-11-09-programmation-multi-dates.md)). Déjà tranché :
+  - préréglages (chaque jour, jours ouvrés, week-ends, chaque semaine, toutes les 2 semaines, chaque mois, tous les 3 mois, tous les 6 mois, chaque année) et « Personnaliser » : fréquence, « tous les N », jours de la semaine, jours du mois (grille 1–31 ou « le premier / … / dernier lundi »), mois de l'année ; pas de répétition horaire
+  - règle stockée au format RFC 5545 (RRULE, celui d'`EKRecurrenceRule`) ; **un jour 29–31 absent du mois tombe le dernier jour du mois** (et non sauté comme le prévoit la norme)
+  - fin de la répétition : jamais, à une date (par défaut la fin de la campagne) **ou** après N diffusions
+  - diffusions créées à l'avance par un job quotidien, sur un horizon **en jours et en nombre** de diffusions (les deux configurables) ; chaque diffusion garde le lien vers sa série et sa date d'origine, pour qu'une diffusion déplacée ou annulée à la main ne soit pas recréée
+  - à prévoir : arrêter la série quand la publication est supprimée ou la campagne clôturée, et la suspendre (avec alerte) quand la publication repasse en brouillon
 - [ ] Campagnes : bouton « Clôturer » côté front (l'endpoint existe), annulation (`CANCELED` existe mais rien ne le pose), modification et archivage
 - [ ] Créneaux de diffusion : imposer un écart minimal entre une diffusion à heure fixe (épinglée) et les diffusions réparties automatiquement — aujourd'hui une épinglée à 17:30 peut côtoyer une automatique à 17:25
 - [ ] Reprendre par glisser-déposer une diffusion en échec vers un autre jour du calendrier
@@ -117,6 +124,7 @@ ne rien perdre.
 
 ### Fait
 
+- [x] **Programmer une publication à plusieurs dates** d'un coup (2026-11-09) : une ligne par date dans la modale, heure automatique ou fixe, tout ou rien
 - [x] **Comptes applicatifs et droits** (2026-10-24, cf. [proposition](docs/proposals/2026-10-24-comptes-et-droits.md)) : une personne = un compte, refus par défaut et droits fins `ressource:action` par endpoint, session côté serveur avec CSRF, premier administrateur au démarrage, page « Comptes » (profils, désactivation, mot de passe provisoire), seules les publications vérifiées partent, actions masquées selon les droits, auteurs des publications et diffusions, journal de sécurité et des actions sensibles
 - [x] Migrations de base de données versionnées (Flyway) : schéma de départ en `V1`, Hibernate en `validate`, préproduction inscrite d'office en version 1
 - [x] CRUD complet des publications : modification (texte, statut) et suppression, qui annule les diffusions programmées et archive une publication déjà diffusée

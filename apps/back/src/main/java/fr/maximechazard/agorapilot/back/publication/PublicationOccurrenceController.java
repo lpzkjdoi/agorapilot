@@ -2,6 +2,7 @@ package fr.maximechazard.agorapilot.back.publication;
 
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrencesRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,15 @@ public class PublicationOccurrenceController {
     @PostMapping
     public ResponseEntity<PublicationOccurrenceDTO> create(@Valid @RequestBody CreatePublicationOccurrenceRequest request) {
         return new ResponseEntity<>(publicationOccurrenceService.create(request), HttpStatus.CREATED);
+    }
+
+    /**
+     * Planifie une publication à plusieurs dates d'un coup (le 11/11, le 4/12…).
+     * Tout ou rien : une date refusée n'en programme aucune.
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<List<PublicationOccurrenceDTO>> createAll(@Valid @RequestBody CreatePublicationOccurrencesRequest request) {
+        return new ResponseEntity<>(publicationOccurrenceService.createAll(request), HttpStatus.CREATED);
     }
 
     /**

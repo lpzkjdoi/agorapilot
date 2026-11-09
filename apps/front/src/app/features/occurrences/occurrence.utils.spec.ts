@@ -6,7 +6,7 @@ import {
   isModifiable,
   scheduledDay,
   scheduledTime,
-  toCreateOccurrenceRequest,
+  toCreateOccurrencesRequest,
   toIsoDate,
 } from "./occurrence.utils";
 
@@ -66,15 +66,16 @@ describe('occurrence utils', () => {
     }))).toBe('Token expired');
   });
 
-  describe('toCreateOccurrenceRequest', () => {
-    it('should send the day alone when no time is given', () => {
-      expect(toCreateOccurrenceRequest(7, { date: '2026-10-03', time: '', channels: ['FACEBOOK'] }))
-        .toEqual({ publicationId: 7, channels: ['FACEBOOK'], date: '2026-10-03' });
-    });
-
-    it('should send a precise, pinned time when one is given', () => {
-      expect(toCreateOccurrenceRequest(7, { date: '2026-10-03', time: '17:45', channels: ['FACEBOOK'] }))
-        .toEqual({ publicationId: 7, channels: ['FACEBOOK'], scheduledAt: '2026-10-03T17:45:00' });
+  describe('toCreateOccurrencesRequest', () => {
+    it('should send the day alone when no time is given, and a pinned time otherwise', () => {
+      expect(toCreateOccurrencesRequest(7, {
+        slots: [{ date: '2026-11-11', time: '' }, { date: '2026-12-04', time: '17:45' }],
+        channels: ['FACEBOOK'],
+      })).toEqual({
+        publicationId: 7,
+        channels: ['FACEBOOK'],
+        slots: [{ date: '2026-11-11' }, { scheduledAt: '2026-12-04T17:45:00' }],
+      });
     });
   });
 

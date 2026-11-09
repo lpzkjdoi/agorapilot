@@ -39,6 +39,19 @@ export type CreateOccurrenceRequest =
   | { publicationId: number, channels: DeliveryChannel[], date: string }
   | { publicationId: number, channels: DeliveryChannel[], scheduledAt: string };
 
+/** Une date de `POST /api/occurrences/batch`, sous les deux mêmes formes exclusives. */
+export type OccurrenceSlot = { date: string } | { scheduledAt: string };
+
+/**
+ * Corps de `POST /api/occurrences/batch` : la même publication à plusieurs
+ * dates, sur les mêmes canaux. Tout ou rien côté back.
+ */
+export interface CreateOccurrencesRequest {
+  publicationId: number
+  channels: DeliveryChannel[]
+  slots: OccurrenceSlot[]
+}
+
 /**
  * Corps de `PUT /api/occurrences/{id}/schedule` et de
  * `POST /api/occurrences/{id}/retry`. `time` à `null` : l'heure est
@@ -49,9 +62,14 @@ export interface RescheduleOccurrenceRequest {
   time: string | null
 }
 
-/** Saisie de la modale « Programmer » ; `time` vide = heure automatique. */
-export interface ScheduleFormValue {
+/** Une date saisie dans la modale « Programmer » ; `time` vide = heure automatique. */
+export interface ScheduleSlotValue {
   date: string
   time: string
+}
+
+/** Saisie de la modale « Programmer » : une ou plusieurs dates, dans l'ordre chronologique. */
+export interface ScheduleFormValue {
+  slots: ScheduleSlotValue[]
   channels: DeliveryChannel[]
 }

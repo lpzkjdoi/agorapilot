@@ -7,6 +7,8 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationDeli
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccurrenceRepository;
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrencesRequest;
+import fr.maximechazard.agorapilot.back.publication.requests.OccurrenceSlotRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,6 +123,19 @@ class OccurrenceSlotsPersistenceTest {
         set(request, "publicationId", publicationId);
         set(request, field, value);
         set(request, "channels", Set.of(DeliveryChannel.FACEBOOK));
+        return request;
+    }
+
+    /** Chaque valeur est un jour ({@link LocalDate}, heure automatique) ou une heure épinglée. */
+    private CreatePublicationOccurrencesRequest batch(Object... whens) {
+        CreatePublicationOccurrencesRequest request = new CreatePublicationOccurrencesRequest();
+        set(request, "publicationId", publicationId);
+        set(request, "channels", Set.of(DeliveryChannel.FACEBOOK));
+        set(request, "slots", java.util.Arrays.stream(whens).map(when -> {
+            OccurrenceSlotRequest slot = new OccurrenceSlotRequest();
+            set(slot, when instanceof LocalDate ? "date" : "scheduledAt", when);
+            return slot;
+        }).toList());
         return request;
     }
 
@@ -413,5 +428,43 @@ class OccurrenceSlotsPersistenceTest {
         assertThat(service.findBetween(DAY, DAY.plusDays(2)))
                 .extracting(PublicationOccurrenceDTO::id)
                 .containsExactly(first, later);
+    }
+
+    // ------------------------------------------------------------ dates multiples
+
+    @Test
+    void schedules_every_date_of_a_batch_in_the_requested_order() {
+        List<PublicationOccurrenceDTO> created = service.createAll(batch(
+                LocalDate.of(2026, 11, 11), LocalDateTime.of(2026, 12, 4, 17, 45), LocalDate.of(2027, 2, 5)));
+
+        assertThat(created).extracting(PublicationOccurrenceDTO::scheduledAt).containsExactly(
+                LocalDateTime.of(2026, 11, 11, 18, 30),
+                LocalDateTime.of(2026, 12, 4, 17, 45),
+                LocalDateTime.of(2027, 2, 5, 18, 30));
+        assertThat(created).extracting(PublicationOccurrenceDTO::pinned).containsExactly(false, true, false);
+    }
+
+    /** Un jour automatique et une heure épinglée le même jour : la première se répartit sans la seconde. */
+    @Test
+    void a_batch_spreads_each_day_with_what_was_already_there() {
+        Long existing = scheduleOn(DAY);
+
+        List<PublicationOccurrenceDTO> created = service.createAll(batch(DAY.atTime(17, 0), DAY));
+
+        assertThat(timeOf(existing)).isEqualTo(LocalTime.of(16, 45));
+        assertThat(created).extracting(PublicationOccurrenceDTO::scheduledAt)
+                .containsExactly(DAY.atTime(17, 0), DAY.atTime(20, 15));
+    }
+
+    /** Tout ou rien : une date refusée n'en laisse aucune programmée. */
+    @Test
+    void a_refused_date_cancels_the_whole_batch() {
+        clock.set(DAY.atTime(21, 58));
+
+        assertThatThrownBy(() -> service.createAll(batch(DAY.plusDays(1), DAY)))
+                .isInstanceOf(InvalidScheduleException.class)
+                .hasMessageContaining(DAY.toString());
+
+        assertThat(publicationOccurrenceRepository.findAll()).isEmpty();
     }
 }

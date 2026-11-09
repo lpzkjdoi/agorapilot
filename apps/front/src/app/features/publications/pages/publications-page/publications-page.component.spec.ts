@@ -438,10 +438,10 @@ describe('PublicationsPageComponent', () => {
     }
 
     function fillAndSubmit(fixture: ComponentFixture<PublicationsPageComponent>, compiled: HTMLElement, date: string, time = '') {
-      const dateInput = compiled.querySelector<HTMLInputElement>('#schedule-date')!;
+      const dateInput = compiled.querySelector<HTMLInputElement>('#schedule-date-0')!;
       dateInput.value = date;
       dateInput.dispatchEvent(new Event('input'));
-      const timeInput = compiled.querySelector<HTMLInputElement>('#schedule-time')!;
+      const timeInput = compiled.querySelector<HTMLInputElement>('#schedule-time-0')!;
       timeInput.value = time;
       timeInput.dispatchEvent(new Event('input'));
       fixture.detectChanges();
@@ -477,11 +477,11 @@ describe('PublicationsPageComponent', () => {
 
       fillAndSubmit(fixture, compiled, '2026-10-03');
 
-      const request = httpTesting.expectOne('/api/occurrences');
+      const request = httpTesting.expectOne('/api/occurrences/batch');
       expect(request.request.method).toBe('POST');
-      expect(request.request.body).toEqual({ publicationId: 1, channels: ['FACEBOOK'], date: '2026-10-03' });
+      expect(request.request.body).toEqual({ publicationId: 1, channels: ['FACEBOOK'], slots: [{ date: '2026-10-03' }] });
 
-      request.flush(scheduled);
+      request.flush([scheduled]);
       fixture.detectChanges();
 
       expect(compiled.querySelector('app-schedule-occurrence-modal')).toBeNull();
@@ -498,17 +498,74 @@ describe('PublicationsPageComponent', () => {
 
       fillAndSubmit(fixture, compiled, '2026-10-03', '17:45');
 
-      const request = httpTesting.expectOne('/api/occurrences');
+      const request = httpTesting.expectOne('/api/occurrences/batch');
       expect(request.request.body).toEqual({
         publicationId: 1,
         channels: ['FACEBOOK'],
-        scheduledAt: '2026-10-03T17:45:00',
+        slots: [{ scheduledAt: '2026-10-03T17:45:00' }],
       });
 
-      request.flush({ ...scheduled, scheduledAt: '2026-10-03T17:45:00', pinned: true });
+      request.flush([{ ...scheduled, scheduledAt: '2026-10-03T17:45:00', pinned: true }]);
 
       expect(notifications.notifications()).toEqual([
         expect.objectContaining({ level: 'success', message: 'Diffusion programmée le samedi 3 octobre à 17:45.' }),
+      ]);
+    });
+
+    it('should POST several dates at once and sum them up', () => {
+      const { fixture, compiled } = openModal();
+
+      compiled.querySelector<HTMLButtonElement>('.schedule-add')!.click();
+      fixture.detectChanges();
+      const second = compiled.querySelector<HTMLInputElement>('#schedule-date-1')!;
+      second.value = '2026-12-04';
+      second.dispatchEvent(new Event('input'));
+      fillAndSubmit(fixture, compiled, '2026-11-11');
+
+      const request = httpTesting.expectOne('/api/occurrences/batch');
+      expect(request.request.body).toEqual({
+        publicationId: 1,
+        channels: ['FACEBOOK'],
+        slots: [{ date: '2026-11-11' }, { date: '2026-12-04' }],
+      });
+
+      request.flush([
+        { ...scheduled, id: 31, scheduledAt: '2026-11-11T18:30:00' },
+        { ...scheduled, id: 32, scheduledAt: '2026-12-04T18:30:00' },
+      ]);
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-schedule-occurrence-modal')).toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'success',
+          message: expect.stringMatching(/^2 diffusions programmées : 11\/11\/2026, 04\/12\/2026 — l’heure s’ajustera/),
+        }),
+      ]);
+    });
+
+    it('should say that nothing was scheduled when one of several dates is refused', () => {
+      const { fixture, compiled } = openModal();
+
+      compiled.querySelector<HTMLButtonElement>('.schedule-add')!.click();
+      fixture.detectChanges();
+      const second = compiled.querySelector<HTMLInputElement>('#schedule-date-1')!;
+      second.value = '2026-12-04';
+      second.dispatchEvent(new Event('input'));
+      fillAndSubmit(fixture, compiled, '2026-09-25');
+
+      httpTesting.expectOne('/api/occurrences/batch').flush(
+        { message: 'Plus aucune publication possible le 2026-09-25.', code: 400 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-schedule-occurrence-modal')).not.toBeNull();
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'Aucune diffusion n’a été programmée. Plus aucune publication possible le 2026-09-25.',
+        }),
       ]);
     });
 
@@ -517,7 +574,7 @@ describe('PublicationsPageComponent', () => {
 
       fillAndSubmit(fixture, compiled, '2026-09-25');
 
-      httpTesting.expectOne('/api/occurrences').flush(
+      httpTesting.expectOne('/api/occurrences/batch').flush(
         { message: 'Plus aucune publication possible le 2026-09-25 : la fenêtre 15:00–22:00 est passée.', code: 400 },
         { status: 400, statusText: 'Bad Request' },
       );
