@@ -15,6 +15,49 @@
   gap: 0.75rem;
 }
 
+/* Actions de gestion : même forme que celles des cartes de publication. */
+.campaign-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.campaign-action {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-ui-text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.campaign-action:hover:not(:disabled) {
+  background-color: #EFF6FF;
+  color: var(--color-brand-blue);
+}
+
+.campaign-action:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.campaign-detail-confirm,
+.campaign-action-danger {
+  color: #B91C1C;
+}
+
+.campaign-action-danger:hover:not(:disabled) {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}
+
+.campaign-detail-confirm {
+  flex-basis: 100%;
+  font-size: 13px;
+}
+
 .campaign-detail-period {
   display: flex;
   align-items: center;

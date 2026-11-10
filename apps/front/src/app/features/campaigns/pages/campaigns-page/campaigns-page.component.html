@@ -14,21 +14,28 @@
     <app-campaign-list
       [campaigns]="campaigns()"
       [selectedId]="selectedId()"
-      [canCreate]="canCreate()"
+      [canCreate]="canWrite()"
       (selected)="selectedId.set($event.id)"
-      (createRequested)="createModalOpen.set(true)"
+      (createRequested)="modal.set('create')"
     />
 
     @if (selected(); as campaign) {
-      <app-campaign-detail [campaign]="campaign" />
+      <app-campaign-detail
+        [campaign]="campaign"
+        [canWrite]="canWrite()"
+        [busy]="acting()"
+        (edit)="modal.set('edit')"
+        (actionConfirmed)="onAction($event)"
+      />
     }
   }
 </div>
 
-@if (createModalOpen()) {
-  <app-create-campaign-modal
-    [creating]="creating()"
-    (closed)="createModalOpen.set(false)"
-    (submitted)="onCreate($event)"
+@if (modal(); as mode) {
+  <app-campaign-form-modal
+    [campaign]="mode === 'edit' ? selected() : null"
+    [saving]="saving()"
+    (closed)="modal.set(null)"
+    (submitted)="onSubmit($event)"
   />
 }

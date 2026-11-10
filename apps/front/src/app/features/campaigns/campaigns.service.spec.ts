@@ -83,4 +83,43 @@ describe('CampaignsService', () => {
     expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(500);
   });
+  it('should PUT the edited campaign on /api/campaigns/{id}', () => {
+    const body = { name: 'Parcs', description: '', startDate: '2026-03-01T00:00:00', endDate: null };
+    let received: Campaign | undefined;
+    service.updateCampaign(1, body).subscribe((campaign) => (received = campaign));
+
+    const request = httpTesting.expectOne('/api/campaigns/1');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(body);
+
+    request.flush(campaigns[0]);
+    expect(received).toEqual(campaigns[0]);
+  });
+
+  it('should POST an empty body on /closure to close a campaign', () => {
+    service.closeCampaign(1).subscribe();
+
+    const request = httpTesting.expectOne('/api/campaigns/1/closure');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeNull();
+    request.flush({ ...campaigns[0], status: 'COMPLETED' });
+  });
+
+  it('should POST an empty body on /cancellation to cancel a campaign', () => {
+    service.cancelCampaign(1).subscribe();
+
+    const request = httpTesting.expectOne('/api/campaigns/1/cancellation');
+    expect(request.request.method).toBe('POST');
+    request.flush({ ...campaigns[0], status: 'CANCELED' });
+  });
+
+  it('should DELETE the campaign to archive it', () => {
+    let done = false;
+    service.archiveCampaign(1).subscribe({ complete: () => (done = true) });
+
+    const request = httpTesting.expectOne('/api/campaigns/1');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    expect(done).toBe(true);
+  });
 });

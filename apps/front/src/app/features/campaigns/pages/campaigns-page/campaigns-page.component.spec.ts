@@ -107,7 +107,7 @@ describe('CampaignsPageComponent', () => {
 
   describe('création', () => {
     function submitForm(): void {
-      const modal = compiled.querySelector('app-create-campaign-modal')!;
+      const modal = compiled.querySelector('app-campaign-form-modal')!;
       (modal.querySelector('#campaign-name') as HTMLInputElement).value = 'Fête de la musique';
       modal.querySelector('#campaign-name')!.dispatchEvent(new Event('input'));
       (modal.querySelector('#campaign-start') as HTMLInputElement).value = '2026-06-01';
@@ -122,7 +122,7 @@ describe('CampaignsPageComponent', () => {
       render();
       openCreateModal();
 
-      expect(compiled.querySelector('app-create-campaign-modal')).not.toBeNull();
+      expect(compiled.querySelector('app-campaign-form-modal')).not.toBeNull();
     });
 
     /** Le back attend un `LocalDateTime` là où l'input rend `AAAA-MM-JJ`. */
@@ -153,7 +153,7 @@ describe('CampaignsPageComponent', () => {
       fixture.detectChanges();
 
       expect(compiled.querySelectorAll('.campaign-list-item').length).toBe(2);
-      expect(compiled.querySelector('app-create-campaign-modal')).toBeNull();
+      expect(compiled.querySelector('app-campaign-form-modal')).toBeNull();
       expect(compiled.querySelector('app-campaign-detail h2')?.textContent?.trim())
         .toBe('Fête de la musique');
       expect(success).toHaveBeenCalledWith('Campagne créée.');
@@ -168,7 +168,7 @@ describe('CampaignsPageComponent', () => {
                  .flush('boom', { status: 400, statusText: 'Bad Request' });
       fixture.detectChanges();
 
-      expect(compiled.querySelector('app-create-campaign-modal')).not.toBeNull();
+      expect(compiled.querySelector('app-campaign-form-modal')).not.toBeNull();
       expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être créée.');
     });
   });
@@ -178,5 +178,132 @@ describe('CampaignsPageComponent', () => {
     render();
 
     expect(compiled.querySelector('.campaign-list-create')).toBeNull();
+  });
+  describe('gestion', () => {
+    function clickAction(label: string): void {
+      const button = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-action'))
+                          .find((candidate) => candidate.textContent?.trim() === label);
+      button!.click();
+      fixture.detectChanges();
+    }
+
+    it('should not offer any action to a reader', () => {
+      signInAs(['campaigns:read']);
+      render();
+
+      expect(compiled.querySelector('.campaign-detail-actions')).toBeNull();
+    });
+
+    it('should open the form prefilled with the selected campaign', () => {
+      render();
+      clickAction('Modifier');
+
+      const modal = compiled.querySelector('app-campaign-form-modal')!;
+      expect(modal.querySelector('h2')?.textContent).toContain('Modifier la campagne');
+      expect((modal.querySelector('#campaign-name') as HTMLInputElement).value).toBe('Marché de Noël');
+    });
+
+    /** Un jour inchangé garde son heure : celle d'une clôture, par exemple. */
+    it('should PUT the edited campaign, keeping the time of an unchanged day', () => {
+      const success = vi.spyOn(notifications, 'success');
+      render([campaign({ endDate: '2026-12-24T17:42:00' })]);
+      clickAction('Modifier');
+
+      const modal = compiled.querySelector('app-campaign-form-modal')!;
+      const name = modal.querySelector('#campaign-name') as HTMLInputElement;
+      name.value = 'Marché de Noël 2026';
+      name.dispatchEvent(new Event('input'));
+      const start = modal.querySelector('#campaign-start') as HTMLInputElement;
+      start.value = '2026-11-28';
+      start.dispatchEvent(new Event('input'));
+      modal.querySelector('form')!.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      const request = httpTesting.expectOne('/api/campaigns/1');
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({
+        name: 'Marché de Noël 2026',
+        description: 'Toutes les annonces du marché',
+        startDate: '2026-11-28T00:00:00',
+        endDate: '2026-12-24T17:42:00',
+      });
+
+      request.flush(campaign({ name: 'Marché de Noël 2026' }));
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-form-modal')).toBeNull();
+      expect(compiled.querySelector('app-campaign-detail h2')?.textContent?.trim()).toBe('Marché de Noël 2026');
+      expect(success).toHaveBeenCalledWith('Campagne modifiée.');
+    });
+
+    it('should keep the form open and warn when the update fails', () => {
+      const error = vi.spyOn(notifications, 'error');
+      render();
+      clickAction('Modifier');
+      compiled.querySelector('app-campaign-form-modal form')!.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      httpTesting.expectOne('/api/campaigns/1').flush('boom', { status: 400, statusText: 'Bad Request' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-form-modal')).not.toBeNull();
+      expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être modifiée.');
+    });
+
+    it('should close a running campaign once confirmed and show its new status', () => {
+      render([campaign({ status: 'ACTIVE' })]);
+      clickAction('Clôturer');
+      clickAction('Confirmer la clôture');
+
+      const request = httpTesting.expectOne('/api/campaigns/1/closure');
+      expect(request.request.method).toBe('POST');
+      request.flush(campaign({ status: 'COMPLETED' }));
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Terminée');
+    });
+
+    it('should cancel a campaign once confirmed', () => {
+      const success = vi.spyOn(notifications, 'success');
+      render();
+      clickAction('Annuler la campagne');
+      clickAction('Confirmer l’annulation');
+
+      httpTesting.expectOne('/api/campaigns/1/cancellation').flush(campaign({ status: 'CANCELED' }));
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Annulée');
+      expect(success).toHaveBeenCalledWith('Campagne annulée.');
+    });
+
+    it('should remove a deleted campaign and select the next one', () => {
+      const success = vi.spyOn(notifications, 'success');
+      render([campaign(), campaign({ id: 2, name: 'Budget participatif' })]);
+      clickAction('Supprimer');
+      clickAction('Confirmer la suppression');
+
+      const request = httpTesting.expectOne('/api/campaigns/1');
+      expect(request.request.method).toBe('DELETE');
+      request.flush(null, { status: 204, statusText: 'No Content' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelectorAll('.campaign-list-item').length).toBe(1);
+      expect(compiled.querySelector('app-campaign-detail h2')?.textContent?.trim()).toBe('Budget participatif');
+      expect(success).toHaveBeenCalledWith('Campagne supprimée.');
+    });
+
+    it('should keep the campaign and warn when an action is refused', () => {
+      const error = vi.spyOn(notifications, 'error');
+      render();
+      clickAction('Annuler la campagne');
+      clickAction('Confirmer l’annulation');
+
+      httpTesting.expectOne('/api/campaigns/1/cancellation')
+                 .flush({ message: 'La campagne 1 est terminée' }, { status: 409, statusText: 'Conflict' });
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Programmée');
+      expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être annulée.');
+    });
   });
 });

@@ -102,4 +102,112 @@ describe('CampaignDetailComponent', () => {
     expect(compiled.querySelector('.campaign-detail-placeholder')?.textContent)
       .toContain('Aucune publication rattachée');
   });
+  describe('management actions', () => {
+    function renderWritable(value: Campaign): HTMLElement {
+      fixture.componentRef.setInput('canWrite', true);
+      return render(value);
+    }
+
+    function buttons(compiled: HTMLElement): string[] {
+      return Array.from(compiled.querySelectorAll('.campaign-action'))
+                  .map((button) => button.textContent?.trim() ?? '');
+    }
+
+    function click(compiled: HTMLElement, label: string): void {
+      const button = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-action'))
+                          .find((candidate) => candidate.textContent?.trim() === label);
+      button!.click();
+      fixture.detectChanges();
+    }
+
+    it('should stay read-only without the write permission', () => {
+      expect(render(campaign()).querySelector('.campaign-detail-actions')).toBeNull();
+    });
+
+    it('should offer close only to a running campaign', () => {
+      expect(buttons(renderWritable(campaign({ status: 'ACTIVE' }))))
+        .toEqual(['Modifier', 'Clôturer', 'Annuler la campagne', 'Supprimer']);
+    });
+
+    it('should offer cancel but not close to a scheduled campaign', () => {
+      expect(buttons(renderWritable(campaign({ status: 'SCHEDULED' }))))
+        .toEqual(['Modifier', 'Annuler la campagne', 'Supprimer']);
+    });
+
+    it('should only offer edit and delete to a finished or canceled campaign', () => {
+      expect(buttons(renderWritable(campaign({ status: 'COMPLETED' })))).toEqual(['Modifier', 'Supprimer']);
+      expect(buttons(renderWritable(campaign({ id: 2, status: 'CANCELED' })))).toEqual(['Modifier', 'Supprimer']);
+    });
+
+    it('should emit edit right away', () => {
+      const edit = vi.fn();
+      fixture.componentInstance.edit.subscribe(edit);
+
+      click(renderWritable(campaign()), 'Modifier');
+
+      expect(edit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ask for confirmation before deleting', () => {
+      const confirmed = vi.fn();
+      fixture.componentInstance.actionConfirmed.subscribe(confirmed);
+      const compiled = renderWritable(campaign());
+
+      click(compiled, 'Supprimer');
+
+      expect(confirmed).not.toHaveBeenCalled();
+      expect(compiled.querySelector('.campaign-detail-confirm')?.textContent)
+        .toContain('Ses publications sont conservées');
+
+      click(compiled, 'Confirmer la suppression');
+
+      expect(confirmed).toHaveBeenCalledWith('archive');
+      expect(compiled.querySelector('.campaign-detail-confirm')).toBeNull();
+    });
+
+    it('should emit close and cancel once confirmed', () => {
+      const confirmed = vi.fn();
+      fixture.componentInstance.actionConfirmed.subscribe(confirmed);
+      const compiled = renderWritable(campaign({ status: 'ACTIVE' }));
+
+      click(compiled, 'Clôturer');
+      click(compiled, 'Confirmer la clôture');
+      click(compiled, 'Annuler la campagne');
+      expect(compiled.querySelector('.campaign-detail-confirm')?.textContent)
+        .toContain('diffusions déjà programmées');
+      click(compiled, 'Confirmer l’annulation');
+
+      expect(confirmed.mock.calls).toEqual([['close'], ['cancel']]);
+    });
+
+    it('should drop the pending confirmation on "Retour"', () => {
+      const confirmed = vi.fn();
+      fixture.componentInstance.actionConfirmed.subscribe(confirmed);
+      const compiled = renderWritable(campaign());
+
+      click(compiled, 'Supprimer');
+      click(compiled, 'Retour');
+
+      expect(compiled.querySelector('.campaign-detail-confirm')).toBeNull();
+      expect(confirmed).not.toHaveBeenCalled();
+    });
+
+    it('should drop the pending confirmation when another campaign is selected', () => {
+      const compiled = renderWritable(campaign());
+      click(compiled, 'Supprimer');
+
+      render(campaign({ id: 2, name: 'Autre' }));
+
+      expect(compiled.querySelector('.campaign-detail-confirm')).toBeNull();
+    });
+
+    it('should disable the actions while one is in flight', () => {
+      fixture.componentRef.setInput('busy', true);
+      const compiled = renderWritable(campaign());
+
+      const disabled = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-action'))
+                            .every((button) => button.disabled);
+      expect(disabled).toBe(true);
+    });
+  });
 });

@@ -13,15 +13,19 @@ export interface Campaign {
   publications: Publication[]
 }
 
-/** Corps de `POST /api/campaigns`. Les dates sont des `LocalDateTime` ISO. */
-export interface CreateCampaignRequest {
+/**
+ * Corps de `POST /api/campaigns` et de `PUT /api/campaigns/{id}`. Les dates
+ * sont des `LocalDateTime` ISO.
+ */
+export interface CampaignRequest {
   name: string
   description: string
   startDate: string | null
   endDate: string | null
 }
 
-export interface CreateCampaignFormValue {
+/** Valeur du formulaire de campagne : dates au format `AAAA-MM-JJ`, vides si absentes. */
+export interface CampaignFormValue {
   name: string
   description: string
   startDate: string
@@ -35,6 +39,19 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
   COMPLETED: 'Terminée',
   CANCELED: 'Annulée',
 };
+
+/** Actions du détail d'une campagne qui demandent une confirmation. */
+export type CampaignAction = 'close' | 'cancel' | 'archive';
+
+/** Une campagne en cours peut être clôturée : arrêtée maintenant. */
+export function canClose(campaign: Campaign): boolean {
+  return campaign.status === 'ACTIVE';
+}
+
+/** Seule une campagne terminée ou déjà annulée ne peut plus l'être. */
+export function canCancel(campaign: Campaign): boolean {
+  return campaign.status !== 'COMPLETED' && campaign.status !== 'CANCELED';
+}
 
 /** Compteurs affichés en tête du détail d'une campagne. */
 export interface CampaignStats {
