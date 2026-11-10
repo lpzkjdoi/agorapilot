@@ -42,6 +42,7 @@ public class FacebookConnectionService {
     static final List<String> SCOPES = List.of("pages_show_list", "pages_read_engagement", "pages_manage_posts");
     static final String PUBLISH_SCOPE = "pages_manage_posts";
     static final String CALLBACK_PATH = "/api/channels/facebook/callback";
+    static final String ACCESS_DENIED = "access_denied";
     static final String FRONT_PATH = "/canal-facebook";
 
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -115,17 +116,25 @@ public class FacebookConnectionService {
      * Le retour de Facebook. Ne lève jamais : l'issue, réussite ou motif d'échec,
      * part dans l'adresse de la page du front vers laquelle le navigateur est
      * renvoyé. La demande est consommée dans tous les cas.
+     * <p>
+     * Une erreur de Facebook est lue <strong>avant</strong> la demande : Facebook
+     * la renvoie parfois sans {@code state} (app mal configurée), et la réponse
+     * serait alors « demande inconnue », qui masque le vrai motif.
      *
-     * @param error renseigné par Facebook quand la personne a refusé ou annulé
+     * @param error        renseigné par Facebook en cas d'échec : {@code access_denied}
+     *                     quand la personne a refusé ou annulé, un code sinon
+     * @param errorMessage le motif donné par Facebook, s'il y en a un
      */
     @Transactional
-    public String complete(String state, String code, String error) {
+    public String complete(String state, String code, String error, String errorMessage) {
         try {
+            if (error != null || errorMessage != null) {
+                discard(state);
+                throw new FacebookConnectionException(describeFacebookError(error, errorMessage));
+            }
+
             FacebookOAuthState request = consume(state);
 
-            if (error != null) {
-                throw new FacebookConnectionException("Connexion annulée sur Facebook.");
-            }
             if (code == null || code.isBlank()) {
                 throw new FacebookConnectionException("Facebook n'a pas renvoyé d'autorisation.");
             }
@@ -188,6 +197,19 @@ public class FacebookConnectionService {
         suspensions.lift(DeliveryChannel.FACEBOOK);
 
         return connection;
+    }
+
+    /** Refus ou annulation de la personne : rien à expliquer de plus. */
+    private static String describeFacebookError(String error, String errorMessage) {
+        if (ACCESS_DENIED.equals(error) || errorMessage == null || errorMessage.isBlank()) {
+            return "Connexion annulée sur Facebook.";
+        }
+        return "Facebook a refusé la connexion : " + errorMessage;
+    }
+
+    /** Une demande qui a échoué sur Facebook ne doit pas pouvoir resservir. */
+    private void discard(String state) {
+        Optional.ofNullable(state).flatMap(states::findById).ifPresent(states::delete);
     }
 
     private FacebookOAuthState consume(String state) {

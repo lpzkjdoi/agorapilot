@@ -62,10 +62,28 @@ class FacebookConnectionControllerTest {
 
     @Test
     void sends_the_browser_back_to_the_front_after_facebook() throws Exception {
-        when(connectionService.complete("etat", "code", null)).thenReturn("https://agora.test/canal-facebook?connexion=ok");
+        when(connectionService.complete("etat", "code", null, null)).thenReturn("https://agora.test/canal-facebook?connexion=ok");
 
         mockMvc.perform(get("/api/channels/facebook/callback").param("state", "etat").param("code", "code"))
                .andExpect(status().isFound())
                .andExpect(header().string("Location", "https://agora.test/canal-facebook?connexion=ok"));
+    }
+
+    @Test
+    void passes_on_both_forms_of_facebook_error() throws Exception {
+        when(connectionService.complete(null, null, "1349048", "Domaine non inscrit."))
+                .thenReturn("https://agora.test/canal-facebook?connexion=erreur");
+        when(connectionService.complete("etat", null, "access_denied", "Permissions error"))
+                .thenReturn("https://agora.test/canal-facebook?connexion=erreur");
+
+        mockMvc.perform(get("/api/channels/facebook/callback")
+                       .param("error_code", "1349048").param("error_message", "Domaine non inscrit."))
+               .andExpect(status().isFound());
+        mockMvc.perform(get("/api/channels/facebook/callback").param("state", "etat")
+                       .param("error", "access_denied").param("error_description", "Permissions error"))
+               .andExpect(status().isFound());
+
+        verify(connectionService).complete(null, null, "1349048", "Domaine non inscrit.");
+        verify(connectionService).complete("etat", null, "access_denied", "Permissions error");
     }
 }
