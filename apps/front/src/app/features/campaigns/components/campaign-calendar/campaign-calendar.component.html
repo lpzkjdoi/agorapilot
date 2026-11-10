@@ -1,0 +1,70 @@
+<div class="campaign-calendar">
+  <header class="campaign-calendar-header">
+    <h3 class="campaign-calendar-title">{{ title() }}</h3>
+    <nav class="campaign-calendar-nav" aria-label="Changer de mois">
+      <button type="button" class="campaign-calendar-arrow" aria-label="Mois précédent" (click)="previous()">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"
+             fill="currentColor" aria-hidden="true">
+          <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z" />
+        </svg>
+      </button>
+      @if (period().start) {
+        <button type="button" (click)="goToStart()">Début</button>
+      }
+      <button type="button" (click)="goToToday()">Aujourd’hui</button>
+      <button type="button" class="campaign-calendar-arrow" aria-label="Mois suivant" (click)="next()">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"
+             fill="currentColor" aria-hidden="true">
+          <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  @if (outOfPeriod().length > 0) {
+    <div class="campaign-calendar-warning" role="alert">
+      <p>
+        {{ outOfPeriod().length === 1
+          ? '1 diffusion tombe hors de la période de la campagne :'
+          : outOfPeriod().length + ' diffusions tombent hors de la période de la campagne :' }}
+      </p>
+      <ul>
+        @for (occurrence of outOfPeriod(); track occurrence.id) {
+          <li>
+            {{ occurrence.scheduledAt | date: "EEE d MMM y 'à' HH:mm" : undefined : 'fr-FR' }}
+            — {{ occurrence.publication.content }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <app-calendar-month-grid
+    [days]="days()"
+    [occurrencesByDay]="occurrencesByDay()"
+    [today]="today()"
+    [now]="now()"
+    [selectedDay]="selectedDay()"
+    [canSchedule]="false"
+    [period]="period()"
+    [panel]="dayPanel"
+    (daySelected)="selectedDay.set($event)"
+  />
+
+  <p class="campaign-calendar-hint">
+    Les jours hachurés sont hors de la période de la campagne. Pour déplacer ou reprendre une
+    diffusion, passez par le <a routerLink="/calendrier">Calendrier</a>.
+  </p>
+</div>
+
+<ng-template #dayPanel let-day let-end="end" let-up="up">
+  <app-calendar-day-panel
+    [class.day-panel-end]="end"
+    [class.day-panel-up]="up"
+    [date]="day"
+    [occurrences]="selectedOccurrences()"
+    [now]="now()"
+    [canSchedule]="false"
+    (closed)="selectedDay.set(null)"
+  />
+</ng-template>

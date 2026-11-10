@@ -3,6 +3,7 @@ import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Occurrence } from '../../../occurrences/occurrence.model';
 import { Publication } from '../../../publications/publication.model';
@@ -48,7 +49,7 @@ describe('CampaignsPageComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CampaignsPageComponent],
-      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSignedInAs(), provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);

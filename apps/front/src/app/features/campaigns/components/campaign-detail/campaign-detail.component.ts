@@ -6,6 +6,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 import { Occurrence } from "../../../occurrences/occurrence.model";
 import { failureReason } from "../../../occurrences/occurrence.utils";
@@ -18,6 +19,7 @@ import {
   canClose,
 } from "../../campaign.model";
 import { planningByPublication, planningStats } from "../../campaign-planning";
+import { CampaignCalendarComponent } from "../campaign-calendar/campaign-calendar.component";
 
 /** Ce que la confirmation annonce, pour chaque action. */
 const CONFIRMATIONS: Record<CampaignAction, { question: string, button: string }> = {
@@ -37,7 +39,7 @@ const CONFIRMATIONS: Record<CampaignAction, { question: string, button: string }
 
 @Component({
   selector: 'app-campaign-detail',
-  imports: [DatePipe],
+  imports: [DatePipe, CampaignCalendarComponent],
   templateUrl: './campaign-detail.component.html',
   styleUrl: './campaign-detail.component.css',
   standalone: true,
@@ -66,6 +68,9 @@ export class CampaignDetailComponent {
 
   protected readonly statusLabels = CAMPAIGN_STATUS_LABELS;
   protected readonly confirmations = CONFIRMATIONS;
+  /** Onglet affiché ; il est conservé d'une campagne à l'autre. */
+  protected readonly tab = signal<'publications' | 'calendar'>('publications');
+
   protected readonly channelLabels = DELIVERY_CHANNEL_LABELS;
   protected readonly failureReason = failureReason;
   protected readonly stats = computed(() => planningStats(this.campaign().publications, this.occurrences() ?? []));

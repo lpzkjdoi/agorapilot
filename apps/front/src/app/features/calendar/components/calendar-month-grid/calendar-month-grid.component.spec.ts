@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Occurrence } from '../../../occurrences/occurrence.model';
 import { monthGrid, OCCURRENCE_DRAG_TYPE } from '../../calendar.utils';
-import { CalendarMonthGridComponent, OccurrenceMove } from './calendar-month-grid.component';
+import { CalendarMonthGridComponent, CalendarPeriod, OccurrenceMove } from './calendar-month-grid.component';
 
 const NOW = new Date(2026, 9, 10, 12, 0);
 
@@ -32,6 +32,7 @@ function occurrence(id: number, scheduledAt: string, overrides: Partial<Occurren
       [now]="now"
       [selectedDay]="selectedDay"
       [canSchedule]="canSchedule"
+      [period]="period"
       [panel]="panel"
       (daySelected)="selected.push($event)"
       (moved)="moves.push($event)"
@@ -44,6 +45,7 @@ class HostComponent {
   byDay = new Map<string, Occurrence[]>();
   selectedDay: string | null = null;
   canSchedule = true;
+  period: CalendarPeriod | null = null;
   selected: string[] = [];
   moves: OccurrenceMove[] = [];
 }
@@ -91,6 +93,31 @@ describe('CalendarMonthGridComponent', () => {
     const first = element.querySelector('.month-cell')!;
     expect(first.classList.contains('month-cell-outside')).toBe(true);
     expect(first.querySelector('.month-day')).toBeNull();
+  });
+
+  it('should not mark any day without a period', () => {
+    fixture.detectChanges();
+
+    expect(element.querySelector('.month-cell-off-period')).toBeNull();
+  });
+
+  it('should hatch the days of the month outside the period, bounds included', () => {
+    host.period = { start: '2026-10-05', end: '2026-10-20' };
+    fixture.detectChanges();
+
+    expect(cell(4).classList.contains('month-cell-off-period')).toBe(true);
+    expect(cell(5).classList.contains('month-cell-off-period')).toBe(false);
+    expect(cell(20).classList.contains('month-cell-off-period')).toBe(false);
+    expect(cell(21).classList.contains('month-cell-off-period')).toBe(true);
+    // Les jours hors du mois gardent leur seul grisé.
+    expect(element.querySelector('.month-cell')!.classList.contains('month-cell-off-period')).toBe(false);
+  });
+
+  it('should leave an open-ended period unbounded', () => {
+    host.period = { start: '2026-10-05', end: null };
+    fixture.detectChanges();
+
+    expect(cell(31).classList.contains('month-cell-off-period')).toBe(false);
   });
 
   it('should circle today', () => {

@@ -28,6 +28,12 @@ export interface DayPanelContext {
   up: boolean
 }
 
+/** Période mise en valeur, bornes incluses (`2026-12-01`) ; une borne absente laisse la période ouverte. */
+export interface CalendarPeriod {
+  start: string | null
+  end: string | null
+}
+
 export interface OccurrenceMove {
   occurrenceId: number
   date: string
@@ -59,6 +65,12 @@ export class CalendarMonthGridComponent {
   /** `occurrences:schedule` : sans lui, aucune pastille ne se déplace. */
   readonly canSchedule = input(true);
 
+  /**
+   * Période d'une campagne : les jours du mois qui en sortent sont estompés.
+   * Absente, tous les jours se valent.
+   */
+  readonly period = input<CalendarPeriod | null>(null);
+
   /** Bulle du jour sélectionné, fournie par la page. */
   readonly panel = input<TemplateRef<DayPanelContext> | null>(null);
 
@@ -79,6 +91,16 @@ export class CalendarMonthGridComponent {
       end: index % 7 >= 5,
       up: Math.floor(index / 7) >= weeks - 2,
     };
+  }
+
+  protected offPeriod(day: CalendarDay): boolean {
+    const period = this.period();
+
+    if (!period || !day.inMonth) {
+      return false;
+    }
+
+    return (period.start !== null && day.date < period.start) || (period.end !== null && day.date > period.end);
   }
 
   protected occurrencesOf(day: CalendarDay): Occurrence[] {

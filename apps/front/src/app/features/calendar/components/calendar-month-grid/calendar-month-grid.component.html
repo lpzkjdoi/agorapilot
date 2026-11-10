@@ -11,6 +11,7 @@
     <div class="month-cell"
          tabindex="-1"
          [class.month-cell-outside]="!day.inMonth"
+         [class.month-cell-off-period]="offPeriod(day)"
          [class.month-cell-selected]="day.date === selectedDay()"
          [class.month-cell-drop]="day.date === dropTarget()"
          (click)="select(day, $event)"
