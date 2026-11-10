@@ -44,6 +44,11 @@
   cursor: default;
 }
 
+/* Hors de la période d'une campagne : hachures discrètes, la case reste lisible. */
+.month-cell-off-period {
+  background-image: repeating-linear-gradient(-45deg, transparent 0 6px, #F3F4F6 6px 8px);
+}
+
 .month-cell-drop {
   background-color: #EFF6FF;
   outline: 2px dashed var(--color-brand-blue);

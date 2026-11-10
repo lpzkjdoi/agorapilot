@@ -1,6 +1,7 @@
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Occurrence, OccurrenceStatus } from '../../../occurrences/occurrence.model';
 import { Publication } from '../../../publications/publication.model';
 import { Campaign } from '../../campaign.model';
@@ -47,6 +48,8 @@ describe('CampaignDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CampaignDetailComponent],
+      // Le calendrier de campagne renvoie au Calendrier général par un lien.
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CampaignDetailComponent);
@@ -311,6 +314,48 @@ describe('CampaignDetailComponent', () => {
       const disabled = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-action'))
                             .every((button) => button.disabled);
       expect(disabled).toBe(true);
+    });
+  });
+  describe('tabs', () => {
+    function tab(compiled: HTMLElement, label: string): HTMLButtonElement {
+      return Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-detail-tab'))
+                  .find((button) => button.textContent?.trim().startsWith(label))!;
+    }
+
+    it('should open on the publications, counted in their tab', () => {
+      const compiled = render(campaign({ publications: [publication(1, 'Un', 'VERIFIED')] }));
+
+      expect(tab(compiled, 'Publications').textContent?.trim()).toBe('Publications (1)');
+      expect(tab(compiled, 'Publications').getAttribute('aria-selected')).toBe('true');
+      expect(compiled.querySelector('.campaign-detail-publications')).not.toBeNull();
+      expect(compiled.querySelector('app-campaign-calendar')).toBeNull();
+    });
+
+    it('should show the campaign calendar once its diffusions are loaded', () => {
+      const compiled = render(campaign());
+
+      tab(compiled, 'Calendrier').click();
+      fixture.detectChanges();
+      expect(compiled.querySelector('app-campaign-calendar')).toBeNull();
+      expect(compiled.textContent).toContain('Chargement des diffusions');
+
+      fixture.componentRef.setInput('occurrences', []);
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-calendar')).not.toBeNull();
+      expect(compiled.querySelector('.campaign-detail-publications, .campaign-detail-placeholder')).toBeNull();
+      expect(tab(compiled, 'Calendrier').getAttribute('aria-selected')).toBe('true');
+    });
+
+    it('should keep the tab when another campaign is selected', () => {
+      fixture.componentRef.setInput('occurrences', []);
+      const compiled = render(campaign());
+      tab(compiled, 'Calendrier').click();
+      fixture.detectChanges();
+
+      render(campaign({ id: 2, name: 'Autre' }));
+
+      expect(compiled.querySelector('app-campaign-calendar')).not.toBeNull();
     });
   });
 });
