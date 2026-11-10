@@ -460,6 +460,27 @@ class CampaignServiceTest {
         }
 
         @Test
+        void deprogrammeLesDiffusionsDeSesPublications() {
+            close(started(null));
+
+            verify(publicationOccurrenceService).cancelScheduledOfCampaign(3L);
+        }
+
+        /** Tout ou rien : une diffusion imminente empêche la clôture. */
+        @Test
+        void resteEnCoursSiUneDiffusionNePeutPasEtreDeprogrammee() {
+            Campaign campaign = started(null);
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            when(publicationOccurrenceService.cancelScheduledOfCampaign(3L))
+                    .thenThrow(new OccurrenceNotModifiableException("La campagne 3 a une diffusion en cours ou imminente"));
+
+            assertThatThrownBy(() -> service.close(3L)).isInstanceOf(OccurrenceNotModifiableException.class);
+            assertThat(campaign.getStatus()).isEqualTo(CampaignStatus.ACTIVE);
+            assertThat(campaign.getEndDate()).isNull();
+            verify(campaignRepository, never()).save(any());
+        }
+
+        @Test
         void arreteLaCampagneMaintenant() {
             Campaign campaign = started(null);
 
@@ -514,6 +535,7 @@ class CampaignServiceTest {
                     .isInstanceOf(CampaignNotClosableException.class)
                     .hasMessageContaining("n'a pas encore commencé");
             verify(campaignRepository, never()).save(any());
+            verify(publicationOccurrenceService, never()).cancelScheduledOfCampaign(any());
         }
 
         @Test

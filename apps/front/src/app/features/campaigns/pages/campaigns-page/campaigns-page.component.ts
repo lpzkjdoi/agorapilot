@@ -275,14 +275,14 @@ export class CampaignsPageComponent {
         ? this.campaignsService.closeCampaign(campaign.id)
         : this.campaignsService.cancelCampaign(campaign.id);
 
-    // Compté avant l'appel : l'annulation les fait disparaître.
+    // Compté avant l'appel : clôture et annulation les font disparaître.
     const scheduled = (this.planning().occurrences ?? []).filter((o) => o.status === 'SCHEDULED').length;
 
     request.subscribe({
       next: (updated) => {
         if (updated) {
           this.replace(updated);
-          // L'annulation déprogramme les diffusions à venir.
+          // Clôture et annulation déprogramment les diffusions à venir.
           this.planningVersion.update((version) => version + 1);
         } else {
           // Supprimée : elle quitte la liste, et la suivante prend sa place.
@@ -290,7 +290,7 @@ export class CampaignsPageComponent {
           this.selectedId.set(this.campaigns()[0]?.id ?? null);
         }
         this.acting.set(false);
-        this.notifications.success(action === 'cancel' ? CampaignsPageComponent.canceledMessage(scheduled) : messages.success);
+        this.notifications.success(updated ? CampaignsPageComponent.stoppedMessage(messages.success, scheduled) : messages.success);
       },
       error: (err: HttpErrorResponse) => {
         console.error(`Action « ${ action } » impossible sur la campagne ${ campaign.id }`, err);
@@ -301,14 +301,17 @@ export class CampaignsPageComponent {
     });
   }
 
-  private static canceledMessage(scheduled: number): string {
+  /** « Campagne clôturée. » devient « Campagne clôturée : 2 diffusions déprogrammées. » */
+  private static stoppedMessage(success: string, scheduled: number): string {
     if (scheduled === 0) {
-      return 'Campagne annulée.';
+      return success;
     }
 
+    const base = success.replace(/\.$/, '');
+
     return scheduled === 1
-      ? 'Campagne annulée : 1 diffusion déprogrammée.'
-      : `Campagne annulée : ${ scheduled } diffusions déprogrammées.`;
+      ? `${ base } : 1 diffusion déprogrammée.`
+      : `${ base } : ${ scheduled } diffusions déprogrammées.`;
   }
 
   private create(value: CampaignFormValue): void {

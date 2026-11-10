@@ -277,6 +277,8 @@ describe('CampaignDetailComponent', () => {
       const compiled = renderWritable(campaign({ status: 'ACTIVE' }));
 
       click(compiled, 'Clôturer');
+      expect(compiled.querySelector('.campaign-detail-confirm')?.textContent)
+        .toContain('ses diffusions programmées seront déprogrammées');
       click(compiled, 'Confirmer la clôture');
       click(compiled, 'Annuler la campagne');
       expect(compiled.querySelector('.campaign-detail-confirm')?.textContent)

@@ -1,4 +1,4 @@
-# Annuler une campagne déprogramme ses diffusions
+# Annuler ou clôturer une campagne déprogramme ses diffusions
 
 **Date** : 2026-11-10
 **Périmètre** : `apps/back`, `apps/front`
@@ -6,9 +6,10 @@
 
 ## Contexte
 
-Jusqu'ici, annuler une campagne laissait partir les diffusions déjà
-programmées de ses publications ; la confirmation le signalait. Décision de
-Maxime : une campagne annulée ne doit plus rien diffuser.
+Jusqu'ici, annuler ou clôturer une campagne laissait partir les diffusions
+déjà programmées de ses publications ; la confirmation d'annulation le
+signalait. Décision de Maxime : une campagne annulée ou clôturée ne doit plus
+rien diffuser.
 
 ## Changements
 
@@ -21,22 +22,22 @@ toutes les diffusions **programmées** des publications de la campagne
 - les diffusions publiées ou en échec restent : elles forment l'historique de
   la campagne ;
 - chaque diffusion annulée est inscrite au journal (`OCCURRENCE_CANCELLED`,
-  « annulée avec sa campagne ») ;
+  « déprogrammée avec sa campagne ») ;
 - les jours touchés sont répartis à nouveau, comme pour une annulation unitaire ;
 - **tout ou rien**, comme pour la suppression d'une publication : si une seule
   diffusion est en cours ou imminente (moins de 5 minutes), rien n'est
-  déprogrammé et l'annulation est refusée (`409`).
+  déprogrammé et l'annulation ou la clôture est refusée (`409`).
 
-`CampaignService.cancel` l'appelle avant de passer la campagne à `CANCELED`.
-Les refus existants (campagne terminée ou déjà annulée) arrivent avant, sans
-toucher aux diffusions.
+`CampaignService.cancel` et `CampaignService.close` l'appellent avant de
+changer le statut de la campagne. Les refus existants arrivent avant et ne
+touchent pas aux diffusions : campagne terminée ou déjà annulée, ou campagne
+pas encore commencée pour la clôture.
 
 ### Front
 
-- La confirmation annonce désormais : « Les diffusions programmées de ses
-  publications seront déprogrammées. »
+- Les deux confirmations annoncent la déprogrammation.
 - La notification de succès donne le nombre de diffusions déprogrammées
-  (« Campagne annulée : 2 diffusions déprogrammées. »), et la planification est
+  (« Campagne clôturée : 1 diffusion déprogrammée. »), et la planification est
   rechargée.
 - En cas de refus, la notification reprend le motif du back, par exemple une
   diffusion imminente.
@@ -54,9 +55,11 @@ Tests ajoutés :
   - l'annulation supprime les diffusions de la campagne, garde celle d'une
     publication hors campagne le même jour et répartit ce jour à nouveau ;
   - une diffusion imminente bloque tout.
-- `CampaignServiceTest.Cancel` (2 + 1 vérification ajoutée) :
+- `CampaignServiceTest.Cancel` et `.Close` (2 chacun, plus une vérification
+  ajoutée à chacun) :
   - appel de la déprogrammation ;
   - campagne inchangée si elle échoue ;
   - aucune déprogrammation sur un refus.
-- `CampaignsPageComponent` (2) : notification avec et sans diffusions, motif
-  du `409`.
+- `CampaignsPageComponent` : notification avec et sans diffusions, pour
+  l'annulation comme pour la clôture, et motif du `409`.
+- `CampaignDetailComponent` : textes des deux confirmations.

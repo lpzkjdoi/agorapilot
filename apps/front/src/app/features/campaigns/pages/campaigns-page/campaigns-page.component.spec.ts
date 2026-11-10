@@ -267,16 +267,24 @@ describe('CampaignsPageComponent', () => {
     });
 
     it('should close a running campaign once confirmed and show its new status', () => {
-      render([campaign({ status: 'ACTIVE' })]);
+      const success = vi.spyOn(notifications, 'success');
+      const samedi = { id: 8, content: 'Samedi', status: 'VERIFIED', medias: [], campaign: { id: 1, name: 'Marché de Noël' } } satisfies Publication;
+      render([campaign({ status: 'ACTIVE', publications: [samedi] })]);
+      flushPlanning([{
+        id: 1, scheduledAt: '2026-12-05T18:30:00', pinned: true, status: 'SCHEDULED', publication: samedi,
+        deliveries: [{ id: 10, channel: 'FACEBOOK', status: 'PENDING' }],
+      } satisfies Occurrence]);
       clickAction('Clôturer');
       clickAction('Confirmer la clôture');
 
       const request = httpTesting.expectOne('/api/campaigns/1/closure');
       expect(request.request.method).toBe('POST');
-      request.flush(campaign({ status: 'COMPLETED' }));
+      request.flush(campaign({ status: 'COMPLETED', publications: [samedi] }));
       fixture.detectChanges();
 
       expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Terminée');
+      expect(success).toHaveBeenCalledWith('Campagne clôturée : 1 diffusion déprogrammée.');
+      httpTesting.expectOne('/api/campaigns/1/occurrences').flush([]);
     });
 
     it('should cancel a campaign once confirmed, announce the unscheduled diffusions and reload them', () => {

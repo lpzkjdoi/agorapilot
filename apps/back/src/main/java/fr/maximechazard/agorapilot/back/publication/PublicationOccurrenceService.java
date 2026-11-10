@@ -277,7 +277,7 @@ public class PublicationOccurrenceService {
 
     /**
      * Déprogramme toutes les diffusions à venir des publications d'une
-     * campagne — c'est ce qu'implique son annulation. Les diffusions passées,
+     * campagne — c'est ce qu'impliquent son annulation et sa clôture. Les diffusions passées,
      * publiées ou en échec, restent : elles sont l'historique de la campagne.
      * Les jours touchés sont répartis à nouveau, et chaque annulation est
      * tracée au journal.
@@ -309,7 +309,7 @@ public class PublicationOccurrenceService {
         for (PublicationOccurrence occurrence : scheduled) {
             days.add(occurrence.getScheduledAt().toLocalDate());
             events.recordAction(SecurityEventType.OCCURRENCE_CANCELLED, describe(occurrence) + " : prévue le "
-                    + occurrence.getScheduledAt().format(JOURNAL_TIME) + ", annulée avec sa campagne");
+                    + occurrence.getScheduledAt().format(JOURNAL_TIME) + ", déprogrammée avec sa campagne");
             // Retirée aussi de la collection de sa publication : sans quoi la
             // cascade la referait persister au flush.
             occurrence.getPublication().getOccurrences().remove(occurrence);
