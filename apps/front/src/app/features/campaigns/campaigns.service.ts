@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from "../../../environments/environment";
+import { Occurrence } from "../occurrences/occurrence.model";
 import { Campaign, CampaignRequest } from "./campaign.model";
 
 @Injectable({
@@ -13,6 +14,11 @@ export class CampaignsService {
 
   getCampaigns(): Observable<Campaign[]> {
     return this.http.get<Campaign[]>(this.url);
+  }
+
+  /** Toutes les diffusions des publications de la campagne, dans l'ordre chronologique. */
+  getOccurrences(id: number): Observable<Occurrence[]> {
+    return this.http.get<Occurrence[]>(`${ this.url }/${ id }/occurrences`);
   }
 
   createCampaign(request: CampaignRequest): Observable<Campaign> {

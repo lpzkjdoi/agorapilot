@@ -1,0 +1,78 @@
+<!-- Le fond est un vrai bouton : fermer au clic extérieur reste alors
+     accessible au clavier, sans gestionnaire de clic sur un élément inerte. -->
+<button type="button"
+        class="modal-backdrop"
+        aria-label="Fermer la fenêtre"
+        (click)="closed.emit()"
+></button>
+
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="add-publications-title">
+  <header class="modal-header">
+    <div>
+      <h2 id="add-publications-title">Ajouter des publications</h2>
+      <p class="modal-subtitle">À la campagne « {{ campaign().name }} ».</p>
+    </div>
+    <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           height="20px"
+           viewBox="0 -960 960 960"
+           width="20px"
+           fill="currentColor"
+           aria-hidden="true"
+      >
+        <path
+          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </button>
+  </header>
+
+  @if (publications() === null) {
+    <div class="add-publications-loading">
+      <app-loader label="Chargement des publications…" />
+    </div>
+  } @else {
+    <input class="add-publications-search"
+           type="search"
+           placeholder="Rechercher une publication…"
+           aria-label="Rechercher une publication"
+           (input)="onSearch($event)"
+    >
+
+    @if (candidates().length === 0) {
+      <p class="add-publications-empty">Aucune autre publication à ajouter.</p>
+    } @else {
+      <ul class="add-publications-list">
+        @for (publication of candidates(); track publication.id) {
+          <li>
+            <label class="add-publications-item">
+              <input type="checkbox"
+                     [checked]="selected().has(publication.id)"
+                     (change)="toggle(publication.id)"
+              >
+              <span class="add-publications-content">{{ publication.content }}</span>
+              @if (publication.campaign; as current) {
+                <span class="add-publications-current">Déplacée depuis « {{ current.name }} »</span>
+              }
+            </label>
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <div class="modal-actions">
+    <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">
+      Annuler
+    </button>
+    <button type="button" class="primary" [disabled]="saving() || selected().size === 0" (click)="onSubmit()">
+      @if (saving()) {
+        <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
+        <app-loader size="sm" variant="dark" label="Ajout en cours…" />
+      }
+      Ajouter
+      @if (selected().size > 0) {
+        ({{ selected().size }})
+      }
+    </button>
+  </div>
+</div>

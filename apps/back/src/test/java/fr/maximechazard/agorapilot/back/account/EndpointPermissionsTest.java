@@ -128,6 +128,7 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.POST, "/api/campaigns/999/closure", CAMPAIGNS_WRITE),
                 new Endpoint(HttpMethod.POST, "/api/campaigns/999/cancellation", CAMPAIGNS_WRITE),
                 new Endpoint(HttpMethod.GET, "/api/campaigns/999", CAMPAIGNS_READ),
+                new Endpoint(HttpMethod.GET, "/api/campaigns/999/occurrences", CAMPAIGNS_READ),
                 new Endpoint(HttpMethod.PUT, "/api/campaigns/999", CAMPAIGNS_WRITE),
                 new Endpoint(HttpMethod.DELETE, "/api/campaigns/999", CAMPAIGNS_WRITE),
 

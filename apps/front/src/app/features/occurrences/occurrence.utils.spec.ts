@@ -1,14 +1,19 @@
+import { registerLocaleData } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
+import localeFr from "@angular/common/locales/fr";
 import { Occurrence } from "./occurrence.model";
 import {
   apiErrorMessage,
   failureReason,
   isModifiable,
   scheduledDay,
+  scheduledMessage,
   scheduledTime,
   toCreateOccurrencesRequest,
   toIsoDate,
 } from "./occurrence.utils";
+
+registerLocaleData(localeFr, 'fr-FR');
 
 function occurrence(overrides: Partial<Occurrence> = {}): Occurrence {
   return {
@@ -85,5 +90,21 @@ describe('occurrence utils', () => {
 
     expect(apiErrorMessage(withReason, 'Programmation impossible.')).toBe('Programmation impossible. La fenêtre est passée.');
     expect(apiErrorMessage(without, 'Programmation impossible.')).toBe('Programmation impossible.');
+  });
+  describe('scheduledMessage', () => {
+    it('should announce a pinned diffusion with its day and time', () => {
+      expect(scheduledMessage([occurrence({ pinned: true })])).toBe('Diffusion programmée le samedi 3 octobre à 18:30.');
+    });
+
+    it('should warn that an automatic time may still move', () => {
+      expect(scheduledMessage([occurrence()])).toContain('l’heure s’ajustera');
+    });
+
+    it('should summarise several diffusions by their days', () => {
+      expect(scheduledMessage([
+        occurrence({ pinned: true }),
+        occurrence({ id: 2, scheduledAt: '2026-10-10T12:00:00', pinned: true }),
+      ])).toBe('2 diffusions programmées : 03/10/2026, 10/10/2026.');
+    });
   });
 });

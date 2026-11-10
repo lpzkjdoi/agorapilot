@@ -9,6 +9,7 @@ import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.Publication;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
+import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceService;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,12 +52,15 @@ class CampaignServiceTest {
 
     @Mock
     private CampaignRepository campaignRepository;
+    @Mock
+    private PublicationOccurrenceService publicationOccurrenceService;
 
     private CampaignService service;
 
     @BeforeEach
     void setUp() {
-        service = new CampaignService(campaignRepository, new CampaignMapper(new PublicationMapper(new MediaMapper())));
+        service = new CampaignService(campaignRepository, new CampaignMapper(new PublicationMapper(new MediaMapper())),
+                publicationOccurrenceService);
     }
 
     private static Campaign campaign(long id, String name) {
@@ -224,6 +228,27 @@ class CampaignServiceTest {
             when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.getById(404L)).isInstanceOf(CampaignNotFoundException.class);
+        }
+    }
+
+    @Nested
+    class Occurrences {
+
+        @Test
+        void delegueAuxDiffusionsDeLaCampagne() {
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign(3L, "Marché")));
+            when(publicationOccurrenceService.findByCampaign(3L)).thenReturn(List.of());
+
+            assertThat(service.getOccurrences(3L)).isEmpty();
+            verify(publicationOccurrenceService).findByCampaign(3L);
+        }
+
+        @Test
+        void signaleUneCampagneInconnueSansChercherSesDiffusions() {
+            when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getOccurrences(404L)).isInstanceOf(CampaignNotFoundException.class);
+            verify(publicationOccurrenceService, never()).findByCampaign(any());
         }
     }
 

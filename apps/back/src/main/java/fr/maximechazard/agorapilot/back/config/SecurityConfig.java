@@ -131,7 +131,8 @@ public class SecurityConfig {
             .requestMatchers("/admin/**").hasAuthority(CHANNELS_MANAGE.code())
 
             // ---- Campagnes
-            .requestMatchers(HttpMethod.GET, "/api/campaigns", "/api/campaigns/*").hasAuthority(CAMPAIGNS_READ.code())
+            .requestMatchers(HttpMethod.GET, "/api/campaigns", "/api/campaigns/*", "/api/campaigns/*/occurrences")
+                .hasAuthority(CAMPAIGNS_READ.code())
             .requestMatchers(HttpMethod.POST, "/api/campaigns", "/api/campaigns/*/closure",
                     "/api/campaigns/*/cancellation").hasAuthority(CAMPAIGNS_WRITE.code())
             .requestMatchers(HttpMethod.PUT, "/api/campaigns/*").hasAuthority(CAMPAIGNS_WRITE.code())

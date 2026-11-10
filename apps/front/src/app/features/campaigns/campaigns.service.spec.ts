@@ -122,4 +122,14 @@ describe('CampaignsService', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
     expect(done).toBe(true);
   });
+  it('should GET the diffusions of a campaign on /api/campaigns/{id}/occurrences', () => {
+    let received: unknown;
+    service.getOccurrences(1).subscribe((occurrences) => (received = occurrences));
+
+    const request = httpTesting.expectOne('/api/campaigns/1/occurrences');
+    expect(request.request.method).toBe('GET');
+
+    request.flush([]);
+    expect(received).toEqual([]);
+  });
 });

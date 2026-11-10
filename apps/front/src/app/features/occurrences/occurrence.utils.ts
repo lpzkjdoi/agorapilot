@@ -1,3 +1,4 @@
+import { formatDate } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import {
   CreateOccurrencesRequest,
@@ -77,4 +78,26 @@ export function apiErrorMessage(err: HttpErrorResponse, fallback: string): strin
   const reason = typeof err.error?.message === 'string' ? err.error.message : null;
 
   return reason ? `${ fallback } ${ reason }` : fallback;
+}
+
+/**
+ * L'heure retenue par le back est annoncée tout de suite ; si elle est
+ * automatique, on prévient qu'elle suivra les autres programmations du jour.
+ * Plusieurs dates sont résumées par leurs jours, dans l'ordre du calendrier.
+ * Suppose la locale `fr-FR` enregistrée.
+ */
+export function scheduledMessage(occurrences: Occurrence[]): string {
+  const adjusts = occurrences.some((occurrence) => !occurrence.pinned)
+    ? ' — l’heure s’ajustera si d’autres publications sont programmées ce jour-là.'
+    : '.';
+
+  if (occurrences.length === 1) {
+    const when = formatDate(occurrences[0].scheduledAt, "EEEE d MMMM 'à' HH:mm", 'fr-FR');
+
+    return `Diffusion programmée le ${ when }${ adjusts }`;
+  }
+
+  const days = occurrences.map((occurrence) => formatDate(occurrence.scheduledAt, 'dd/MM/yyyy', 'fr-FR'));
+
+  return `${ occurrences.length } diffusions programmées : ${ days.join(', ') }${ adjusts }`;
 }

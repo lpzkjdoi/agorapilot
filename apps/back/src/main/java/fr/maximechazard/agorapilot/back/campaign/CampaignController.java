@@ -3,6 +3,7 @@ package fr.maximechazard.agorapilot.back.campaign;
 import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,12 @@ public class CampaignController {
     @GetMapping("/{id}")
     public ResponseEntity<CampaignDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(campaignService.getById(id));
+    }
+
+    /** Toutes les diffusions des publications de la campagne, dans l'ordre chronologique. */
+    @GetMapping("/{id}/occurrences")
+    public ResponseEntity<List<PublicationOccurrenceDTO>> getOccurrences(@PathVariable Long id) {
+        return ResponseEntity.ok(campaignService.getOccurrences(id));
     }
 
     // -------------------------------- POST --------------------------------

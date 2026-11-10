@@ -7,14 +7,17 @@ import {
   linkedSignal,
   output,
 } from '@angular/core';
+import { Occurrence } from "../../../occurrences/occurrence.model";
+import { failureReason } from "../../../occurrences/occurrence.utils";
+import { DELIVERY_CHANNEL_LABELS, Publication } from "../../../publications/publication.model";
 import {
   CAMPAIGN_STATUS_LABELS,
   Campaign,
   CampaignAction,
-  campaignStats,
   canCancel,
   canClose,
 } from "../../campaign.model";
+import { planningByPublication, planningStats } from "../../campaign-planning";
 
 /** Ce que la confirmation annonce, pour chaque action. */
 const CONFIRMATIONS: Record<CampaignAction, { question: string, button: string }> = {
@@ -46,13 +49,27 @@ export class CampaignDetailComponent {
   readonly canWrite = input(false);
   /** Vrai tant qu'une action est en vol : les boutons sont désactivés. */
   readonly busy = input(false);
+  /** Diffusions des publications de la campagne ; `null` tant qu'elles se chargent. */
+  readonly occurrences = input<Occurrence[] | null>(null);
+  /** Le chargement des diffusions a échoué : les compteurs ne sont pas affichés. */
+  readonly planningUnavailable = input(false);
+  /** Droit `occurrences:schedule` : programmer une publication depuis la campagne. */
+  readonly canSchedule = input(false);
+  /** Droit `publications:write` : ajouter ou retirer des publications. */
+  readonly canAssign = input(false);
 
   readonly edit = output<void>();
   readonly actionConfirmed = output<CampaignAction>();
+  readonly schedule = output<Publication>();
+  readonly addPublications = output<void>();
+  readonly detach = output<Publication>();
 
   protected readonly statusLabels = CAMPAIGN_STATUS_LABELS;
   protected readonly confirmations = CONFIRMATIONS;
-  protected readonly stats = computed(() => campaignStats(this.campaign()));
+  protected readonly channelLabels = DELIVERY_CHANNEL_LABELS;
+  protected readonly failureReason = failureReason;
+  protected readonly stats = computed(() => planningStats(this.campaign().publications, this.occurrences() ?? []));
+  protected readonly plannings = computed(() => planningByPublication(this.occurrences() ?? []));
   protected readonly closable = computed(() => canClose(this.campaign()));
   protected readonly cancelable = computed(() => canCancel(this.campaign()));
 

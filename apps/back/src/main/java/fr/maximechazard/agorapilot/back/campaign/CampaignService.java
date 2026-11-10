@@ -6,6 +6,8 @@ import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableE
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
+import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceService;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import java.util.List;
 public class CampaignService {
     private final CampaignRepository campaignRepository;
     private final CampaignMapper mapper;
+    private final PublicationOccurrenceService publicationOccurrenceService;
 
     public CampaignDTO create(CreateCampaignRequest request) {
         Campaign campaign = new Campaign(
@@ -45,6 +48,13 @@ public class CampaignService {
     @Transactional(readOnly = true)
     public CampaignDTO getById(Long campaignId) {
         return mapper.toDTO(find(campaignId));
+    }
+
+    /** Les diffusions de la campagne, pour suivre sa planification ; {@code 404} si elle n'existe pas. */
+    @Transactional(readOnly = true)
+    public List<PublicationOccurrenceDTO> getOccurrences(Long campaignId) {
+        find(campaignId);
+        return publicationOccurrenceService.findByCampaign(campaignId);
     }
 
     /**
