@@ -136,7 +136,7 @@ class FacebookConnectionServiceTest {
             pendingRequest(NOW.minusMinutes(2));
             facebookGrants(VALID);
 
-            String redirect = service.complete("etat", "code", null);
+            String redirect = service.complete("etat", "code", null, null);
 
             assertThat(redirect).isEqualTo(FRONT + "/canal-facebook?connexion=ok");
 
@@ -161,7 +161,7 @@ class FacebookConnectionServiceTest {
             pendingRequest(NOW.minusMinutes(2));
             facebookGrants(VALID);
 
-            service.complete("etat", "code", null);
+            service.complete("etat", "code", null, null);
 
             verify(states).delete(any(FacebookOAuthState.class));
         }
@@ -170,13 +170,13 @@ class FacebookConnectionServiceTest {
         void refuses_an_unknown_state() {
             when(states.findById("inconnu")).thenReturn(Optional.empty());
 
-            assertThat(reasonOf(service.complete("inconnu", "code", null))).contains("inconnue ou déjà utilisée");
+            assertThat(reasonOf(service.complete("inconnu", "code", null, null))).contains("inconnue ou déjà utilisée");
             verifyNoInteractions(oauthClient, suspensions);
         }
 
         @Test
         void refuses_a_missing_state() {
-            assertThat(reasonOf(service.complete(null, "code", null))).contains("inconnue ou déjà utilisée");
+            assertThat(reasonOf(service.complete(null, "code", null, null))).contains("inconnue ou déjà utilisée");
             verifyNoInteractions(oauthClient);
         }
 
@@ -184,7 +184,7 @@ class FacebookConnectionServiceTest {
         void refuses_an_expired_request() {
             pendingRequest(NOW.minusMinutes(11));
 
-            assertThat(reasonOf(service.complete("etat", "code", null))).contains("expirée");
+            assertThat(reasonOf(service.complete("etat", "code", null, null))).contains("expirée");
             verifyNoInteractions(oauthClient);
         }
 
@@ -192,8 +192,38 @@ class FacebookConnectionServiceTest {
         void reports_a_cancellation_on_facebook() {
             pendingRequest(NOW.minusMinutes(2));
 
-            assertThat(reasonOf(service.complete("etat", null, "access_denied"))).isEqualTo("Connexion annulée sur Facebook.");
+            assertThat(reasonOf(service.complete("etat", null, "access_denied", null))).isEqualTo("Connexion annulée sur Facebook.");
             verifyNoInteractions(oauthClient);
+        }
+
+        /** Facebook renvoie sans state une app mal configurée : son motif doit passer. */
+        @Test
+        void relays_the_reason_given_by_facebook_even_without_state() {
+            String reason = reasonOf(service.complete(null, null, "1349048",
+                    "Impossible de charger cette URL : le domaine de cette URL n'est pas inscrit dans ceux de l'application."));
+
+            assertThat(reason).isEqualTo("Facebook a refusé la connexion : Impossible de charger cette URL : "
+                    + "le domaine de cette URL n'est pas inscrit dans ceux de l'application.");
+            verifyNoInteractions(states, oauthClient, suspensions);
+        }
+
+        @Test
+        void discards_the_request_when_facebook_reports_an_error() {
+            pendingRequest(NOW.minusMinutes(2));
+
+            service.complete("etat", null, "1349048", "Domaine non inscrit.");
+
+            verify(states).delete(any());
+            verifyNoInteractions(oauthClient);
+        }
+
+        /** Un refus de la personne garde son message simple, quel que soit le détail technique. */
+        @Test
+        void keeps_a_refusal_by_the_person_simple() {
+            pendingRequest(NOW.minusMinutes(2));
+
+            assertThat(reasonOf(service.complete("etat", null, "access_denied", "Permissions error")))
+                    .isEqualTo("Connexion annulée sur Facebook.");
         }
 
         @Test
@@ -203,7 +233,7 @@ class FacebookConnectionServiceTest {
             when(oauthClient.exchangeForLongLived("court")).thenReturn("long");
             when(oauthClient.findManagedPage("long", "page-id")).thenReturn(Optional.empty());
 
-            assertThat(reasonOf(service.complete("etat", "code", null))).contains("n'administre pas la Page page-id");
+            assertThat(reasonOf(service.complete("etat", "code", null, null))).contains("n'administre pas la Page page-id");
             verify(connections, never()).save(any());
             verify(suspensions, never()).lift(any());
         }
@@ -213,7 +243,7 @@ class FacebookConnectionServiceTest {
             pendingRequest(NOW.minusMinutes(2));
             facebookGrants(new TokenInspection(true, List.of("pages_show_list"), null, null, null));
 
-            assertThat(reasonOf(service.complete("etat", "code", null))).contains("pages_manage_posts");
+            assertThat(reasonOf(service.complete("etat", "code", null, null))).contains("pages_manage_posts");
             verify(connections, never()).save(any());
         }
 
@@ -225,7 +255,7 @@ class FacebookConnectionServiceTest {
                     "{\"error\":{\"message\":\"This authorization code has expired.\",\"code\":100}}"
                             .getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
 
-            assertThat(reasonOf(service.complete("etat", "code", null))).contains("This authorization code has expired.");
+            assertThat(reasonOf(service.complete("etat", "code", null, null))).contains("This authorization code has expired.");
         }
     }
 

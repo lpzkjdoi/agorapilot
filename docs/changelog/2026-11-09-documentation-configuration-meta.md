@@ -2,6 +2,10 @@
 
 ## Contexte
 
+> Rectificatif du 2026-11-10 : la connexion n'avait en fait jamais abouti, la
+> publication passait par le jeton historique (cf.
+> [changelog du 2026-11-10](./2026-11-10-erreur-retour-facebook.md)).
+
 La connexion du canal Facebook depuis l'interface a été validée en préproduction
 le 2026-11-09 : URI de redirection déclarée dans l'app Meta, connexion de la Page
 et contrôle du jeton réussis. La configuration côté Meta n'était décrite qu'en

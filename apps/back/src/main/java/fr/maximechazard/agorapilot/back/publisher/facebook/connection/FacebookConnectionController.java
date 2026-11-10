@@ -50,12 +50,22 @@ public class FacebookConnectionController {
      * facebook.com et le cookie de session ({@code SameSite=strict}) n'y est pas
      * joint. Le {@code state}, à usage unique, identifie la demande et son
      * auteur. Toujours une redirection vers la page du front, qui affiche l'issue.
+     * <p>
+     * Facebook signale un échec sous deux formes : {@code error} et
+     * {@code error_description} quand la personne refuse, {@code error_code} et
+     * {@code error_message} quand l'app est mal configurée (domaine non déclaré,
+     * URI de redirection refusée…).
      */
     @GetMapping("/callback")
     public ResponseEntity<Void> callback(@RequestParam(required = false) String state,
                                          @RequestParam(required = false) String code,
-                                         @RequestParam(required = false) String error) {
-        String target = connectionService.complete(state, code, error);
+                                         @RequestParam(required = false) String error,
+                                         @RequestParam(name = "error_description", required = false) String errorDescription,
+                                         @RequestParam(name = "error_code", required = false) String errorCode,
+                                         @RequestParam(name = "error_message", required = false) String errorMessage) {
+        String target = connectionService.complete(state, code,
+                error != null ? error : errorCode,
+                errorMessage != null ? errorMessage : errorDescription);
         return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, target).build();
     }
 }

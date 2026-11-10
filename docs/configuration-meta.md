@@ -44,7 +44,10 @@ prod.
 App → Paramètres → Général (« Paramètres de base ») :
 
 - relever l'**identifiant** et la **clé secrète** de l'app ;
-- **domaines de l'app** : le domaine de l'environnement (`<PREPROD_HOST>`) ;
+- **domaines de l'app** : le domaine de l'environnement (`<PREPROD_HOST>`, par
+  exemple `preprod.chariotte-manager.fr`). **Obligatoire** : sans lui, Facebook
+  refuse la connexion avant même d'afficher la boîte de dialogue (« Le domaine de
+  cette URL n'est pas inscrit dans ceux de l'application ») ;
 - **URL de la politique de confidentialité** : requise pour passer l'app en
   mode Live (étape 6).
 
@@ -133,6 +136,7 @@ les logs du back (`Connexion Facebook`).
 
 | Message | Cause probable | Correctif |
 |---|---|---|
+| « Facebook a refusé la connexion : … le domaine de cette URL n'est pas inscrit dans ceux de l'application … » | Domaine de l'environnement absent des domaines de l'app | Étape 2 : ajouter `<PREPROD_HOST>` aux domaines de l'app |
 | « URL bloquée » (sur Facebook) | URI de redirection absente ou différente | Étape 3 : recopier l'URI exacte |
 | « Le compte Facebook connecté n'administre pas la Page … » | Mauvais compte, ou `FACEBOOK_PAGE_ID` erroné | Se connecter avec un administrateur de la Page ; vérifier l'identifiant |
 | « La permission pages_manage_posts n'a pas été accordée à AgoraPilot. » | Permission décochée dans la boîte de dialogue | Reconnecter en acceptant toutes les permissions |

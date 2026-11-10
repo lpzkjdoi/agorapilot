@@ -68,3 +68,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-09 | [Programmer une publication à plusieurs dates](./changelog/2026-11-09-programmation-multi-dates.md) | _voir PR_ |
 | 2026-11-09 | [Documenter la configuration de l'app Meta](./changelog/2026-11-09-documentation-configuration-meta.md) | _voir PR_ |
 | 2026-11-10 | [Supprimer le bootstrap et le renouvellement historiques du jeton Facebook](./changelog/2026-11-10-suppression-bootstrap-facebook.md) | _voir PR_ |
+| 2026-11-10 | [Relayer l'erreur de Facebook au retour de la connexion](./changelog/2026-11-10-erreur-retour-facebook.md) | _voir PR_ |

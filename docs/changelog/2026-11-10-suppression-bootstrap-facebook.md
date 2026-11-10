@@ -58,8 +58,10 @@ restait donc à supprimer l'ancien mécanisme :
 
 - Back : `mvn -B clean verify`.
 - Front : `npm test`, `npm run lint`, build de production.
-- La préproduction a déjà une Page connectée : la `V6` n'y supprime que la table
-  historique, et la diffusion continue avec le jeton connecté.
+- ~~La préproduction a déjà une Page connectée~~ : faux, constaté après
+  déploiement (cf. [changelog du 2026-11-10](./2026-11-10-erreur-retour-facebook.md)).
+  Aucune connexion n'avait abouti : la préproduction ne peut plus publier sur
+  Facebook tant que la Page n'est pas connectée.
 
 ## Commit
 
