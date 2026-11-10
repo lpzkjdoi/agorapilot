@@ -1,5 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.campaign.Campaign;
+import fr.maximechazard.agorapilot.back.campaign.CampaignRepository;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
@@ -96,6 +98,8 @@ class OccurrenceSlotsPersistenceTest {
     private PublicationDeliveryRepository publicationDeliveryRepository;
     @Autowired
     private MutableClock clock;
+    @Autowired
+    private CampaignRepository campaignRepository;
 
     private Long publicationId;
 
@@ -428,6 +432,26 @@ class OccurrenceSlotsPersistenceTest {
         assertThat(service.findBetween(DAY, DAY.plusDays(2)))
                 .extracting(PublicationOccurrenceDTO::id)
                 .containsExactly(first, later);
+    }
+
+    /** Le calendrier d'une campagne : seules les diffusions de ses publications. */
+    @Test
+    void lists_a_range_restricted_to_a_campaign() {
+        Campaign campaign = campaignRepository.save(new Campaign("Marché de Noël", "", null, null));
+        Publication inCampaign = publicationRepository.findById(publicationId).orElseThrow();
+        inCampaign.setCampaign(campaign);
+        publicationRepository.save(inCampaign);
+        Long expected = scheduleOn(DAY);
+
+        publicationId = publicationRepository.save(new Publication("Hors campagne", PublicationStatus.VERIFIED)).getId();
+        Long outside = scheduleOn(DAY);
+
+        assertThat(service.findBetween(DAY, DAY.plusDays(2), campaign.getId()))
+                .extracting(PublicationOccurrenceDTO::id)
+                .containsExactly(expected);
+        assertThat(service.findBetween(DAY, DAY.plusDays(2), null))
+                .extracting(PublicationOccurrenceDTO::id)
+                .containsExactlyInAnyOrder(expected, outside);
     }
 
     // ------------------------------------------------------------ dates multiples

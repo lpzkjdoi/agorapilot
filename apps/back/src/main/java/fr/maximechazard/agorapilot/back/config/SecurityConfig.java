@@ -131,8 +131,13 @@ public class SecurityConfig {
             .requestMatchers("/admin/**").hasAuthority(CHANNELS_MANAGE.code())
 
             // ---- Campagnes
-            .requestMatchers(HttpMethod.GET, "/api/campaigns").hasAuthority(CAMPAIGNS_READ.code())
-            .requestMatchers(HttpMethod.POST, "/api/campaigns", "/api/campaigns/*/closure").hasAuthority(CAMPAIGNS_WRITE.code())
+            .requestMatchers(HttpMethod.GET, "/api/campaigns", "/api/campaigns/*").hasAuthority(CAMPAIGNS_READ.code())
+            .requestMatchers(HttpMethod.POST, "/api/campaigns", "/api/campaigns/*/closure",
+                    "/api/campaigns/*/cancellation").hasAuthority(CAMPAIGNS_WRITE.code())
+            .requestMatchers(HttpMethod.PUT, "/api/campaigns/*").hasAuthority(CAMPAIGNS_WRITE.code())
+            // Pas de droit de suppression propre aux campagnes : archiver une campagne
+            // ne touche à aucune publication, qui sont seulement détachées.
+            .requestMatchers(HttpMethod.DELETE, "/api/campaigns/*").hasAuthority(CAMPAIGNS_WRITE.code())
 
             // ---- Médiathèque
             .requestMatchers(HttpMethod.GET, "/api/medias", "/api/medias/*", "/api/medias/*/file").hasAuthority(MEDIAS_READ.code())

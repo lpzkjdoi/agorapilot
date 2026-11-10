@@ -6,9 +6,16 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
+
+    /** Une campagne archivée est une campagne supprimée : elle n'apparaît plus nulle part. */
+    List<Campaign> findAllByArchivedFalse();
+
+    Optional<Campaign> findByIdAndArchivedFalse(Long id);
 
     /**
      * Les campagnes en cours à {@code now} : commencées, pas encore finies, ni

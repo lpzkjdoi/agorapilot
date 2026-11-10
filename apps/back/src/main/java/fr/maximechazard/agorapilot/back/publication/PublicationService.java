@@ -190,7 +190,7 @@ public class PublicationService {
     public PublicationDTO setCampaign(Long publicationId, Long campaignId) {
         Publication publication = findOrThrow(publicationId);
 
-        Campaign campaign = campaignId == null ? null : campaignRepository.findById(campaignId)
+        Campaign campaign = campaignId == null ? null : campaignRepository.findByIdAndArchivedFalse(campaignId)
                 .orElseThrow(() -> new CampaignNotFoundException("Campagne " + campaignId + " introuvable"));
 
         publication.setCampaign(campaign);

@@ -287,10 +287,21 @@ class PublicationOccurrenceControllerTest {
 
         @Test
         void lists_the_occurrences_between_two_days() throws Exception {
-            when(publicationOccurrenceService.findBetween(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1)))
+            when(publicationOccurrenceService.findBetween(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1), null))
                     .thenReturn(List.of(occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING)));
 
             mockMvc.perform(get("/api/occurrences").param("from", "2026-10-01").param("to", "2026-11-01"))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$[0].id").value(1));
+        }
+
+        @Test
+        void restricts_the_range_to_a_campaign() throws Exception {
+            when(publicationOccurrenceService.findBetween(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1), 3L))
+                    .thenReturn(List.of(occurrence(PublicationOccurrenceStatus.SCHEDULED, DeliveryStatus.PENDING)));
+
+            mockMvc.perform(get("/api/occurrences")
+                           .param("from", "2026-10-01").param("to", "2026-11-01").param("campaignId", "3"))
                    .andExpect(status().isOk())
                    .andExpect(jsonPath("$[0].id").value(1));
         }

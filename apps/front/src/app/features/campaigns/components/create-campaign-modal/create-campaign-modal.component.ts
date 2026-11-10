@@ -30,12 +30,10 @@ export class CreateCampaignModalComponent {
   readonly submitted = output<CreateCampaignFormValue>();
 
   /**
-   * Le back valide `startDate` en `@FutureOrPresent` et `endDate` en `@Future`
-   * sur un instant : une date du jour, envoyée à minuit, serait déjà passée. Le
-   * sélecteur commence donc demain plutôt que de laisser l'API refuser la
-   * saisie.
+   * Le back contrôle les dates à la journée : une campagne peut démarrer
+   * aujourd'hui, pas avant.
    */
-  protected readonly minDate = CreateCampaignModalComponent.tomorrow();
+  protected readonly minDate = CreateCampaignModalComponent.today();
 
   readonly form = new FormGroup({
     name: new FormControl('', {
@@ -48,12 +46,11 @@ export class CreateCampaignModalComponent {
   });
 
   /**
-   * Demain dans le fuseau du navigateur : `toISOString()` bascule en UTC et
-   * renverrait la veille entre minuit et l'aube, heure française.
+   * Aujourd'hui dans le fuseau du navigateur : `toISOString()` bascule en UTC
+   * et renverrait la veille entre minuit et l'aube, heure française.
    */
-  private static tomorrow(): string {
+  private static today(): string {
     const date = new Date();
-    date.setDate(date.getDate() + 1);
 
     const month = `${ date.getMonth() + 1 }`.padStart(2, '0');
     const day = `${ date.getDate() }`.padStart(2, '0');

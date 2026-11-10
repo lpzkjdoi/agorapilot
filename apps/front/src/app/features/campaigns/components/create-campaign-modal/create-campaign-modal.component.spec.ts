@@ -66,20 +66,16 @@ describe('CreateCampaignModalComponent', () => {
     expect(submitted).not.toHaveBeenCalled();
   });
 
-  /**
-   * Le back valide `startDate` en `@FutureOrPresent` sur un instant : une date
-   * du jour envoyée à minuit serait refusée.
-   */
-  it('should not offer any date before tomorrow', () => {
+  /** Le back contrôle les dates à la journée : une campagne peut démarrer aujourd'hui. */
+  it('should offer today but no earlier date', () => {
     const start = (fixture.nativeElement as HTMLElement)
       .querySelector('#campaign-start') as HTMLInputElement;
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const today = new Date();
     const expected = [
-      tomorrow.getFullYear(),
-      `${ tomorrow.getMonth() + 1 }`.padStart(2, '0'),
-      `${ tomorrow.getDate() }`.padStart(2, '0'),
+      today.getFullYear(),
+      `${ today.getMonth() + 1 }`.padStart(2, '0'),
+      `${ today.getDate() }`.padStart(2, '0'),
     ].join('-');
 
     // Construit dans le fuseau du navigateur : `toISOString()` renverrait la

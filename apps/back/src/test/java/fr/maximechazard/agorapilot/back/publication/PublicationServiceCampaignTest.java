@@ -68,7 +68,7 @@ class PublicationServiceCampaignTest {
     void rattacheLaPublicationALaCampagne() {
         givenPublication();
         givenSaveEchoesBack();
-        when(campaignRepository.findById(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.findByIdAndArchivedFalse(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
 
         PublicationDTO dto = service.setCampaign(PUBLICATION_ID, CAMPAIGN_ID);
 
@@ -98,7 +98,7 @@ class PublicationServiceCampaignTest {
         publication.setCampaign(previous);
         givenPublication();
         givenSaveEchoesBack();
-        when(campaignRepository.findById(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.findByIdAndArchivedFalse(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
 
         assertThat(service.setCampaign(PUBLICATION_ID, CAMPAIGN_ID).campaign().id()).isEqualTo(CAMPAIGN_ID);
     }
@@ -111,7 +111,7 @@ class PublicationServiceCampaignTest {
     void nEnregistreQueLaPublication() {
         givenPublication();
         givenSaveEchoesBack();
-        when(campaignRepository.findById(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.findByIdAndArchivedFalse(CAMPAIGN_ID)).thenReturn(Optional.of(campaign));
 
         service.setCampaign(PUBLICATION_ID, CAMPAIGN_ID);
 
@@ -131,7 +131,7 @@ class PublicationServiceCampaignTest {
     @Test
     void signaleUneCampagneInconnue() {
         givenPublication();
-        when(campaignRepository.findById(404L)).thenReturn(Optional.empty());
+        when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.setCampaign(PUBLICATION_ID, 404L))
                 .isInstanceOf(CampaignNotFoundException.class);

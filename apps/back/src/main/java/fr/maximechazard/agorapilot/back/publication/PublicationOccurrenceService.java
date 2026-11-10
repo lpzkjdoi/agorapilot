@@ -320,14 +320,29 @@ public class PublicationOccurrenceService {
     /** Les occurrences de {@code [from, to)}, dans l'ordre chronologique. */
     @Transactional(readOnly = true)
     public List<PublicationOccurrenceDTO> findBetween(LocalDate from, LocalDate to) {
+        return findBetween(from, to, null);
+    }
+
+    /**
+     * Les occurrences de {@code [from, to)}, dans l'ordre chronologique, limitées
+     * aux publications d'une campagne quand {@code campaignId} est renseigné —
+     * le calendrier d'une campagne.
+     */
+    @Transactional(readOnly = true)
+    public List<PublicationOccurrenceDTO> findBetween(LocalDate from, LocalDate to, Long campaignId) {
         if (!from.isBefore(to) || from.plusDays(MAX_RANGE_DAYS).isBefore(to)) {
             throw new InvalidScheduleException("Intervalle invalide : 'to' doit suivre 'from', sur "
                     + MAX_RANGE_DAYS + " jours au plus.");
         }
 
-        return publicationOccurrenceRepository
-                .findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(from.atStartOfDay(), to.atStartOfDay())
-                .stream()
+        List<PublicationOccurrence> occurrences = campaignId == null
+                ? publicationOccurrenceRepository
+                        .findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(from.atStartOfDay(), to.atStartOfDay())
+                : publicationOccurrenceRepository
+                        .findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThanAndPublicationCampaignId(
+                                from.atStartOfDay(), to.atStartOfDay(), campaignId);
+
+        return occurrences.stream()
                 .sorted(Comparator.comparing(PublicationOccurrence::getScheduledAt))
                 .map(publicationOccurrenceMapper::toDTO)
                 .toList();
