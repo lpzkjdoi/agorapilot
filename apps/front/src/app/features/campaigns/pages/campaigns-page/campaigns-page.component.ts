@@ -275,24 +275,43 @@ export class CampaignsPageComponent {
         ? this.campaignsService.closeCampaign(campaign.id)
         : this.campaignsService.cancelCampaign(campaign.id);
 
+    // Compté avant l'appel : clôture et annulation les font disparaître.
+    const scheduled = (this.planning().occurrences ?? []).filter((o) => o.status === 'SCHEDULED').length;
+
     request.subscribe({
       next: (updated) => {
         if (updated) {
           this.replace(updated);
+          // Clôture et annulation déprogramment les diffusions à venir.
+          this.planningVersion.update((version) => version + 1);
         } else {
           // Supprimée : elle quitte la liste, et la suivante prend sa place.
           this.campaigns.update((campaigns) => campaigns.filter((c) => c.id !== campaign.id));
           this.selectedId.set(this.campaigns()[0]?.id ?? null);
         }
         this.acting.set(false);
-        this.notifications.success(messages.success);
+        this.notifications.success(updated ? CampaignsPageComponent.stoppedMessage(messages.success, scheduled) : messages.success);
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         console.error(`Action « ${ action } » impossible sur la campagne ${ campaign.id }`, err);
         this.acting.set(false);
-        this.notifications.error(messages.failure);
+        // Le back dit pourquoi — une diffusion imminente bloque l'annulation, par exemple.
+        this.notifications.error(apiErrorMessage(err, messages.failure));
       },
     });
+  }
+
+  /** « Campagne clôturée. » devient « Campagne clôturée : 2 diffusions déprogrammées. » */
+  private static stoppedMessage(success: string, scheduled: number): string {
+    if (scheduled === 0) {
+      return success;
+    }
+
+    const base = success.replace(/\.$/, '');
+
+    return scheduled === 1
+      ? `${ base } : 1 diffusion déprogrammée.`
+      : `${ base } : ${ scheduled } diffusions déprogrammées.`;
   }
 
   private create(value: CampaignFormValue): void {

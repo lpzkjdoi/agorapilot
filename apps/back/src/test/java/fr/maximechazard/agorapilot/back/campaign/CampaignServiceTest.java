@@ -11,6 +11,7 @@ import fr.maximechazard.agorapilot.back.publication.Publication;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceService;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
+import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotModifiableException;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -337,6 +338,26 @@ class CampaignServiceTest {
         }
 
         @Test
+        void deprogrammeLesDiffusionsDeSesPublications() {
+            cancel(campaign(3L, "À venir"));
+
+            verify(publicationOccurrenceService).cancelScheduledOfCampaign(3L);
+        }
+
+        /** Tout ou rien : une diffusion imminente empêche l'annulation de la campagne. */
+        @Test
+        void resteActiveSiUneDiffusionNePeutPasEtreDeprogrammee() {
+            Campaign campaign = campaign(3L, "À venir");
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            when(publicationOccurrenceService.cancelScheduledOfCampaign(3L))
+                    .thenThrow(new OccurrenceNotModifiableException("La campagne 3 a une diffusion en cours ou imminente"));
+
+            assertThatThrownBy(() -> service.cancel(3L)).isInstanceOf(OccurrenceNotModifiableException.class);
+            assertThat(campaign.getStatus()).isEqualTo(CampaignStatus.SCHEDULED);
+            verify(campaignRepository, never()).save(any());
+        }
+
+        @Test
         void annuleUneCampagneEnCoursEnConservantSesDates() {
             Campaign campaign = campaign(3L, "En cours");
             LocalDateTime started = LocalDateTime.now().minusDays(2);
@@ -367,6 +388,7 @@ class CampaignServiceTest {
                     .isInstanceOf(CampaignNotCancelableException.class)
                     .hasMessageContaining("déjà annulée");
             verify(campaignRepository, never()).save(any());
+            verify(publicationOccurrenceService, never()).cancelScheduledOfCampaign(any());
         }
 
         @Test
@@ -438,6 +460,27 @@ class CampaignServiceTest {
         }
 
         @Test
+        void deprogrammeLesDiffusionsDeSesPublications() {
+            close(started(null));
+
+            verify(publicationOccurrenceService).cancelScheduledOfCampaign(3L);
+        }
+
+        /** Tout ou rien : une diffusion imminente empêche la clôture. */
+        @Test
+        void resteEnCoursSiUneDiffusionNePeutPasEtreDeprogrammee() {
+            Campaign campaign = started(null);
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            when(publicationOccurrenceService.cancelScheduledOfCampaign(3L))
+                    .thenThrow(new OccurrenceNotModifiableException("La campagne 3 a une diffusion en cours ou imminente"));
+
+            assertThatThrownBy(() -> service.close(3L)).isInstanceOf(OccurrenceNotModifiableException.class);
+            assertThat(campaign.getStatus()).isEqualTo(CampaignStatus.ACTIVE);
+            assertThat(campaign.getEndDate()).isNull();
+            verify(campaignRepository, never()).save(any());
+        }
+
+        @Test
         void arreteLaCampagneMaintenant() {
             Campaign campaign = started(null);
 
@@ -492,6 +535,7 @@ class CampaignServiceTest {
                     .isInstanceOf(CampaignNotClosableException.class)
                     .hasMessageContaining("n'a pas encore commencé");
             verify(campaignRepository, never()).save(any());
+            verify(publicationOccurrenceService, never()).cancelScheduledOfCampaign(any());
         }
 
         @Test

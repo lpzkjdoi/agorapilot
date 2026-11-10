@@ -24,11 +24,11 @@ import { CampaignCalendarComponent } from "../campaign-calendar/campaign-calenda
 /** Ce que la confirmation annonce, pour chaque action. */
 const CONFIRMATIONS: Record<CampaignAction, { question: string, button: string }> = {
   close: {
-    question: 'Clôturer la campagne maintenant ? Sa date de fin passera à aujourd’hui.',
+    question: 'Clôturer la campagne maintenant ? Sa date de fin passera à aujourd’hui et ses diffusions programmées seront déprogrammées.',
     button: 'Confirmer la clôture',
   },
   cancel: {
-    question: 'Annuler la campagne ? Les diffusions déjà programmées de ses publications partiront quand même.',
+    question: 'Annuler la campagne ? Les diffusions programmées de ses publications seront déprogrammées.',
     button: 'Confirmer l’annulation',
   },
   archive: {

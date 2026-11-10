@@ -81,6 +81,9 @@ public class CampaignService {
      * Le critère est la <strong>date de début</strong> : une campagne dont la
      * date de fin est déjà passée est terminée de fait, et la clôturer ne fait
      * que l'acter.
+     * <p>
+     * Les diffusions à venir de ses publications sont déprogrammées ; si l'une
+     * d'elles est en cours ou imminente, rien n'est clôturé ({@code 409}).
      */
     @Transactional
     public CampaignDTO close(Long campaignId) {
@@ -100,6 +103,9 @@ public class CampaignService {
             throw new CampaignNotClosableException("La campagne " + campaignId + " n'a pas encore commencé");
         }
 
+        // Une campagne arrêtée ne diffuse plus : ses diffusions à venir sont
+        // déprogrammées, en tout ou rien comme pour une annulation.
+        publicationOccurrenceService.cancelScheduledOfCampaign(campaignId);
         campaign.close(now);
 
         return mapper.toDTO(campaignRepository.save(campaign));
@@ -107,7 +113,8 @@ public class CampaignService {
 
     /**
      * Annule une campagne qui n'est pas terminée — brouillon, programmée ou en
-     * cours. Les diffusions de ses publications ne sont pas touchées.
+     * cours — et déprogramme les diffusions à venir de ses publications. Si
+     * l'une d'elles est en cours ou imminente, rien n'est annulé ({@code 409}).
      */
     @Transactional
     public CampaignDTO cancel(Long campaignId) {
@@ -116,7 +123,10 @@ public class CampaignService {
         switch (campaign.statusAt(LocalDateTime.now())) {
             case CANCELED -> throw new CampaignNotCancelableException("La campagne " + campaignId + " est déjà annulée");
             case COMPLETED -> throw new CampaignNotCancelableException("La campagne " + campaignId + " est terminée");
-            default -> campaign.cancel();
+            default -> {
+                publicationOccurrenceService.cancelScheduledOfCampaign(campaignId);
+                campaign.cancel();
+            }
         }
 
         return mapper.toDTO(campaignRepository.save(campaign));
