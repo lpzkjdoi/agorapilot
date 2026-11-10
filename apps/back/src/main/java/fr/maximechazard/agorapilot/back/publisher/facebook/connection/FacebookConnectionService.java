@@ -3,7 +3,6 @@ package fr.maximechazard.agorapilot.back.publisher.facebook.connection;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPageTokenProvider;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookProperties;
 import fr.maximechazard.agorapilot.back.publisher.facebook.GraphApiError;
 import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookConnection.CheckResult;
@@ -30,10 +29,10 @@ import java.util.Optional;
 /**
  * Connexion de la Page Facebook depuis l'interface, et contrôle de son jeton.
  * <p>
- * Remplace, à terme, le bootstrap à la main ({@code POST /admin/facebook/bootstrap})
- * et le renouvellement de {@code FacebookTokenService}, qui ne se déclenche jamais
- * pour un jeton de Page permanent. Les deux mécanismes cohabitent ; cf.
- * {@link FacebookTokenSource}.
+ * Seule source du jeton qui publie : le jeton de Page dérivé d'un jeton
+ * utilisateur longue durée est permanent, il n'y a rien à renouveler. Ce qui peut
+ * arriver, c'est son invalidation (mot de passe changé, rôle perdu sur la Page) :
+ * le contrôle quotidien la détecte, et une reconnexion la répare.
  */
 @Service
 @Slf4j
@@ -52,7 +51,6 @@ public class FacebookConnectionService {
     private final FacebookOAuthClient oauthClient;
     private final FacebookProperties facebook;
     private final FacebookConnectionProperties props;
-    private final FacebookPageTokenProvider tokens;
     private final ChannelSuspensionService suspensions;
     private final SecurityEventService events;
     private final ObjectMapper mapper;
@@ -61,15 +59,13 @@ public class FacebookConnectionService {
 
     public FacebookConnectionService(FacebookConnectionRepository connections, FacebookOAuthStateRepository states,
                                      FacebookOAuthClient oauthClient, FacebookProperties facebook,
-                                     FacebookConnectionProperties props, FacebookPageTokenProvider tokens,
-                                     ChannelSuspensionService suspensions, SecurityEventService events,
+                                     FacebookConnectionProperties props, ChannelSuspensionService suspensions, SecurityEventService events,
                                      ObjectMapper mapper, Clock clock, @Value("${frontend.url}") String frontendUrl) {
         this.connections = connections;
         this.states = states;
         this.oauthClient = oauthClient;
         this.facebook = facebook;
         this.props = props;
-        this.tokens = tokens;
         this.suspensions = suspensions;
         this.events = events;
         this.mapper = mapper;
@@ -86,7 +82,7 @@ public class FacebookConnectionService {
 
     @Transactional(readOnly = true)
     public FacebookConnectionStatusDTO status() {
-        return FacebookConnectionStatusDTO.of(props.tokenSource(), tokens.origin(), current().orElse(null));
+        return FacebookConnectionStatusDTO.of(current().orElse(null));
     }
 
     // ----------------------------- Connexion --------------------------------
@@ -94,13 +90,9 @@ public class FacebookConnectionService {
     /**
      * Ouvre une demande de connexion au nom du compte et rend l'adresse de la
      * boîte de dialogue Facebook, où le front envoie le navigateur.
-     *
-     * @throws FacebookConnectionDisabledException {@code FACEBOOK_TOKEN_SOURCE=legacy}
      */
     @Transactional
     public String start(String username) {
-        ensureEnabled();
-
         LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS);
         states.deleteCreatedBefore(now.minus(props.stateTtl()));
 
@@ -129,7 +121,6 @@ public class FacebookConnectionService {
     @Transactional
     public String complete(String state, String code, String error) {
         try {
-            ensureEnabled();
             FacebookOAuthState request = consume(state);
 
             if (error != null) {
@@ -143,7 +134,7 @@ public class FacebookConnectionService {
             log.info("Page Facebook {} connectée par {}.", connection.getPageId(), connection.getConnectedBy());
             return frontUrl("ok", null);
 
-        } catch (FacebookConnectionException | FacebookConnectionDisabledException e) {
+        } catch (FacebookConnectionException e) {
             log.warn("Connexion Facebook refusée : {}", e.getMessage());
             return frontUrl("erreur", e.getMessage());
         } catch (RestClientResponseException e) {
@@ -217,14 +208,10 @@ public class FacebookConnectionService {
     /**
      * Demande à Facebook si le jeton connecté publie encore, et suspend le canal
      * dès qu'il ne le peut plus — avant qu'une diffusion n'échoue. Sans effet
-     * hors {@link FacebookTokenSource#CONNECTION} ou sans Page connectée.
+     * sans Page connectée.
      */
     @Transactional
     public Optional<FacebookConnection> check() {
-        if (!props.enabled()) {
-            return Optional.empty();
-        }
-
         return current().map(connection -> {
             LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS);
             connection.setLastCheckedAt(now);
@@ -270,12 +257,6 @@ public class FacebookConnectionService {
     }
 
     // ------------------------------- Outils ---------------------------------
-
-    private void ensureEnabled() {
-        if (!props.enabled()) {
-            throw new FacebookConnectionDisabledException();
-        }
-    }
 
     String redirectUri() {
         return frontendUrl + CALLBACK_PATH;

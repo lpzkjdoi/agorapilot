@@ -62,9 +62,6 @@ services:
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
       FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
-      # Retour arrière de la connexion depuis l'interface : `legacy` rend la
-      # main au seul bootstrap historique. Cf. docs/deploiement-preprod.md.
-      FACEBOOK_TOKEN_SOURCE: ${FACEBOOK_TOKEN_SOURCE:-connection}
       # Racine de la médiathèque, sur le volume `media-data` ci-dessous. Chemin
       # figé plutôt que variabilisé : il n'a pas à changer d'un environnement à
       # l'autre, et toute nouvelle variable devrait être propagée jusqu'à
@@ -80,18 +77,17 @@ services:
       # `preprod` tant qu'on ne veut pas les changer.
       PUBLICATION_WINDOW_START: ${PUBLICATION_WINDOW_START:-15:00}
       PUBLICATION_WINDOW_END: ${PUBLICATION_WINDOW_END:-22:00}
-      # Pas de token de page ici : il est obtenu par POST /admin/facebook/bootstrap
-      # et stocké en base (table facebook_tokens), puis renouvelé par
-      # FacebookTokenScheduler. Voir docs/deploiement-preprod.md.
-      # FacebookTokenScheduler tourne en cron "0 0 3 * * *" sans zone explicite.
+      # Pas de token de page ici : il est obtenu en connectant la Page depuis
+      # la page « Canal Facebook » et stocké en base (table facebook_connections).
+      # Le contrôle quotidien du jeton tourne en cron "0 0 7 * * *", à l'heure TZ.
       TZ: ${TZ:-Europe/Paris}
     volumes:
       # Les affiches déposées ne sont pas reconstructibles : ce volume est à
       # sauvegarder au même titre que `db-data`.
       - media-data:/var/lib/agorapilot/media
     # Publié sur la boucle locale uniquement : permet d'atteindre les endpoints
-    # /admin/facebook/** (non authentifiés, donc non exposés par le front) depuis
-    # le VPS ou via un tunnel SSH.
+    # /admin/** (état de l'ordonnanceur, non exposés par le front) depuis le VPS
+    # ou via un tunnel SSH.
     ports:
       - "127.0.0.1:8080:8080"
     networks:

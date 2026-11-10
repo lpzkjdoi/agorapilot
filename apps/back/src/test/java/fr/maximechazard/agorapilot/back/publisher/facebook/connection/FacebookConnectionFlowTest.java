@@ -143,7 +143,6 @@ class FacebookConnectionFlowTest {
 
         mockMvc.perform(get("/api/channels/facebook/connection").session(session))
                .andExpect(status().isOk())
-               .andExpect(jsonPath("$.tokenInUse").value("CONNECTION"))
                .andExpect(jsonPath("$.connection.pageName").value("Mairie"))
                .andExpect(jsonPath("$.connection.connectedBy").value("maxime"));
     }

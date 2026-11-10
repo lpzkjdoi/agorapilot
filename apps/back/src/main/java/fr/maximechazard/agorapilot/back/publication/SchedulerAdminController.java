@@ -13,8 +13,8 @@ import java.util.Map;
  * État de l'ordonnanceur de diffusion, pour savoir s'il tourne et ce qui l'a
  * fait échouer en dernier sans fouiller les logs du conteneur.
  * <p>
- * Comme {@code /admin/facebook}, non authentifié et non proxifié par le nginx du
- * front : joignable uniquement sur la boucle locale du VPS.
+ * Réservé au droit {@code channels:manage}, comme tout {@code /admin/**}, et non
+ * proxifié par le nginx du front : joignable uniquement sur la boucle locale du VPS.
  */
 @RestController
 @RequestMapping("/admin/scheduler")

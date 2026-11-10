@@ -25,15 +25,6 @@
   padding: 3rem;
 }
 
-.channel-legacy {
-  padding: 0.75rem 1rem;
-  border: 1px solid #FCD34D;
-  border-radius: var(--radius-md);
-  background-color: #FFFBEB;
-  color: #92400E;
-  font-size: 14px;
-}
-
 .channel-card {
   display: flex;
   flex-direction: column;
@@ -50,11 +41,8 @@
   color: var(--color-ui-text-secondary);
 }
 
-.channel-origin {
+.channel-none {
   font-weight: 600;
-}
-
-.channel-origin-none {
   color: #B91C1C;
 }
 

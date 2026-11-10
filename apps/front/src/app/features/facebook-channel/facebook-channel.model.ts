@@ -1,9 +1,3 @@
-/** `FACEBOOK_TOKEN_SOURCE` : `LEGACY` est le retour arrière vers le bootstrap à la main. */
-export type FacebookTokenSource = 'CONNECTION' | 'LEGACY';
-
-/** D'où vient le jeton qui publie réellement. */
-export type FacebookTokenOrigin = 'CONNECTION' | 'LEGACY' | 'NONE';
-
 export type FacebookCheckResult = 'VALID' | 'INVALID' | 'UNKNOWN';
 
 /** Reflète `FacebookConnectionStatusDTO.Connection` ; dates en heure locale du serveur, sans fuseau. */
@@ -23,17 +17,9 @@ export interface FacebookConnection {
 
 /** Reflète `FacebookConnectionStatusDTO` (`GET /api/channels/facebook/connection`). */
 export interface FacebookConnectionStatus {
-  source: FacebookTokenSource
-  tokenInUse: FacebookTokenOrigin
-  /** `null` tant qu'aucune Page n'a été connectée depuis AgoraPilot. */
+  /** `null` tant qu'aucune Page n'a été connectée : rien ne peut alors être publié. */
   connection: FacebookConnection | null
 }
-
-export const TOKEN_ORIGIN_LABELS: Record<FacebookTokenOrigin, string> = {
-  CONNECTION: 'Jeton connecté depuis AgoraPilot',
-  LEGACY: 'Jeton historique (bootstrap à la main)',
-  NONE: 'Aucun jeton : rien ne peut être publié',
-};
 
 export const CHECK_RESULT_LABELS: Record<FacebookCheckResult, string> = {
   VALID: 'Valide',

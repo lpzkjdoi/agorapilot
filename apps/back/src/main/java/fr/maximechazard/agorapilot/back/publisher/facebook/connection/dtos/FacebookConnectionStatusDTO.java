@@ -1,8 +1,6 @@
 package fr.maximechazard.agorapilot.back.publisher.facebook.connection.dtos;
 
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPageTokenProvider;
 import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookConnection;
-import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookTokenSource;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -12,18 +10,12 @@ import java.util.List;
  * État du canal Facebook pour la page « Canal Facebook ». Jamais le jeton
  * lui-même.
  *
- * @param source     le mode réglé par {@code FACEBOOK_TOKEN_SOURCE}
- * @param tokenInUse d'où vient le jeton qui publie réellement
- * @param connection {@code null} tant qu'aucune Page n'a été connectée depuis l'interface
+ * @param connection {@code null} tant qu'aucune Page n'a été connectée : rien ne peut alors être publié
  */
-public record FacebookConnectionStatusDTO(FacebookTokenSource source,
-                                          FacebookPageTokenProvider.Origin tokenInUse,
-                                          Connection connection) {
+public record FacebookConnectionStatusDTO(Connection connection) {
 
-    public static FacebookConnectionStatusDTO of(FacebookTokenSource source, FacebookPageTokenProvider.Origin tokenInUse,
-                                                 FacebookConnection connection) {
-        return new FacebookConnectionStatusDTO(source, tokenInUse,
-                connection == null ? null : Connection.of(connection));
+    public static FacebookConnectionStatusDTO of(FacebookConnection connection) {
+        return new FacebookConnectionStatusDTO(connection == null ? null : Connection.of(connection));
     }
 
     public record Connection(String pageId, String pageName, List<String> scopes, String connectedBy,

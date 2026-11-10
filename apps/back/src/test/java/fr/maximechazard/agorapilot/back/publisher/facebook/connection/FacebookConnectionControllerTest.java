@@ -1,6 +1,5 @@
 package fr.maximechazard.agorapilot.back.publisher.facebook.connection;
 
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPageTokenProvider;
 import fr.maximechazard.agorapilot.back.publisher.facebook.connection.dtos.FacebookConnectionStatusDTO;
 import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ class FacebookConnectionControllerTest {
     private FacebookConnectionService connectionService;
 
     private static FacebookConnectionStatusDTO connectedStatus() {
-        return new FacebookConnectionStatusDTO(FacebookTokenSource.CONNECTION, FacebookPageTokenProvider.Origin.CONNECTION,
+        return new FacebookConnectionStatusDTO(
                 new FacebookConnectionStatusDTO.Connection("page-id", "Mairie", List.of("pages_manage_posts"), "maxime",
                         LocalDateTime.of(2026, 10, 27, 10, 0), null, null,
                         LocalDateTime.of(2026, 10, 28, 7, 0), FacebookConnection.CheckResult.VALID, null));
@@ -41,8 +40,6 @@ class FacebookConnectionControllerTest {
 
         mockMvc.perform(get("/api/channels/facebook/connection"))
                .andExpect(status().isOk())
-               .andExpect(jsonPath("$.source").value("CONNECTION"))
-               .andExpect(jsonPath("$.tokenInUse").value("CONNECTION"))
                .andExpect(jsonPath("$.connection.pageName").value("Mairie"))
                .andExpect(jsonPath("$.connection.connectedBy").value("maxime"))
                .andExpect(jsonPath("$.connection.lastCheckResult").value("VALID"))
