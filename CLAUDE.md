@@ -10,13 +10,11 @@ respecter **systématiquement**, sans avoir besoin qu'on me les redemande.
   (`git fetch origin develop && git checkout -B claude/<desc> origin/develop`).
 - **Toujours** développer sur une branche dédiée nommée `claude/<description-courte>`.
   Ne jamais committer directement sur `develop` ni `main`.
-- **Ouvrir automatiquement une Pull Request en draft vers `develop`** après le push,
-  s'il n'en existe pas déjà une d'ouverte pour la branche :
-  `gh pr create --draft --base develop --title "..." --body "..."`.
-  **Toute PR que j'ouvre est en draft, sans exception** — y compris quand le travail me
-  paraît terminé. Le passage en « ready for review » (`gh pr ready <numéro>`) appartient à
-  Maxime, je ne le fais jamais de ma propre initiative. Si je constate qu'une de mes PR est
-  ouverte hors draft, je la repasse en draft (`gh pr ready --undo <numéro>`).
+- **Ouvrir automatiquement une Pull Request vers `develop`, prête à relire**, après le
+  push, s'il n'en existe pas déjà une d'ouverte pour la branche :
+  `gh pr create --base develop --title "..." --body "..."`.
+  **Jamais de draft** : je n'utilise pas `--draft` et je ne repasse pas une PR en draft
+  (`gh pr ready --undo`), sauf demande explicite de Maxime.
 - Messages de commit clairs et descriptifs (impératif, en français).
 - Le modèle de branches, le cycle de contribution et le versionnage sont décrits
   dans [`docs/gitflow.md`](./docs/gitflow.md).

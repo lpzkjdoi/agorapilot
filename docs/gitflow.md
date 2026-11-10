@@ -31,22 +31,21 @@ develop ───●───●───●───●───●────
 
 1. Brancher depuis `develop` : `feature/xxx`, `fix/xxx` (ou `claude/xxx`).
 2. Pousser la branche → la CI tourne (back et/ou front selon les chemins modifiés).
-3. **Ouvrir une Pull Request en draft vers `develop`** (voir [Pull Requests en draft](#pull-requests-en-draft)).
-4. Quand le travail est prêt et la CI verte : passer la PR en « ready for review », puis merger dans `develop` en `--no-ff` → déploie la **preprod**.
+3. **Ouvrir une Pull Request vers `develop`, prête à relire** (voir [Pull Requests](#pull-requests)).
+4. Quand la revue est faite et la CI verte : merger dans `develop` en `--no-ff` → déploie la **preprod**.
 5. Quand la preprod est validée : merger `develop` → `main`, puis **taguer** `vX.Y.Z` → déploie la **prod** (approbation manuelle).
 
-### Pull Requests en draft
+### Pull Requests
 
-Toute PR est **créée en draft**, sans exception. Le draft signale que le travail est en
-cours : la CI tourne et le diff est relisable, mais la PR ne réclame pas encore de revue et
-ne peut pas être mergée par inadvertance. Le passage en « ready for review » est une action
-délibérée, faite quand la branche est réellement finie et la CI verte.
+Toute PR est **créée prête à relire**, pas en draft : une PR s'ouvre quand la branche est
+finie et testée, et la revue peut commencer aussitôt. La protection de branche (CI verte
+requise) évite une fusion prématurée.
 
 ```bash
-gh pr create --draft --base develop --title "..." --body "..."
+gh pr create --base develop --title "..." --body "..."
 ```
 
-Convertir une PR existante dans un sens ou dans l'autre :
+Le draft reste possible sur demande explicite, pour partager un travail en cours :
 
 ```bash
 gh pr ready --undo <numéro>   # repasse en draft
@@ -158,8 +157,8 @@ Prérequis avant le premier déploiement prod :
 ## Recommandations d'outillage GitHub
 
 - **Protection de branches** sur `main` et `develop` : CI verte requise avant merge (à activer côté GitHub).
-- Pull Requests **obligatoires en draft** pour toute contribution destinée à `develop` / `main`,
-  afin de conserver la trace et la revue.
+- Pull Requests **obligatoires**, ouvertes prêtes à relire, pour toute contribution destinée
+  à `develop` / `main`, afin de conserver la trace et la revue.
 
 ### GitHub CLI (`gh`)
 
@@ -178,7 +177,7 @@ a les droits d'écriture sur le dépôt. Commandes courantes une fois connecté 
 
 | Besoin | Commande |
 |---|---|
-| Créer la PR draft | `gh pr create --draft --base develop` |
+| Créer la PR | `gh pr create --base develop` |
 | Voir l'état d'une PR | `gh pr view <numéro>` |
 | Suivre la CI en cours | `gh run watch` |
 | Lire les logs d'un job en échec | `gh run view --log-failed` |
