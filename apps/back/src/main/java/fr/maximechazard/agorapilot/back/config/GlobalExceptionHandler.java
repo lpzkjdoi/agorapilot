@@ -5,6 +5,7 @@ import fr.maximechazard.agorapilot.back.account.exceptions.AuthenticationFailedE
 import fr.maximechazard.agorapilot.back.account.exceptions.ForbiddenAccountOperationException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidAccountRequestException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotCancelableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.media.exceptions.MediaInUseException;
@@ -42,6 +43,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CampaignNotClosableException.class)
     public ResponseEntity<ApiError> handleCampaignNotClosableException(CampaignNotClosableException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(CampaignNotCancelableException.class)
+    public ResponseEntity<ApiError> handleCampaignNotCancelableException(CampaignNotCancelableException exception) {
         return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 

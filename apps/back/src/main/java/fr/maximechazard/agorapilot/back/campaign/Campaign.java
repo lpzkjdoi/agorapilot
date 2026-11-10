@@ -49,7 +49,14 @@ public class Campaign {
     @Column(nullable = false)
     private CampaignStatus status;
 
-    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
+    /**
+     * Sans cascade ni {@code orphanRemoval} : une publication vit par elle-même
+     * et la campagne ne fait que la regrouper. Avec {@code CascadeType.ALL},
+     * supprimer une campagne aurait supprimé ses publications — et leurs
+     * diffusions avec elles ; retirer une publication de la liste l'aurait
+     * effacée. C'est {@code Publication.campaign} qui porte le rattachement.
+     */
+    @OneToMany(mappedBy = "campaign")
     private List<Publication> publications = new ArrayList<>();
 
     @Column(nullable = false)
@@ -82,6 +89,65 @@ public class Campaign {
         }
 
         return CampaignStatus.SCHEDULED;
+    }
+
+    /**
+     * Le statut à l'instant {@code now}.
+     * <p>
+     * Seuls {@code COMPLETED} et {@code CANCELED} sont des décisions — une
+     * clôture, une annulation — et méritent d'être stockés. Les autres se
+     * déduisent des dates : le statut stocké, figé à la création, laissait une
+     * campagne « programmée » le rester bien après son démarrage.
+     */
+    public CampaignStatus statusAt(LocalDateTime now) {
+        if (status == CampaignStatus.CANCELED || status == CampaignStatus.COMPLETED) {
+            return status;
+        }
+
+        if (startDate == null) {
+            return CampaignStatus.DRAFT;
+        }
+
+        if (startDate.isAfter(now)) {
+            return CampaignStatus.SCHEDULED;
+        }
+
+        if (endDate != null && !endDate.isAfter(now)) {
+            return CampaignStatus.COMPLETED;
+        }
+
+        return CampaignStatus.ACTIVE;
+    }
+
+    /**
+     * Remplace le nom, la description et la période. Le statut stocké suit la
+     * nouvelle date de début, sauf décision déjà prise (clôture, annulation).
+     */
+    public void update(String name, String description, LocalDateTime startDate, LocalDateTime endDate) {
+        this.name = name;
+        this.description = description;
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+        if (status != CampaignStatus.COMPLETED && status != CampaignStatus.CANCELED) {
+            status = determineStatus(startDate);
+        }
+    }
+
+    /** Annule la campagne. Ses dates sont conservées : elles disent ce qui était prévu. */
+    public void cancel() {
+        status = CampaignStatus.CANCELED;
+    }
+
+    /**
+     * Archive la campagne et en détache les publications, qui redeviennent
+     * « sans campagne » plutôt que d'afficher le badge d'une campagne disparue.
+     * Rien n'est effacé : la ligne reste en base, pour l'historique.
+     */
+    public void archive() {
+        archived = true;
+        publications.forEach(publication -> publication.setCampaign(null));
+        publications.clear();
     }
 
     public void addPublication(Publication publication) {

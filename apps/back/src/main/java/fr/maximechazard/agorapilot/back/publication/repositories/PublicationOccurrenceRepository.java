@@ -13,6 +13,9 @@ public interface PublicationOccurrenceRepository extends JpaRepository<Publicati
     /** Intervalle semi-ouvert {@code [start, end)} : {@code Between} inclurait la borne haute. */
     List<PublicationOccurrence> findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThan(LocalDateTime start, LocalDateTime end);
 
+    List<PublicationOccurrence> findAllByScheduledAtGreaterThanEqualAndScheduledAtLessThanAndPublicationCampaignId(
+            LocalDateTime start, LocalDateTime end, Long campaignId);
+
     List<PublicationOccurrence> findAllByScheduledAtBeforeAndStatus(LocalDateTime scheduledAt, PublicationOccurrenceStatus status);
 
     /** Intervalle semi-ouvert {@code [start, end)}, comme ci-dessus. */

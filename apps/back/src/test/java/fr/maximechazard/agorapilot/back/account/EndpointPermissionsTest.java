@@ -126,6 +126,10 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.GET, "/api/campaigns", CAMPAIGNS_READ),
                 new Endpoint(HttpMethod.POST, "/api/campaigns", CAMPAIGNS_WRITE),
                 new Endpoint(HttpMethod.POST, "/api/campaigns/999/closure", CAMPAIGNS_WRITE),
+                new Endpoint(HttpMethod.POST, "/api/campaigns/999/cancellation", CAMPAIGNS_WRITE),
+                new Endpoint(HttpMethod.GET, "/api/campaigns/999", CAMPAIGNS_READ),
+                new Endpoint(HttpMethod.PUT, "/api/campaigns/999", CAMPAIGNS_WRITE),
+                new Endpoint(HttpMethod.DELETE, "/api/campaigns/999", CAMPAIGNS_WRITE),
 
                 new Endpoint(HttpMethod.GET, "/api/medias", MEDIAS_READ),
                 new Endpoint(HttpMethod.GET, "/api/medias/999", MEDIAS_READ),

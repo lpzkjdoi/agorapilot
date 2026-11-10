@@ -6,6 +6,7 @@ import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,8 @@ public class CampaignMapper {
                 campaign.getDescription(),
                 campaign.getStartDate(),
                 campaign.getEndDate(),
-                campaign.getStatus(),
+                // Le statut est dérivé à la lecture : voir Campaign.statusAt.
+                campaign.statusAt(LocalDateTime.now()),
                 publications
         );
     }

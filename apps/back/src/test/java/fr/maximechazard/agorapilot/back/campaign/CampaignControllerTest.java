@@ -2,9 +2,11 @@ package fr.maximechazard.agorapilot.back.campaign;
 
 import fr.maximechazard.agorapilot.back.support.ApiControllerTest;
 import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotCancelableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
+import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationCampaignDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
@@ -15,15 +17,19 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -139,6 +145,151 @@ class CampaignControllerTest {
                    .andExpect(status().isBadRequest());
 
             verify(campaignService, never()).create(any());
+        }
+
+        /**
+         * Le front envoie minuit : contrôlée à l'instant, une campagne du jour
+         * était refusée comme « passée ».
+         */
+        @Test
+        void accepteUneCampagneQuiDemarreAujourdHui() throws Exception {
+            when(campaignService.create(any(CreateCampaignRequest.class))).thenReturn(campaign());
+
+            mockMvc.perform(post("/api/campaigns")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("{\"name\":\"Du jour\",\"startDate\":\"" + LocalDate.now() + "T00:00:00\"}"))
+                   .andExpect(status().isCreated());
+        }
+
+        @Test
+        void refuseUneDateDeFinAvantLaDateDeDebut() throws Exception {
+            LocalDate start = LocalDate.now().plusDays(10);
+
+            mockMvc.perform(post("/api/campaigns")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("{\"name\":\"À l'envers\",\"startDate\":\"" + start + "T00:00:00\","
+                                    + "\"endDate\":\"" + start.minusDays(1) + "T00:00:00\"}"))
+                   .andExpect(status().isBadRequest());
+
+            verify(campaignService, never()).create(any());
+        }
+    }
+
+    @Nested
+    class GetById {
+
+        @Test
+        void renvoieLaCampagne() throws Exception {
+            when(campaignService.getById(3L)).thenReturn(campaign());
+
+            mockMvc.perform(get("/api/campaigns/3"))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$.name").value("Marché de Noël"))
+                   .andExpect(jsonPath("$.publications[0].id").value(8));
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() throws Exception {
+            when(campaignService.getById(404L)).thenThrow(new CampaignNotFoundException("Campagne 404 introuvable"));
+
+            mockMvc.perform(get("/api/campaigns/404"))
+                   .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    class Update {
+
+        @Test
+        void modifieLaCampagne() throws Exception {
+            when(campaignService.update(eq(3L), any(UpdateCampaignRequest.class))).thenReturn(campaign());
+
+            mockMvc.perform(put("/api/campaigns/3")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"name":"Marché de Noël","description":"",
+                                    "startDate":"2020-01-01T00:00:00","endDate":null}"""))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$.id").value(3));
+        }
+
+        @Test
+        void refuseUnNomVide() throws Exception {
+            mockMvc.perform(put("/api/campaigns/3")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"name":"","description":""}"""))
+                   .andExpect(status().isBadRequest());
+
+            verify(campaignService, never()).update(any(), any());
+        }
+
+        @Test
+        void refuseUneDateDeFinAvantLaDateDeDebut() throws Exception {
+            mockMvc.perform(put("/api/campaigns/3")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"name":"À l'envers","startDate":"2026-12-10T00:00:00",
+                                    "endDate":"2026-12-01T00:00:00"}"""))
+                   .andExpect(status().isBadRequest());
+
+            verify(campaignService, never()).update(any(), any());
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() throws Exception {
+            when(campaignService.update(eq(404L), any(UpdateCampaignRequest.class)))
+                    .thenThrow(new CampaignNotFoundException("Campagne 404 introuvable"));
+
+            mockMvc.perform(put("/api/campaigns/404")
+                           .contentType(MediaType.APPLICATION_JSON)
+                           .content("""
+                                   {"name":"Inconnue"}"""))
+                   .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    class Cancel {
+
+        @Test
+        void annuleLaCampagne() throws Exception {
+            when(campaignService.cancel(3L)).thenReturn(campaign());
+
+            mockMvc.perform(post("/api/campaigns/3/cancellation"))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$.id").value(3));
+        }
+
+        @Test
+        void refuseUneCampagneTerminee() throws Exception {
+            when(campaignService.cancel(3L))
+                    .thenThrow(new CampaignNotCancelableException("La campagne 3 est terminée"));
+
+            mockMvc.perform(post("/api/campaigns/3/cancellation"))
+                   .andExpect(status().isConflict())
+                   .andExpect(jsonPath("$.message").value("La campagne 3 est terminée"));
+        }
+    }
+
+    @Nested
+    class Archive {
+
+        @Test
+        void archiveLaCampagne() throws Exception {
+            mockMvc.perform(delete("/api/campaigns/3"))
+                   .andExpect(status().isNoContent());
+
+            verify(campaignService).archive(3L);
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() throws Exception {
+            org.mockito.Mockito.doThrow(new CampaignNotFoundException("Campagne 404 introuvable"))
+                               .when(campaignService).archive(404L);
+
+            mockMvc.perform(delete("/api/campaigns/404"))
+                   .andExpect(status().isNotFound());
         }
     }
 

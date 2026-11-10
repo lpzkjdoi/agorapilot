@@ -1,5 +1,8 @@
 package fr.maximechazard.agorapilot.back.campaign;
 
+import fr.maximechazard.agorapilot.back.publication.Publication;
+import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
+import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,11 +37,40 @@ class CampaignPersistenceTest {
     @Autowired
     private CampaignService campaignService;
     @Autowired
+    private PublicationRepository publicationRepository;
+    @Autowired
     private EntityManager entityManager;
 
     @BeforeEach
     void setUp() {
+        publicationRepository.deleteAll();
         campaignRepository.deleteAll();
+    }
+
+    /**
+     * La campagne portait {@code cascade = ALL, orphanRemoval = true} sur ses
+     * publications : la retirer de la liste suffisait à effacer une publication.
+     */
+    @Test
+    @Transactional
+    void archiverUneCampagneDetacheSesPublicationsSansLesSupprimer() {
+        Campaign campaign = campaignRepository.save(new Campaign("Marché de Noël", "", null, null));
+        Publication publication = new Publication("Rendez-vous samedi", PublicationStatus.VERIFIED);
+        publication.setCampaign(campaign);
+        Long publicationId = publicationRepository.save(publication).getId();
+        Long campaignId = campaign.getId();
+        entityManager.flush();
+        entityManager.clear();
+
+        campaignService.archive(campaignId);
+        entityManager.flush();
+        entityManager.clear();
+
+        Publication reloaded = publicationRepository.findById(publicationId).orElseThrow();
+        assertThat(reloaded.getCampaign()).isNull();
+        assertThat(campaignRepository.findById(campaignId).orElseThrow().getArchived()).isTrue();
+        assertThat(campaignRepository.findAllByArchivedFalse()).isEmpty();
+        assertThat(campaignRepository.findByIdAndArchivedFalse(campaignId)).isEmpty();
     }
 
     @Test

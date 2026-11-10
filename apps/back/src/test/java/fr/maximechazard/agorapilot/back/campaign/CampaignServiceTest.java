@@ -1,9 +1,11 @@
 package fr.maximechazard.agorapilot.back.campaign;
 
 import fr.maximechazard.agorapilot.back.campaign.dtos.CampaignDTO;
+import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotCancelableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
+import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.Publication;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
@@ -96,7 +98,7 @@ class CampaignServiceTest {
         void renvoieDesDTOEtNonLesEntites() {
             Campaign campaign = campaign(3L, "Marché de Noël");
             campaign.addPublication(publication(8L, "Rendez-vous samedi"));
-            when(campaignRepository.findAll()).thenReturn(List.of(campaign));
+            when(campaignRepository.findAllByArchivedFalse()).thenReturn(List.of(campaign));
 
             List<CampaignDTO> campaigns = service.getAll();
 
@@ -115,7 +117,7 @@ class CampaignServiceTest {
 
         @Test
         void rendUneCampagneSansPublication() {
-            when(campaignRepository.findAll()).thenReturn(List.of(campaign(4L, "Vide")));
+            when(campaignRepository.findAllByArchivedFalse()).thenReturn(List.of(campaign(4L, "Vide")));
 
             assertThat(service.getAll()).singleElement()
                                         .satisfies(dto -> assertThat(dto.publications()).isEmpty());
@@ -123,7 +125,7 @@ class CampaignServiceTest {
 
         @Test
         void rendUneListeVideSansCampagne() {
-            when(campaignRepository.findAll()).thenReturn(List.of());
+            when(campaignRepository.findAllByArchivedFalse()).thenReturn(List.of());
 
             assertThat(service.getAll()).isEmpty();
         }
@@ -142,6 +144,255 @@ class CampaignServiceTest {
             assertThat(sansDate.status()).isEqualTo(CampaignStatus.DRAFT);
             assertThat(aVenir.status()).isEqualTo(CampaignStatus.SCHEDULED);
         }
+
+        /** La colonne est `NOT NULL`, la description facultative. */
+        @Test
+        void remplaceUneDescriptionAbsenteParUneChaineVide() {
+            when(campaignRepository.save(any(Campaign.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            CreateCampaignRequest request = request("Sans description", START);
+            set(request, "description", null);
+
+            assertThat(service.create(request).description()).isEmpty();
+        }
+    }
+
+    /**
+     * Le statut renvoyé se déduit des dates à la lecture : le statut stocké,
+     * figé à la création, laissait une campagne « programmée » pour toujours.
+     */
+    @Nested
+    class DerivedStatus {
+
+        private CampaignStatus statusOf(Campaign campaign) {
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            return service.getById(3L).status();
+        }
+
+        @Test
+        void passeEnCoursUneCampagneProgrammeeDontLaDateEstArrivee() {
+            Campaign campaign = campaign(3L, "Démarrée");
+            campaign.setStartDate(LocalDateTime.now().minusDays(1));
+            campaign.setStatus(CampaignStatus.SCHEDULED);
+
+            assertThat(statusOf(campaign)).isEqualTo(CampaignStatus.ACTIVE);
+        }
+
+        @Test
+        void termineUneCampagneDontLaDateDeFinEstPassee() {
+            Campaign campaign = campaign(3L, "Finie");
+            campaign.setStartDate(LocalDateTime.now().minusDays(10));
+            campaign.setEndDate(LocalDateTime.now().minusDays(1));
+            campaign.setStatus(CampaignStatus.ACTIVE);
+
+            assertThat(statusOf(campaign)).isEqualTo(CampaignStatus.COMPLETED);
+        }
+
+        @Test
+        void resteEnCoursSansDateDeFin() {
+            Campaign campaign = campaign(3L, "Permanente");
+            campaign.setStartDate(LocalDateTime.now().minusDays(10));
+            campaign.setEndDate(null);
+
+            assertThat(statusOf(campaign)).isEqualTo(CampaignStatus.ACTIVE);
+        }
+
+        @Test
+        void resteProgrammeeAvantSaDateDeDebut() {
+            assertThat(statusOf(campaign(3L, "À venir"))).isEqualTo(CampaignStatus.SCHEDULED);
+        }
+
+        @Test
+        void resteBrouillonSansDateDeDebut() {
+            Campaign campaign = campaign(3L, "Brouillon");
+            campaign.setStartDate(null);
+
+            assertThat(statusOf(campaign)).isEqualTo(CampaignStatus.DRAFT);
+        }
+
+        /** Une annulation est une décision : les dates ne la défont pas. */
+        @Test
+        void conserveUneAnnulationMemeEnPleinePeriode() {
+            Campaign campaign = campaign(3L, "Annulée");
+            campaign.setStartDate(LocalDateTime.now().minusDays(1));
+            campaign.setStatus(CampaignStatus.CANCELED);
+
+            assertThat(statusOf(campaign)).isEqualTo(CampaignStatus.CANCELED);
+        }
+
+        @Test
+        void signaleUneCampagneInconnueOuArchivee() {
+            when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getById(404L)).isInstanceOf(CampaignNotFoundException.class);
+        }
+    }
+
+    @Nested
+    class Update {
+
+        private UpdateCampaignRequest update(String name, LocalDateTime startDate, LocalDateTime endDate) {
+            UpdateCampaignRequest request = new UpdateCampaignRequest();
+            set(request, "name", name);
+            set(request, "description", "Nouvelle description");
+            set(request, "startDate", startDate);
+            set(request, "endDate", endDate);
+            return request;
+        }
+
+        private CampaignDTO apply(Campaign campaign, UpdateCampaignRequest request) {
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
+            return service.update(3L, request);
+        }
+
+        @Test
+        void remplaceNomDescriptionEtPeriode() {
+            LocalDateTime start = START.plusDays(5);
+            LocalDateTime end = START.plusDays(60);
+
+            CampaignDTO dto = apply(campaign(3L, "Ancien nom"), update("Nouveau nom", start, end));
+
+            assertThat(dto.name()).isEqualTo("Nouveau nom");
+            assertThat(dto.description()).isEqualTo("Nouvelle description");
+            assertThat(dto.startDate()).isEqualTo(start);
+            assertThat(dto.endDate()).isEqualTo(end);
+        }
+
+        /** Une campagne en cours garde sa date de début passée : la modifier ne doit pas l'interdire. */
+        @Test
+        void accepteUneDateDeDebutPasseePourUneCampagneEnCours() {
+            LocalDateTime started = LocalDateTime.now().minusDays(10);
+
+            CampaignDTO dto = apply(campaign(3L, "En cours"), update("En cours", started, null));
+
+            assertThat(dto.startDate()).isEqualTo(started);
+            assertThat(dto.status()).isEqualTo(CampaignStatus.ACTIVE);
+        }
+
+        @Test
+        void retireLesDatesPourRepasserEnBrouillon() {
+            CampaignDTO dto = apply(campaign(3L, "Programmée"), update("Programmée", null, null));
+
+            assertThat(dto.status()).isEqualTo(CampaignStatus.DRAFT);
+        }
+
+        @Test
+        void neRevientPasSurUneAnnulation() {
+            Campaign campaign = campaign(3L, "Annulée");
+            campaign.setStatus(CampaignStatus.CANCELED);
+
+            CampaignDTO dto = apply(campaign, update("Annulée, renommée", START, END));
+
+            assertThat(dto.name()).isEqualTo("Annulée, renommée");
+            assertThat(dto.status()).isEqualTo(CampaignStatus.CANCELED);
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() {
+            when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.update(404L, update("X", null, null)))
+                    .isInstanceOf(CampaignNotFoundException.class);
+            verify(campaignRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class Cancel {
+
+        private CampaignDTO cancel(Campaign campaign) {
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
+            return service.cancel(3L);
+        }
+
+        @Test
+        void annuleUneCampagneProgrammee() {
+            assertThat(cancel(campaign(3L, "À venir")).status()).isEqualTo(CampaignStatus.CANCELED);
+        }
+
+        @Test
+        void annuleUneCampagneEnCoursEnConservantSesDates() {
+            Campaign campaign = campaign(3L, "En cours");
+            LocalDateTime started = LocalDateTime.now().minusDays(2);
+            campaign.setStartDate(started);
+
+            CampaignDTO dto = cancel(campaign);
+
+            assertThat(dto.status()).isEqualTo(CampaignStatus.CANCELED);
+            assertThat(dto.startDate()).isEqualTo(started);
+            assertThat(dto.endDate()).isEqualTo(END);
+        }
+
+        @Test
+        void annuleUnBrouillon() {
+            Campaign campaign = campaign(3L, "Brouillon");
+            campaign.setStartDate(null);
+
+            assertThat(cancel(campaign).status()).isEqualTo(CampaignStatus.CANCELED);
+        }
+
+        @Test
+        void refuseUneCampagneDejaAnnulee() {
+            Campaign campaign = campaign(3L, "Annulée");
+            campaign.setStatus(CampaignStatus.CANCELED);
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+
+            assertThatThrownBy(() -> service.cancel(3L))
+                    .isInstanceOf(CampaignNotCancelableException.class)
+                    .hasMessageContaining("déjà annulée");
+            verify(campaignRepository, never()).save(any());
+        }
+
+        @Test
+        void refuseUneCampagneCloturee() {
+            Campaign campaign = campaign(3L, "Clôturée");
+            campaign.setStatus(CampaignStatus.COMPLETED);
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+
+            assertThatThrownBy(() -> service.cancel(3L))
+                    .isInstanceOf(CampaignNotCancelableException.class)
+                    .hasMessageContaining("terminée");
+        }
+
+        /** Terminée de fait, sans clôture : sa date de fin est passée. */
+        @Test
+        void refuseUneCampagneDontLaDateDeFinEstPassee() {
+            Campaign campaign = campaign(3L, "Finie");
+            campaign.setStartDate(LocalDateTime.now().minusDays(10));
+            campaign.setEndDate(LocalDateTime.now().minusDays(1));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+
+            assertThatThrownBy(() -> service.cancel(3L)).isInstanceOf(CampaignNotCancelableException.class);
+        }
+    }
+
+    @Nested
+    class Archive {
+
+        @Test
+        void archiveEtDetacheLesPublicationsSansLesSupprimer() {
+            Campaign campaign = campaign(3L, "Marché de Noël");
+            Publication publication = publication(8L, "Rendez-vous samedi");
+            campaign.addPublication(publication);
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
+
+            service.archive(3L);
+
+            ArgumentCaptor<Campaign> saved = ArgumentCaptor.forClass(Campaign.class);
+            verify(campaignRepository).save(saved.capture());
+            assertThat(saved.getValue().getArchived()).isTrue();
+            assertThat(saved.getValue().getPublications()).isEmpty();
+            assertThat(publication.getCampaign()).isNull();
+            verify(campaignRepository, never()).delete(any());
+        }
+
+        @Test
+        void signaleUneCampagneDejaArchivee() {
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.archive(3L)).isInstanceOf(CampaignNotFoundException.class);
+        }
     }
 
     @Nested
@@ -156,7 +407,7 @@ class CampaignServiceTest {
         }
 
         private CampaignDTO close(Campaign campaign) {
-            when(campaignRepository.findById(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
             when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
             return service.close(3L);
         }
@@ -210,7 +461,7 @@ class CampaignServiceTest {
             Campaign campaign = campaign(3L, "À venir");
             campaign.setStartDate(LocalDateTime.now().plusDays(1));
             campaign.setStatus(CampaignStatus.SCHEDULED);
-            when(campaignRepository.findById(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
 
             assertThatThrownBy(() -> service.close(3L))
                     .isInstanceOf(CampaignNotClosableException.class)
@@ -223,7 +474,7 @@ class CampaignServiceTest {
             Campaign campaign = campaign(3L, "Brouillon");
             campaign.setStartDate(null);
             campaign.setStatus(CampaignStatus.DRAFT);
-            when(campaignRepository.findById(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
 
             assertThatThrownBy(() -> service.close(3L))
                     .isInstanceOf(CampaignNotClosableException.class);
@@ -234,7 +485,7 @@ class CampaignServiceTest {
         void refuseUneCampagneDejaCloturee() {
             Campaign campaign = started(LocalDateTime.now().minusDays(1));
             campaign.setStatus(CampaignStatus.COMPLETED);
-            when(campaignRepository.findById(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
 
             assertThatThrownBy(() -> service.close(3L))
                     .isInstanceOf(CampaignNotClosableException.class)
@@ -246,7 +497,7 @@ class CampaignServiceTest {
         void refuseUneCampagneAnnulee() {
             Campaign campaign = started(null);
             campaign.setStatus(CampaignStatus.CANCELED);
-            when(campaignRepository.findById(3L)).thenReturn(Optional.of(campaign));
+            when(campaignRepository.findByIdAndArchivedFalse(3L)).thenReturn(Optional.of(campaign));
 
             assertThatThrownBy(() -> service.close(3L))
                     .isInstanceOf(CampaignNotClosableException.class)
@@ -256,7 +507,7 @@ class CampaignServiceTest {
 
         @Test
         void signaleUneCampagneInconnue() {
-            when(campaignRepository.findById(404L)).thenReturn(Optional.empty());
+            when(campaignRepository.findByIdAndArchivedFalse(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.close(404L))
                     .isInstanceOf(CampaignNotFoundException.class);

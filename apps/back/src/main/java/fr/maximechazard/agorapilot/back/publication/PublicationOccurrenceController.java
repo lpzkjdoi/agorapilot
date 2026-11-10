@@ -35,12 +35,17 @@ public class PublicationOccurrenceController {
         return new ResponseEntity<>(publicationOccurrenceService.getWeeklyOccurrences(), HttpStatus.OK);
     }
 
-    /** Occurrences de {@code [from, to)} — le calendrier du mois, typiquement. */
+    /**
+     * Occurrences de {@code [from, to)} — le calendrier du mois, typiquement.
+     * Avec {@code campaignId}, seulement celles des publications de cette
+     * campagne.
+     */
     @GetMapping
     public ResponseEntity<List<PublicationOccurrenceDTO>> findBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ResponseEntity.ok(publicationOccurrenceService.findBetween(from, to));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long campaignId) {
+        return ResponseEntity.ok(publicationOccurrenceService.findBetween(from, to, campaignId));
     }
 
     // -------------------------------- POST --------------------------------
