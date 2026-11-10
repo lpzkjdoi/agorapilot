@@ -3,7 +3,6 @@ package fr.maximechazard.agorapilot.back.publisher.facebook.connection;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import fr.maximechazard.agorapilot.back.publication.DeliveryChannel;
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPageTokenProvider;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookProperties;
 import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookConnection.CheckResult;
 import fr.maximechazard.agorapilot.back.publisher.facebook.connection.FacebookOAuthClient.ManagedPage;
@@ -60,8 +59,6 @@ class FacebookConnectionServiceTest {
     @Mock
     private FacebookOAuthClient oauthClient;
     @Mock
-    private FacebookPageTokenProvider tokens;
-    @Mock
     private ChannelSuspensionService suspensions;
     @Mock
     private SecurityEventService events;
@@ -70,14 +67,10 @@ class FacebookConnectionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = serviceWith(FacebookTokenSource.CONNECTION);
-    }
-
-    private FacebookConnectionService serviceWith(FacebookTokenSource source) {
         Clock clock = Clock.fixed(NOW.atZone(PARIS).toInstant(), PARIS);
-        return new FacebookConnectionService(connections, states, oauthClient, FACEBOOK,
-                new FacebookConnectionProperties(source, "https://www.facebook.com", Duration.ofMinutes(10)),
-                tokens, suspensions, events, new ObjectMapper(), clock, FRONT);
+        service = new FacebookConnectionService(connections, states, oauthClient, FACEBOOK,
+                new FacebookConnectionProperties("https://www.facebook.com", Duration.ofMinutes(10)),
+                suspensions, events, new ObjectMapper(), clock, FRONT);
     }
 
     private static UriComponents parse(String url) {
@@ -113,14 +106,6 @@ class FacebookConnectionServiceTest {
             service.start("maxime");
 
             verify(states).deleteCreatedBefore(NOW.minusMinutes(10));
-        }
-
-        @Test
-        void is_refused_when_the_legacy_mechanism_is_selected() {
-            FacebookConnectionService legacy = serviceWith(FacebookTokenSource.LEGACY);
-
-            assertThatThrownBy(() -> legacy.start("maxime")).isInstanceOf(FacebookConnectionDisabledException.class);
-            verifyNoInteractions(states);
         }
     }
 
@@ -242,14 +227,6 @@ class FacebookConnectionServiceTest {
 
             assertThat(reasonOf(service.complete("etat", "code", null))).contains("This authorization code has expired.");
         }
-
-        @Test
-        void is_refused_when_the_legacy_mechanism_is_selected() {
-            String redirect = serviceWith(FacebookTokenSource.LEGACY).complete("etat", "code", null);
-
-            assertThat(reasonOf(redirect)).contains("FACEBOOK_TOKEN_SOURCE=legacy");
-            verifyNoInteractions(states, oauthClient);
-        }
     }
 
     @Nested
@@ -321,24 +298,13 @@ class FacebookConnectionServiceTest {
             assertThat(service.check()).isEmpty();
             verifyNoInteractions(oauthClient, suspensions);
         }
-
-        @Test
-        void does_nothing_with_the_legacy_mechanism() {
-            assertThat(serviceWith(FacebookTokenSource.LEGACY).check()).isEmpty();
-            verifyNoInteractions(connections, oauthClient, suspensions);
-        }
     }
 
     @Test
-    void reports_the_source_and_the_token_in_use() {
+    void reports_no_connection_until_a_page_is_connected() {
         when(connections.findTopByOrderByConnectedAtDesc()).thenReturn(Optional.empty());
-        when(tokens.origin()).thenReturn(FacebookPageTokenProvider.Origin.LEGACY);
 
-        var status = service.status();
-
-        assertThat(status.source()).isEqualTo(FacebookTokenSource.CONNECTION);
-        assertThat(status.tokenInUse()).isEqualTo(FacebookPageTokenProvider.Origin.LEGACY);
-        assertThat(status.connection()).isNull();
+        assertThat(service.status().connection()).isNull();
     }
 
     @Test

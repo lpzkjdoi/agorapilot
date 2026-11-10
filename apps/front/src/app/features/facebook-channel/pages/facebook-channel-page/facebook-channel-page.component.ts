@@ -9,15 +9,14 @@ import { apiErrorMessage } from '../../../occurrences/occurrence.utils';
 import {
   CHECK_RESULT_LABELS,
   FacebookConnectionStatus,
-  TOKEN_ORIGIN_LABELS,
 } from '../../facebook-channel.model';
 import { FacebookChannelService } from '../../facebook-channel.service';
 
 /**
  * État du canal Facebook et connexion de la Page (`channels:manage`).
  *
- * Remplace le bootstrap à la main (Graph Explorer, puis `curl` sur le VPS) :
- * « Connecter » passe par la boîte de dialogue de Facebook, qui ramène ici avec
+ * Seul moyen de donner à AgoraPilot le jeton qui publie : « Connecter » passe
+ * par la boîte de dialogue de Facebook, qui ramène ici avec
  * `?connexion=ok` ou `?connexion=erreur&motif=…`.
  */
 @Component({
@@ -35,7 +34,6 @@ export class FacebookChannelPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  protected readonly originLabels = TOKEN_ORIGIN_LABELS;
   protected readonly checkLabels = CHECK_RESULT_LABELS;
 
   protected readonly status = signal<FacebookConnectionStatus | null>(null);

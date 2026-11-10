@@ -351,7 +351,7 @@ curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" $B/api/auth/logout
 ## Connexion du canal Facebook (depuis l'interface)
 
 La page **« Canal Facebook »** (`/canal-facebook`, droit `channels:manage`)
-remplace le bootstrap à la main décrit plus bas. Elle passe par le flux OAuth de
+est le seul moyen de donner à AgoraPilot le jeton qui publie. Elle passe par le flux OAuth de
 Facebook Login : le bouton « Connecter la Page Facebook » envoie le navigateur
 sur la boîte de dialogue de Facebook, qui le ramène sur AgoraPilot avec un code
 que le back échange contre le jeton de la Page `FACEBOOK_PAGE_ID`.
@@ -396,86 +396,16 @@ vers « Canal Facebook ». Facebook injoignable ne suspend rien (résultat
 « Indéterminé »). Le bouton « Contrôler maintenant » fait la même chose à la
 demande.
 
-### Bascule et retour arrière
+### Sans Page connectée
 
-L'ancien mécanisme est intact ; la variable `FACEBOOK_TOKEN_SOURCE` choisit :
+La connexion est la **seule** source du jeton qui publie : l'ancien bootstrap à
+la main (`POST /admin/facebook/bootstrap`, table `facebook_tokens`) et son
+renouvellement nocturne ont été supprimés (migration `V6`). Tant qu'aucune Page
+n'est connectée, toute diffusion Facebook échoue avec le motif « Aucune Page
+Facebook connectée », et la page « Canal Facebook » l'annonce.
 
-| Valeur | Jeton qui publie | Connexion / contrôle |
-|---|---|---|
-| `connection` (défaut) | le jeton connecté ; **à défaut**, le jeton historique de `facebook_tokens` | actifs |
-| `legacy` | le jeton historique seul, comme avant | désactivés (la page l'indique) |
-
-La bascule ne coupe donc rien : tant que personne n'a connecté la Page, le jeton
-posé par le bootstrap continue de publier.
-
-**Revenir en arrière** sans toucher au code : définir la variable
-`FACEBOOK_TOKEN_SOURCE=legacy` dans l'Environment GitHub `preprod`, puis relancer
-« Deploy preprod » (`workflow_dispatch`). Les tables `facebook_connections` et
-`facebook_oauth_states` restent en place, ignorées.
-
-**Annuler la PR elle-même** (revert) reste possible : Flyway ignore une migration
-appliquée plus récente que le code (`V5`), et Hibernate des tables qu'il ne
-connaît pas. Seule précaution : supprimer d'abord les lignes du journal de type
-`FACEBOOK_CONNECTED`, que l'ancien code ne saurait pas lire (la page « Comptes »
-échouerait) :
-
-```sql
-DELETE FROM security_events WHERE type = 'FACEBOOK_CONNECTED';
-```
-
-## Endpoints d'administration Facebook
-
-> Mécanisme historique, conservé le temps de valider la connexion depuis
-> l'interface (cf. section précédente) ; il sert encore quand
-> `FACEBOOK_TOKEN_SOURCE=legacy` ou tant qu'aucune Page n'a été connectée.
-
-
-`FacebookAdminController` expose `POST /admin/facebook/bootstrap` et
-`GET /admin/facebook/token/status`, réservés aux comptes qui ont le droit
-`channels:manage`. Ils ne sont **pas** proxifiés par le nginx du front : depuis
-Internet, `/admin/...` renvoie l'`index.html` de la SPA, jamais l'API.
-
-Ils restent joignables sur la boucle locale du VPS, avec une session ouverte
-comme décrit dans [Appeler l'API depuis le VPS](#appeler-lapi-depuis-le-vps).
-
-Il faut ensuite un **token utilisateur de courte durée**, généré depuis le
-[Graph API Explorer](https://developers.facebook.com/tools/explorer/). Deux
-précautions, faute de quoi le bootstrap échoue :
-
-1. **Sélectionner la bonne app** dans le menu « Meta App » en haut à droite,
-   celle dont l'identifiant est dans `FACEBOOK_CLIENT_ID`. L'explorateur émet
-   sinon un token rattaché à une autre app, et l'échange est refusé avec
-   `The access token does not belong to application <id>`.
-2. Demander les permissions `pages_show_list`, `pages_read_engagement` et
-   `pages_manage_posts`.
-
-En cas de doute sur l'app à laquelle un token appartient, le
-[débogueur de token](https://developers.facebook.com/tools/debug/accesstoken/)
-affiche son App ID.
-
-Le token se passe ensuite **en paramètre de requête** — il est obligatoire :
-
-```bash
-curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" "$B/admin/facebook/bootstrap?shortLivedToken=LE_TOKEN"
-```
-
-Réponse attendue : `Token successfully initialized`. Le service échange ce token
-contre un token utilisateur longue durée, en dérive le token de page, et stocke
-les deux en base (table `facebook_tokens`). Vérifier ensuite :
-
-```bash
-curl -s -H "$C" $B/admin/facebook/token/status
-```
-
-Un `expiresAt` à dix ans (`daysRemaining` ≈ 3650) est normal : Facebook a renvoyé
-un token permanent (`expires_at: 0`), que le code convertit en `now + 10 ans`.
-
-En cas d'échec, l'erreur de Facebook est renvoyée telle quelle dans la réponse
-HTTP (message et code), sans avoir à consulter les logs du conteneur.
-
-Le renouvellement ultérieur est automatique (`FacebookTokenScheduler`, cron
-`0 0 3 * * *`). C'est la raison de la variable `TZ` : sans elle, le conteneur
-serait en UTC et le renouvellement aurait lieu à une autre heure locale.
+Une base vide (nouvel environnement, ou base de préproduction recréée) demande
+donc de **connecter la Page avant la première diffusion**.
 
 ## État de l'ordonnanceur de diffusion
 
@@ -520,7 +450,7 @@ Refus rencontrés :
 | Codes | Cause | Remède |
 |---|---|---|
 | 368 / 4854002 | Meta exige que l'administrateur de la Page confirme son identité | Ouvrir l'application Facebook sur le téléphone de l'administrateur (ou facebook.com/id/hub) et suivre les instructions. Les autres administrateurs de la Page peuvent devoir le faire aussi |
-| 190 | Jeton invalide ou expiré | Refaire le bootstrap (`POST /admin/facebook/bootstrap`) |
+| 190 | Jeton invalide ou expiré | Reconnecter la Page depuis « Canal Facebook » (la reconnexion lève aussi la suspension) |
 
 Une livraison `FAILED` n'est jamais retentée automatiquement. Une fois la cause
 réglée, la reprendre depuis le calendrier (bouton **« Reprendre »** dans la
@@ -563,9 +493,8 @@ désormais la source de vérité, via un Environment `preprod`
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
 
 `PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
-`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`,
-`FACEBOOK_TOKEN_SOURCE` (défaut `connection`, cf.
-[Bascule et retour arrière](#bascule-et-retour-arrière)) et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
+`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`
+et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
 et leur absence fait échouer le déploiement avec un message nommant la clé.
 
 `PREPROD_SSH_KNOWN_HOSTS` contient l'empreinte du serveur, obtenue par :
@@ -600,17 +529,3 @@ interdit d'utiliser les sources qui s'y trouvent.
 En cas d'échec du premier déploiement, le retour arrière est celui du runbook
 manuel : restaurer `.env.bak`, et redéployer un tag antérieur en fixant
 `IMAGE_TAG` à la main dans le `.env` avant `docker compose up -d`.
-
-## Dette connue
-
-- **La validité réelle du token Facebook n'est jamais vérifiée.**
-  `FacebookTokenService.renewIfNeeded()` ne se déclenche que si la date
-  d'expiration *stockée* arrive à moins de 15 jours. Avec un token permanent
-  (enregistré à dix ans), le job nocturne ne fait donc jamais rien — ce qui est
-  correct tant que le token reste valide. Mais si Facebook l'invalide
-  prématurément (mot de passe changé, permission révoquée, revue d'app), rien ne
-  le détecte : on ne l'apprend qu'au premier échec de publication. Un appel
-  périodique à `debug_token` pour contrôler `is_valid` comblerait ce trou.
-  **Comblé pour le jeton connecté depuis l'interface** (contrôle quotidien, cf.
-  [Connexion du canal Facebook](#connexion-du-canal-facebook-depuis-linterface)) ;
-  reste vrai du jeton historique, à supprimer avec le bootstrap.

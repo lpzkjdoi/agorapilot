@@ -1,6 +1,5 @@
 package fr.maximechazard.agorapilot.back.account;
 
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookTokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -11,7 +10,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -73,10 +71,6 @@ class EndpointPermissionsTest {
     @Autowired
     private UserAccountRepository repository;
 
-    /** Le jeton Facebook ne doit pas être réellement demandé à Facebook. */
-    @MockitoBean
-    private FacebookTokenService facebookTokenService;
-
     /**
      * Une session ouverte par un vrai compte qui détient exactement ces droits :
      * {@code AccountRefreshFilter} le relit en base, comme en production.
@@ -128,8 +122,6 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection/check", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.GET, "/admin/scheduler/status", CHANNELS_MANAGE),
-                new Endpoint(HttpMethod.GET, "/admin/facebook/token/status", CHANNELS_MANAGE),
-                new Endpoint(HttpMethod.POST, "/admin/facebook/bootstrap?shortLivedToken=x", CHANNELS_MANAGE),
 
                 new Endpoint(HttpMethod.GET, "/api/campaigns", CAMPAIGNS_READ),
                 new Endpoint(HttpMethod.POST, "/api/campaigns", CAMPAIGNS_WRITE),

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { FacebookConnectionStatus } from './facebook-channel.model';
 import { BROWSER_REDIRECT, FacebookChannelService } from './facebook-channel.service';
 
-const status: FacebookConnectionStatus = { source: 'CONNECTION', tokenInUse: 'LEGACY', connection: null };
+const status: FacebookConnectionStatus = { connection: null };
 
 describe('FacebookChannelService', () => {
   let service: FacebookChannelService;

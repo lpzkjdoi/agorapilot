@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Configuration de l'intégration Facebook.
  * <p>
  * Volontairement sans token de page : celui-ci n'est pas une donnée de
- * configuration mais un état, obtenu via {@code POST /admin/facebook/bootstrap}
- * puis conservé en base et renouvelé par {@link FacebookTokenScheduler}.
+ * configuration mais un état, obtenu en connectant la Page depuis l'interface
+ * puis conservé en base ({@code facebook_connections}).
  */
 @ConfigurationProperties(prefix = "facebook")
 public record FacebookProperties(

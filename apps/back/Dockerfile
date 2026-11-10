@@ -19,9 +19,9 @@ RUN mvn -B -DskipTests package
 # --- Étape 2 : exécution --------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
-# tzdata est requis pour que TZ soit réellement pris en compte sur Alpine :
-# FacebookTokenScheduler tourne en cron "0 0 3 * * *" sans zone explicite,
-# donc l'heure du conteneur détermine l'heure de renouvellement du token.
+# tzdata est requis pour que TZ soit réellement pris en compte sur Alpine : le
+# contrôle quotidien du jeton Facebook (cron "0 0 7 * * *") et la fenêtre de
+# publication sont exprimés sans zone explicite, à l'heure du conteneur.
 RUN apk add --no-cache tzdata
 ENV TZ=Europe/Paris
 

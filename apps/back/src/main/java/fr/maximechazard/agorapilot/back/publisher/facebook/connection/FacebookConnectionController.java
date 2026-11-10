@@ -18,8 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Connexion de la Page Facebook depuis l'interface ({@code channels:manage}).
  * <p>
  * Sous {@code /api}, donc proxifié par le nginx du front, contrairement à
- * {@code /admin/facebook/**} : c'est ce qui rend la connexion possible sans
- * accès au VPS.
+ * {@code /admin/**} : c'est ce qui rend la connexion possible sans accès au VPS.
  */
 @RestController
 @RequestMapping("/api/channels/facebook")

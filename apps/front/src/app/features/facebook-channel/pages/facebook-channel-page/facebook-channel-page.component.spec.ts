@@ -23,9 +23,8 @@ const connection: FacebookConnection = {
   lastCheckResult: 'VALID',
   lastCheckMessage: null,
 };
-const connected: FacebookConnectionStatus = { source: 'CONNECTION', tokenInUse: 'CONNECTION', connection };
-const notYetConnected: FacebookConnectionStatus = { source: 'CONNECTION', tokenInUse: 'LEGACY', connection: null };
-const legacy: FacebookConnectionStatus = { source: 'LEGACY', tokenInUse: 'LEGACY', connection: null };
+const connected: FacebookConnectionStatus = { connection };
+const notYetConnected: FacebookConnectionStatus = { connection: null };
 
 describe('FacebookChannelPageComponent', () => {
   let httpTesting: HttpTestingController;
@@ -64,7 +63,7 @@ describe('FacebookChannelPageComponent', () => {
     setUp();
     const { compiled } = render(connected);
 
-    expect(compiled.textContent).toContain('Jeton connecté depuis AgoraPilot');
+    expect(compiled.querySelector('.channel-none')).toBeNull();
     expect(compiled.textContent).toContain('Mairie');
     expect(compiled.textContent).toContain('maxime, le 27 octobre 2026 à 10:00');
     expect(compiled.textContent).toContain('Aucune (jeton permanent)');
@@ -74,22 +73,13 @@ describe('FacebookChannelPageComponent', () => {
     expect(button(compiled, 'Contrôler maintenant')).toBeDefined();
   });
 
-  it('should explain that the legacy token publishes until a page is connected', () => {
+  it('should warn that nothing can be published until a page is connected', () => {
     setUp();
     const { compiled } = render(notYetConnected);
 
-    expect(compiled.textContent).toContain('Jeton historique (bootstrap à la main)');
-    expect(compiled.textContent).toContain('le jeton historique sert en attendant');
+    expect(compiled.querySelector('.channel-none')?.textContent).toContain('Rien ne peut être publié');
     expect(button(compiled, 'Connecter la Page Facebook')).toBeDefined();
     expect(button(compiled, 'Contrôler maintenant')).toBeUndefined();
-  });
-
-  it('should offer no connection in legacy mode', () => {
-    setUp();
-    const { compiled } = render(legacy);
-
-    expect(compiled.querySelector('.channel-legacy')?.textContent).toContain('FACEBOOK_TOKEN_SOURCE=legacy');
-    expect(compiled.querySelector('.channel-actions')).toBeNull();
   });
 
   it('should send the browser to the Facebook dialog', () => {

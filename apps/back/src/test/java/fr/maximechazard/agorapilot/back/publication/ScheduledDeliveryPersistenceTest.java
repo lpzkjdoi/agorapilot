@@ -5,7 +5,7 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccu
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookClient;
 import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPostResponse;
-import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookTokenService;
+import fr.maximechazard.agorapilot.back.publisher.facebook.FacebookPageTokenProvider;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionRepository;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +72,7 @@ class ScheduledDeliveryPersistenceTest {
     @MockitoBean
     private FacebookClient facebookClient;
     @MockitoBean
-    private FacebookTokenService facebookTokenService;
+    private FacebookPageTokenProvider pageTokenProvider;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +80,7 @@ class ScheduledDeliveryPersistenceTest {
         publicationOccurrenceRepository.deleteAll();
         publicationRepository.deleteAll();
         channelSuspensionRepository.deleteAll();
-        when(facebookTokenService.getCurrentPageToken()).thenReturn("page-token");
+        when(pageTokenProvider.currentPageToken()).thenReturn("page-token");
     }
 
     private Long occurrence(LocalDateTime scheduledAt, DeliveryStatus deliveryStatus) {

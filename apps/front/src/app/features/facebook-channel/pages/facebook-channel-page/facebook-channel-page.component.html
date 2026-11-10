@@ -11,24 +11,12 @@
   } @else if (loading()) {
     <div class="channel-loading"><app-loader size="lg" label="Chargement du canal…" /></div>
   } @else if (status(); as status) {
-    @if (status.source === 'LEGACY') {
-      <p class="channel-legacy" role="status">
-        Mode historique (<code>FACEBOOK_TOKEN_SOURCE=legacy</code>) : la connexion depuis AgoraPilot est désactivée,
-        le jeton posé par le bootstrap à la main publie seul.
-      </p>
+    @if (!status.connection) {
+      <section class="channel-card">
+        <h2>Aucune Page connectée</h2>
+        <p class="channel-none">Rien ne peut être publié sur Facebook tant qu’une Page n’est pas connectée.</p>
+      </section>
     }
-
-    <section class="channel-card">
-      <h2>Jeton utilisé pour publier</h2>
-      <p class="channel-origin channel-origin-{{ status.tokenInUse.toLowerCase() }}">
-        {{ originLabels[status.tokenInUse] }}
-      </p>
-      @if (status.source === 'CONNECTION' && status.tokenInUse === 'LEGACY') {
-        <p class="channel-hint">
-          Aucune Page n’a encore été connectée depuis AgoraPilot : le jeton historique sert en attendant.
-        </p>
-      }
-    </section>
 
     @if (status.connection; as connection) {
       <section class="channel-card">
@@ -64,21 +52,19 @@
       </section>
     }
 
-    @if (status.source === 'CONNECTION') {
-      <div class="channel-actions">
-        <button type="button" class="channel-connect" [disabled]="connecting()" (click)="connect()">
-          {{ connecting() ? 'Ouverture de Facebook…' : (status.connection ? 'Reconnecter la Page' : 'Connecter la Page Facebook') }}
+    <div class="channel-actions">
+      <button type="button" class="channel-connect" [disabled]="connecting()" (click)="connect()">
+        {{ connecting() ? 'Ouverture de Facebook…' : (status.connection ? 'Reconnecter la Page' : 'Connecter la Page Facebook') }}
+      </button>
+      @if (status.connection) {
+        <button type="button" [disabled]="checking()" (click)="check()">
+          {{ checking() ? 'Contrôle…' : 'Contrôler maintenant' }}
         </button>
-        @if (status.connection) {
-          <button type="button" [disabled]="checking()" (click)="check()">
-            {{ checking() ? 'Contrôle…' : 'Contrôler maintenant' }}
-          </button>
-        }
-      </div>
-      <p class="channel-hint">
-        La connexion se fait sur Facebook, avec un compte administrateur de la Page. Le jeton est contrôlé chaque
-        matin : s’il ne peut plus publier, les diffusions sont suspendues et un bandeau l’annonce.
-      </p>
-    }
+      }
+    </div>
+    <p class="channel-hint">
+      La connexion se fait sur Facebook, avec un compte administrateur de la Page. Le jeton est contrôlé chaque
+      matin : s’il ne peut plus publier, les diffusions sont suspendues et un bandeau l’annonce.
+    </p>
   }
 </div>
