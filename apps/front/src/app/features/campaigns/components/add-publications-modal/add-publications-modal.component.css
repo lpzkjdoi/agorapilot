@@ -1,0 +1,76 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.add-publications-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.add-publications-search {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+/* La liste défile seule : la modale garde ses boutons en vue. */
+.add-publications-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 20rem;
+  overflow-y: auto;
+  border: 1px solid var(--color-ui-border);
+  border-radius: var(--radius-sm);
+}
+
+.add-publications-list li + li {
+  border-top: 1px solid var(--color-ui-border);
+}
+
+.add-publications-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.25rem 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.add-publications-item input {
+  margin-top: 0.2rem;
+}
+
+.add-publications-content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--color-ui-text-primary);
+}
+
+.add-publications-current {
+  grid-column: 2;
+  font-size: 12px;
+  color: #7E22CE;
+}
+
+.add-publications-empty {
+  padding: 1.5rem 0;
+  text-align: center;
+  color: var(--color-ui-text-secondary);
+}
+
+.modal-actions .primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

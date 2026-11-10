@@ -7,7 +7,9 @@ import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableE
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
 import fr.maximechazard.agorapilot.back.campaign.requests.CreateCampaignRequest;
 import fr.maximechazard.agorapilot.back.campaign.requests.UpdateCampaignRequest;
+import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
+import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationCampaignDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDTO;
 import org.junit.jupiter.api.Nested;
@@ -193,6 +195,37 @@ class CampaignControllerTest {
             when(campaignService.getById(404L)).thenThrow(new CampaignNotFoundException("Campagne 404 introuvable"));
 
             mockMvc.perform(get("/api/campaigns/404"))
+                   .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    class Occurrences {
+
+        @Test
+        void renvoieLesDiffusionsDeLaCampagne() throws Exception {
+            when(campaignService.getOccurrences(3L)).thenReturn(List.of(new PublicationOccurrenceDTO(
+                    5L,
+                    LocalDateTime.of(2026, 12, 5, 18, 30),
+                    false,
+                    PublicationOccurrenceStatus.SCHEDULED,
+                    campaign().publications().getFirst(),
+                    List.of(),
+                    "maxime"
+            )));
+
+            mockMvc.perform(get("/api/campaigns/3/occurrences"))
+                   .andExpect(status().isOk())
+                   .andExpect(jsonPath("$[0].id").value(5))
+                   .andExpect(jsonPath("$[0].scheduledAt").value("2026-12-05T18:30:00"))
+                   .andExpect(jsonPath("$[0].publication.id").value(8));
+        }
+
+        @Test
+        void signaleUneCampagneInconnue() throws Exception {
+            when(campaignService.getOccurrences(404L)).thenThrow(new CampaignNotFoundException("Campagne 404 introuvable"));
+
+            mockMvc.perform(get("/api/campaigns/404/occurrences"))
                    .andExpect(status().isNotFound());
         }
     }

@@ -52,20 +52,3 @@ export function canClose(campaign: Campaign): boolean {
 export function canCancel(campaign: Campaign): boolean {
   return campaign.status !== 'COMPLETED' && campaign.status !== 'CANCELED';
 }
-
-/** Compteurs affichés en tête du détail d'une campagne. */
-export interface CampaignStats {
-  total: number
-  verified: number
-  drafts: number
-}
-
-export function campaignStats(campaign: Campaign): CampaignStats {
-  const publications = campaign.publications;
-
-  return {
-    total: publications.length,
-    verified: publications.filter((publication) => publication.status === 'VERIFIED').length,
-    drafts: publications.filter((publication) => publication.status === 'DRAFT').length,
-  };
-}

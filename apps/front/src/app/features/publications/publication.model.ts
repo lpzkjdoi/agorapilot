@@ -59,6 +59,11 @@ export interface CreatePublicationFormValue {
 /** Canaux de diffusion connus du back (`DeliveryChannel`). */
 export type DeliveryChannel = 'FACEBOOK' | 'INTRAMUROS';
 
+export const DELIVERY_CHANNEL_LABELS: Record<DeliveryChannel, string> = {
+  FACEBOOK: 'Facebook',
+  INTRAMUROS: 'Intramuros',
+};
+
 /**
  * Statut d'une livraison (`DeliveryStatus`). `IN_PROGRESS` : prise en charge
  * par l'ordonnanceur, appel au canal en cours.

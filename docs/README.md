@@ -72,3 +72,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-10 | [Connexion de la Page Facebook en préproduction : ce qu'il fallait côté Meta](./changelog/2026-11-10-connexion-facebook-preprod.md) | _voir PR_ |
 | 2026-11-10 | [Campagnes : fondations back (modifier, annuler, archiver, statut à jour)](./changelog/2026-11-10-campagnes-fondations-back.md) | _voir PR_ |
 | 2026-11-10 | [Campagnes : modifier, clôturer, annuler et supprimer depuis la page](./changelog/2026-11-10-campagnes-actions-front.md) | _voir PR_ |
+| 2026-11-10 | [Campagnes : suivre et piloter la planification de ses publications](./changelog/2026-11-10-campagnes-planification.md) | _voir PR_ |

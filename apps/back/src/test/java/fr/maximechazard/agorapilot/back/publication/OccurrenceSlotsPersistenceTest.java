@@ -454,6 +454,32 @@ class OccurrenceSlotsPersistenceTest {
                 .containsExactlyInAnyOrder(expected, outside);
     }
 
+    /** Toutes les diffusions d'une campagne, sans borne de dates, hors publications supprimées. */
+    @Test
+    void lists_every_occurrence_of_a_campaign_in_chronological_order() {
+        Campaign campaign = campaignRepository.save(new Campaign("Budget participatif", "", null, null));
+        Publication inCampaign = publicationRepository.findById(publicationId).orElseThrow();
+        inCampaign.setCampaign(campaign);
+        publicationRepository.save(inCampaign);
+        Long later = scheduleOn(DAY.plusDays(90));
+        Long first = scheduleOn(DAY);
+
+        Publication archived = new Publication("Supprimée", PublicationStatus.VERIFIED);
+        archived.setCampaign(campaign);
+        publicationId = publicationRepository.save(archived).getId();
+        scheduleOn(DAY.plusDays(1));
+        archived = publicationRepository.findById(publicationId).orElseThrow();
+        archived.setArchived(true);
+        publicationRepository.save(archived);
+
+        publicationId = publicationRepository.save(new Publication("Hors campagne", PublicationStatus.VERIFIED)).getId();
+        scheduleOn(DAY);
+
+        assertThat(service.findByCampaign(campaign.getId()))
+                .extracting(PublicationOccurrenceDTO::id)
+                .containsExactly(first, later);
+    }
+
     // ------------------------------------------------------------ dates multiples
 
     @Test

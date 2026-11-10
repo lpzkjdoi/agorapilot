@@ -317,6 +317,20 @@ public class PublicationOccurrenceService {
         return !occurrences.isEmpty();
     }
 
+    /**
+     * Toutes les diffusions d'une campagne, passées comme à venir, dans l'ordre
+     * chronologique. Sans borne de dates : une campagne dure ce qu'elle dure, et
+     * ses diffusions se comptent en dizaines, pas en milliers.
+     */
+    @Transactional(readOnly = true)
+    public List<PublicationOccurrenceDTO> findByCampaign(Long campaignId) {
+        return publicationOccurrenceRepository
+                .findAllByPublicationCampaignIdAndPublicationArchivedFalseOrderByScheduledAtAsc(campaignId)
+                .stream()
+                .map(publicationOccurrenceMapper::toDTO)
+                .toList();
+    }
+
     /** Les occurrences de {@code [from, to)}, dans l'ordre chronologique. */
     @Transactional(readOnly = true)
     public List<PublicationOccurrenceDTO> findBetween(LocalDate from, LocalDate to) {

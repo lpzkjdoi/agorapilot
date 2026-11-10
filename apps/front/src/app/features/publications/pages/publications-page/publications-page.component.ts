@@ -1,4 +1,3 @@
-import { formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -20,8 +19,12 @@ import { MediasService } from "../../../medias/medias.service";
 import {
   ScheduleOccurrenceModalComponent,
 } from "../../../occurrences/components/schedule-occurrence-modal/schedule-occurrence-modal.component";
-import { Occurrence, ScheduleFormValue } from "../../../occurrences/occurrence.model";
-import { apiErrorMessage, toCreateOccurrencesRequest } from "../../../occurrences/occurrence.utils";
+import { ScheduleFormValue } from "../../../occurrences/occurrence.model";
+import {
+  apiErrorMessage,
+  scheduledMessage,
+  toCreateOccurrencesRequest,
+} from "../../../occurrences/occurrence.utils";
 import { OccurrencesService } from "../../../occurrences/occurrences.service";
 import { Campaign } from "../../../campaigns/campaign.model";
 import { CampaignsService } from "../../../campaigns/campaigns.service";
@@ -399,7 +402,7 @@ export class PublicationsPageComponent {
       next: (occurrences) => {
         this.scheduling.set(false);
         this.schedulingFor.set(null);
-        this.notifications.success(PublicationsPageComponent.scheduledMessage(occurrences));
+        this.notifications.success(scheduledMessage(occurrences));
       },
       error: (err: HttpErrorResponse) => {
         console.error('Programmation impossible', err);
@@ -411,27 +414,6 @@ export class PublicationsPageComponent {
           : 'La diffusion n’a pas pu être programmée.'));
       },
     });
-  }
-
-  /**
-   * L'heure retenue par le back est annoncée tout de suite ; si elle est
-   * automatique, on prévient qu'elle suivra les autres programmations du jour.
-   * Plusieurs dates sont résumées par leurs jours, dans l'ordre du calendrier.
-   */
-  private static scheduledMessage(occurrences: Occurrence[]): string {
-    const adjusts = occurrences.some((occurrence) => !occurrence.pinned)
-      ? ' — l’heure s’ajustera si d’autres publications sont programmées ce jour-là.'
-      : '.';
-
-    if (occurrences.length === 1) {
-      const when = formatDate(occurrences[0].scheduledAt, "EEEE d MMMM 'à' HH:mm", 'fr-FR');
-
-      return `Diffusion programmée le ${ when }${ adjusts }`;
-    }
-
-    const days = occurrences.map((occurrence) => formatDate(occurrence.scheduledAt, 'dd/MM/yyyy', 'fr-FR'));
-
-    return `${ occurrences.length } diffusions programmées : ${ days.join(', ') }${ adjusts }`;
   }
 
   private loadPublications(): void {

@@ -1,6 +1,7 @@
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Occurrence, OccurrenceStatus } from '../../../occurrences/occurrence.model';
 import { Publication } from '../../../publications/publication.model';
 import { Campaign } from '../../campaign.model';
 import { CampaignDetailComponent } from './campaign-detail.component';
@@ -9,6 +10,22 @@ registerLocaleData(localeFr, 'fr-FR');
 
 function publication(id: number, content: string, status: Publication['status']): Publication {
   return { id, content, status, medias: [], campaign: null };
+}
+
+function occurrence(id: number, of: Publication, scheduledAt: string, status: OccurrenceStatus): Occurrence {
+  return {
+    id,
+    scheduledAt,
+    pinned: false,
+    status,
+    publication: of,
+    deliveries: [{
+      id,
+      channel: 'FACEBOOK',
+      status: status === 'SCHEDULED' ? 'PENDING' : status,
+      errorMessage: status === 'FAILED' ? 'Jeton expiré' : null,
+    }],
+  };
 }
 
 function campaign(overrides: Partial<Campaign> = {}): Campaign {
@@ -70,19 +87,105 @@ describe('CampaignDetailComponent', () => {
     expect(compiled.querySelector('.campaign-detail-period')).toBeNull();
   });
 
-  it('should count the publications by status', () => {
+  it('should only count the publications while the diffusions load', () => {
     const compiled = render(campaign({
-      publications: [
-        publication(1, 'Un', 'VERIFIED'),
-        publication(2, 'Deux', 'VERIFIED'),
-        publication(3, 'Trois', 'DRAFT'),
-      ],
+      publications: [publication(1, 'Un', 'VERIFIED'), publication(2, 'Deux', 'DRAFT')],
     }));
 
     const values = Array.from(compiled.querySelectorAll('.campaign-detail-stat-value'))
                         .map((value) => value.textContent?.trim());
 
-    expect(values).toEqual(['3', '2', '1']);
+    expect(values).toEqual(['2']);
+    expect(compiled.querySelector('.campaign-detail-publication-planning')).toBeNull();
+  });
+
+  describe('planning', () => {
+    const un = publication(1, 'Un', 'VERIFIED');
+    const deux = publication(2, 'Deux', 'VERIFIED');
+    const trois = publication(3, 'Trois', 'DRAFT');
+
+    function renderPlanned(): HTMLElement {
+      fixture.componentRef.setInput('occurrences', [
+        occurrence(10, un, '2026-12-05T18:30:00', 'SCHEDULED'),
+        occurrence(11, un, '2026-12-12T18:30:00', 'SCHEDULED'),
+        occurrence(12, un, '2026-11-01T12:00:00', 'PUBLISHED'),
+        occurrence(13, deux, '2026-11-03T12:00:00', 'FAILED'),
+      ]);
+      return render(campaign({ publications: [un, deux, trois] }));
+    }
+
+    function planningOf(compiled: HTMLElement, index: number): string {
+      return compiled.querySelectorAll('.campaign-detail-publication')[index]
+                     .querySelector('.campaign-detail-publication-planning')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    }
+
+    it('should count the diffusions by status', () => {
+      const values = Array.from(renderPlanned().querySelectorAll('.campaign-detail-stat-value'))
+                          .map((value) => value.textContent?.trim());
+
+      expect(values).toEqual(['3', '2', '1', '1']);
+    });
+
+    it('should show the next diffusion, its channel and how many follow', () => {
+      const text = planningOf(renderPlanned(), 0);
+
+      expect(text).toContain('Prochaine diffusion le sam. 5 déc. à 18:30');
+      expect(text).toContain('Facebook');
+      expect(text).toContain('+ 1 autre(s)');
+      expect(text).toContain('Publiée le 1 nov.');
+    });
+
+    it('should flag the last failed diffusion with its reason', () => {
+      const compiled = renderPlanned();
+
+      expect(planningOf(compiled, 1)).toContain('Aucune diffusion programmée');
+      const failed = compiled.querySelectorAll('.campaign-detail-publication')[1].querySelector('.planning-failed');
+      expect(failed?.textContent).toContain('Échec le 3 nov.');
+      expect(failed?.getAttribute('title')).toBe('Jeton expiré');
+    });
+
+    it('should warn when the planning could not be loaded', () => {
+      fixture.componentRef.setInput('planningUnavailable', true);
+
+      expect(render(campaign()).querySelector('.campaign-detail-warning')?.textContent)
+        .toContain('n’a pas pu être chargée');
+    });
+
+    it('should offer to schedule verified publications only', () => {
+      fixture.componentRef.setInput('canSchedule', true);
+      const schedule = vi.fn();
+      fixture.componentInstance.schedule.subscribe(schedule);
+      const compiled = renderPlanned();
+
+      const rows = compiled.querySelectorAll('.campaign-detail-publication');
+      expect(rows[2].querySelector('.campaign-detail-publication-actions')).toBeNull();
+      (rows[0].querySelector('.campaign-action') as HTMLButtonElement).click();
+
+      expect(schedule).toHaveBeenCalledWith(un);
+    });
+
+    it('should offer to add and detach publications with the publication write permission', () => {
+      fixture.componentRef.setInput('canAssign', true);
+      const add = vi.fn();
+      const detach = vi.fn();
+      fixture.componentInstance.addPublications.subscribe(add);
+      fixture.componentInstance.detach.subscribe(detach);
+      const compiled = renderPlanned();
+
+      const actions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.campaign-action'));
+      actions.find((button) => button.textContent?.trim() === 'Ajouter des publications')!.click();
+      actions.filter((button) => button.textContent?.trim() === 'Retirer')[2].click();
+
+      expect(add).toHaveBeenCalledTimes(1);
+      expect(detach).toHaveBeenCalledWith(trois);
+    });
+
+    it('should offer neither without the permissions', () => {
+      const compiled = renderPlanned();
+
+      expect(compiled.querySelector('.campaign-detail-publication-actions')).toBeNull();
+      expect(compiled.textContent).not.toContain('Ajouter des publications');
+    });
   });
 
   it('should list the attached publications with their status', () => {

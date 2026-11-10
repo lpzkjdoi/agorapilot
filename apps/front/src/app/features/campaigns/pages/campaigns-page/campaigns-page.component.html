@@ -23,9 +23,16 @@
       <app-campaign-detail
         [campaign]="campaign"
         [canWrite]="canWrite()"
-        [busy]="acting()"
+        [busy]="acting() || detaching()"
+        [occurrences]="planning().occurrences"
+        [planningUnavailable]="planning().failed"
+        [canSchedule]="canSchedule()"
+        [canAssign]="canAssign()"
         (edit)="modal.set('edit')"
         (actionConfirmed)="onAction($event)"
+        (schedule)="schedulingFor.set($event)"
+        (addPublications)="onAddRequested()"
+        (detach)="onDetach($event)"
       />
     }
   }
@@ -37,5 +44,24 @@
     [saving]="saving()"
     (closed)="modal.set(null)"
     (submitted)="onSubmit($event)"
+  />
+}
+
+@if (addModalOpen() && selected(); as campaign) {
+  <app-add-publications-modal
+    [campaign]="campaign"
+    [publications]="candidates()"
+    [saving]="adding()"
+    (closed)="addModalOpen.set(false)"
+    (submitted)="onAddSubmitted($event)"
+  />
+}
+
+@if (schedulingFor(); as publication) {
+  <app-schedule-occurrence-modal
+    [publication]="publication"
+    [saving]="scheduling()"
+    (closed)="schedulingFor.set(null)"
+    (submitted)="onScheduleSubmitted($event)"
   />
 }

@@ -74,33 +74,97 @@
 
   <ul class="campaign-detail-stats">
     <li class="campaign-detail-stat">
-      <span class="campaign-detail-stat-value">{{ stats().total }}</span>
+      <span class="campaign-detail-stat-value">{{ stats().publications }}</span>
       <span class="campaign-detail-stat-label">Publications</span>
     </li>
-    <li class="campaign-detail-stat verified">
-      <span class="campaign-detail-stat-value">{{ stats().verified }}</span>
-      <span class="campaign-detail-stat-label">Vérifiées</span>
-    </li>
-    <li class="campaign-detail-stat drafts">
-      <span class="campaign-detail-stat-value">{{ stats().drafts }}</span>
-      <span class="campaign-detail-stat-label">Brouillons</span>
-    </li>
+    @if (occurrences() !== null) {
+      <li class="campaign-detail-stat scheduled">
+        <span class="campaign-detail-stat-value">{{ stats().scheduled }}</span>
+        <span class="campaign-detail-stat-label">Diffusions programmées</span>
+      </li>
+      <li class="campaign-detail-stat published">
+        <span class="campaign-detail-stat-value">{{ stats().published }}</span>
+        <span class="campaign-detail-stat-label">Publiées</span>
+      </li>
+      <li class="campaign-detail-stat failed">
+        <span class="campaign-detail-stat-value">{{ stats().failed }}</span>
+        <span class="campaign-detail-stat-label">En échec</span>
+      </li>
+    }
   </ul>
 
-  <h3 class="campaign-detail-subtitle">Publications ({{ stats().total }})</h3>
+  @if (planningUnavailable()) {
+    <p class="campaign-detail-warning" role="alert">La planification de la campagne n’a pas pu être chargée.</p>
+  }
+
+  <div class="campaign-detail-section-header">
+    <h3 class="campaign-detail-subtitle">Publications ({{ stats().publications }})</h3>
+    @if (canAssign()) {
+      <button type="button" class="campaign-action" [disabled]="busy()" (click)="addPublications.emit()">
+        Ajouter des publications
+      </button>
+    }
+  </div>
 
   @if (campaign().publications.length === 0) {
     <p class="campaign-detail-placeholder">Aucune publication rattachée à cette campagne</p>
   } @else {
     <ul class="campaign-detail-publications">
       @for (publication of campaign().publications; track publication.id) {
+        @let planning = plannings().get(publication.id);
         <li class="campaign-detail-publication">
-          <span class="campaign-detail-publication-content">{{ publication.content }}</span>
-          <span class="campaign-badge"
-                [class]="publication.status === 'VERIFIED' ? 'campaign-badge-active' : 'campaign-badge-draft'"
-          >
-            {{ publication.status === 'VERIFIED' ? 'Vérifiée' : 'Brouillon' }}
-          </span>
+          <div class="campaign-detail-publication-main">
+            <span class="campaign-detail-publication-content">{{ publication.content }}</span>
+            <span class="campaign-badge"
+                  [class]="publication.status === 'VERIFIED' ? 'campaign-badge-active' : 'campaign-badge-draft'"
+            >
+              {{ publication.status === 'VERIFIED' ? 'Vérifiée' : 'Brouillon' }}
+            </span>
+          </div>
+
+          @if (occurrences() !== null) {
+            <p class="campaign-detail-publication-planning">
+              @if (planning?.next; as next) {
+                <span class="planning-next">
+                  Prochaine diffusion le {{ next.scheduledAt | date: "EEE d MMM 'à' HH:mm" : undefined : 'fr-FR' }}
+                  @for (delivery of next.deliveries; track delivery.id) {
+                    <span class="planning-channel">{{ channelLabels[delivery.channel] }}</span>
+                  }
+                </span>
+                @if (planning!.scheduledCount > 1) {
+                  <span class="planning-more">+ {{ planning!.scheduledCount - 1 }} autre(s)</span>
+                }
+              } @else {
+                <span class="planning-none">Aucune diffusion programmée</span>
+              }
+              @if (planning?.last; as last) {
+                @if (last.status === 'FAILED') {
+                  <span class="planning-failed" [attr.title]="failureReason(last)">
+                    Échec le {{ last.scheduledAt | date: 'd MMM' : undefined : 'fr-FR' }}
+                  </span>
+                } @else {
+                  <span class="planning-published">
+                    Publiée le {{ last.scheduledAt | date: 'd MMM' : undefined : 'fr-FR' }}
+                  </span>
+                }
+              }
+            </p>
+          }
+
+          @if ((canSchedule() && publication.status === 'VERIFIED') || canAssign()) {
+            <div class="campaign-detail-publication-actions">
+              @if (canSchedule() && publication.status === 'VERIFIED') {
+                <button type="button" class="campaign-action" [disabled]="busy()" (click)="schedule.emit(publication)">
+                  Programmer
+                </button>
+              }
+              @if (canAssign()) {
+                <button type="button" class="campaign-action" [disabled]="busy()" (click)="detach.emit(publication)">
+                  Retirer
+                </button>
+              }
+            </div>
+          }
         </li>
       }
     </ul>
