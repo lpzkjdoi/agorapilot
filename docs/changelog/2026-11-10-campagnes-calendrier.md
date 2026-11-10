@@ -79,7 +79,7 @@ Les quatre lots couvrent ce qui manquait à la page Campagnes : modifier,
 clôturer, annuler, supprimer, suivre et piloter la planification, voir le
 calendrier. Points laissés ouverts :
 
-- **Annulation et diffusions** : faut-il déprogrammer les diffusions à venir
-  d'une campagne annulée ?
+- **Annulation et diffusions** : tranché, l'annulation les déprogramme. Voir
+  [la suite](./2026-11-10-campagnes-annulation-diffusions.md).
 - **Lien vers une publication** : la page Publications n'a pas d'adresse propre
   à chaque publication.

@@ -276,6 +276,54 @@ public class PublicationOccurrenceService {
     }
 
     /**
+     * Déprogramme toutes les diffusions à venir des publications d'une
+     * campagne — c'est ce qu'implique son annulation. Les diffusions passées,
+     * publiées ou en échec, restent : elles sont l'historique de la campagne.
+     * Les jours touchés sont répartis à nouveau, et chaque annulation est
+     * tracée au journal.
+     * <p>
+     * Tout ou rien, comme la suppression d'une publication : si une seule
+     * diffusion est en cours ou imminente, rien n'est touché.
+     *
+     * @return le nombre de diffusions déprogrammées
+     * @throws OccurrenceNotModifiableException une diffusion est en cours ou imminente
+     */
+    @Transactional
+    public int cancelScheduledOfCampaign(Long campaignId) {
+        List<PublicationOccurrence> scheduled = publicationOccurrenceRepository
+                .findAllByPublicationCampaignIdAndPublicationArchivedFalseOrderByScheduledAtAsc(campaignId)
+                .stream()
+                .filter(occurrence -> occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED)
+                .toList();
+
+        for (PublicationOccurrence occurrence : scheduled) {
+            if (!isModifiable(occurrence)) {
+                throw new OccurrenceNotModifiableException("La campagne " + campaignId
+                        + " a une diffusion en cours ou imminente (moins de " + FROZEN_HORIZON.toMinutes()
+                        + " minutes) : réessayer une fois la diffusion passée.");
+            }
+        }
+
+        Set<LocalDate> days = new TreeSet<>();
+
+        for (PublicationOccurrence occurrence : scheduled) {
+            days.add(occurrence.getScheduledAt().toLocalDate());
+            events.recordAction(SecurityEventType.OCCURRENCE_CANCELLED, describe(occurrence) + " : prévue le "
+                    + occurrence.getScheduledAt().format(JOURNAL_TIME) + ", annulée avec sa campagne");
+            // Retirée aussi de la collection de sa publication : sans quoi la
+            // cascade la referait persister au flush.
+            occurrence.getPublication().getOccurrences().remove(occurrence);
+            publicationOccurrenceRepository.delete(occurrence);
+        }
+
+        // La répartition relit les occurrences du jour : les suppressions doivent être passées.
+        publicationOccurrenceRepository.flush();
+        days.forEach(this::redistribute);
+
+        return scheduled.size();
+    }
+
+    /**
      * Prépare la suppression d'une publication : annule ses diffusions
      * programmées — leurs jours sont répartis à nouveau — et retire ses échecs
      * qui n'ont rien publié nulle part.

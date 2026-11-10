@@ -280,7 +280,7 @@ describe('CampaignDetailComponent', () => {
       click(compiled, 'Confirmer la clôture');
       click(compiled, 'Annuler la campagne');
       expect(compiled.querySelector('.campaign-detail-confirm')?.textContent)
-        .toContain('diffusions déjà programmées');
+        .toContain('seront déprogrammées');
       click(compiled, 'Confirmer l’annulation');
 
       expect(confirmed.mock.calls).toEqual([['close'], ['cancel']]);

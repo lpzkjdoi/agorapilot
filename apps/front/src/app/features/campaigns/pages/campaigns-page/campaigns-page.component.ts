@@ -275,24 +275,40 @@ export class CampaignsPageComponent {
         ? this.campaignsService.closeCampaign(campaign.id)
         : this.campaignsService.cancelCampaign(campaign.id);
 
+    // Compté avant l'appel : l'annulation les fait disparaître.
+    const scheduled = (this.planning().occurrences ?? []).filter((o) => o.status === 'SCHEDULED').length;
+
     request.subscribe({
       next: (updated) => {
         if (updated) {
           this.replace(updated);
+          // L'annulation déprogramme les diffusions à venir.
+          this.planningVersion.update((version) => version + 1);
         } else {
           // Supprimée : elle quitte la liste, et la suivante prend sa place.
           this.campaigns.update((campaigns) => campaigns.filter((c) => c.id !== campaign.id));
           this.selectedId.set(this.campaigns()[0]?.id ?? null);
         }
         this.acting.set(false);
-        this.notifications.success(messages.success);
+        this.notifications.success(action === 'cancel' ? CampaignsPageComponent.canceledMessage(scheduled) : messages.success);
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         console.error(`Action « ${ action } » impossible sur la campagne ${ campaign.id }`, err);
         this.acting.set(false);
-        this.notifications.error(messages.failure);
+        // Le back dit pourquoi — une diffusion imminente bloque l'annulation, par exemple.
+        this.notifications.error(apiErrorMessage(err, messages.failure));
       },
     });
+  }
+
+  private static canceledMessage(scheduled: number): string {
+    if (scheduled === 0) {
+      return 'Campagne annulée.';
+    }
+
+    return scheduled === 1
+      ? 'Campagne annulée : 1 diffusion déprogrammée.'
+      : `Campagne annulée : ${ scheduled } diffusions déprogrammées.`;
   }
 
   private create(value: CampaignFormValue): void {

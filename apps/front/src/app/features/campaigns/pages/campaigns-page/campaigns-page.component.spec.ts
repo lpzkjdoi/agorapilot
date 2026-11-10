@@ -279,16 +279,36 @@ describe('CampaignsPageComponent', () => {
       expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Terminée');
     });
 
-    it('should cancel a campaign once confirmed', () => {
+    it('should cancel a campaign once confirmed, announce the unscheduled diffusions and reload them', () => {
+      const success = vi.spyOn(notifications, 'success');
+      const samedi = { id: 8, content: 'Samedi', status: 'VERIFIED', medias: [], campaign: { id: 1, name: 'Marché de Noël' } } satisfies Publication;
+      render([campaign({ publications: [samedi] })]);
+      flushPlanning(['2026-12-05T18:30:00', '2026-12-12T18:30:00'].map((scheduledAt, index) => ({
+        id: index + 1, scheduledAt, pinned: true, status: 'SCHEDULED', publication: samedi,
+        deliveries: [{ id: index + 10, channel: 'FACEBOOK', status: 'PENDING' }],
+      } satisfies Occurrence)));
+
+      clickAction('Annuler la campagne');
+      clickAction('Confirmer l’annulation');
+
+      httpTesting.expectOne('/api/campaigns/1/cancellation').flush(campaign({ status: 'CANCELED', publications: [samedi] }));
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Annulée');
+      expect(success).toHaveBeenCalledWith('Campagne annulée : 2 diffusions déprogrammées.');
+      httpTesting.expectOne('/api/campaigns/1/occurrences').flush([]);
+    });
+
+    it('should keep it simple when the canceled campaign had nothing scheduled', () => {
       const success = vi.spyOn(notifications, 'success');
       render();
+      flushPlanning();
       clickAction('Annuler la campagne');
       clickAction('Confirmer l’annulation');
 
       httpTesting.expectOne('/api/campaigns/1/cancellation').flush(campaign({ status: 'CANCELED' }));
       fixture.detectChanges();
 
-      expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Annulée');
       expect(success).toHaveBeenCalledWith('Campagne annulée.');
     });
 
@@ -314,12 +334,14 @@ describe('CampaignsPageComponent', () => {
       clickAction('Annuler la campagne');
       clickAction('Confirmer l’annulation');
 
-      httpTesting.expectOne('/api/campaigns/1/cancellation')
-                 .flush({ message: 'La campagne 1 est terminée' }, { status: 409, statusText: 'Conflict' });
+      httpTesting.expectOne('/api/campaigns/1/cancellation').flush(
+        { message: 'La campagne 1 a une diffusion en cours ou imminente.' },
+        { status: 409, statusText: 'Conflict' },
+      );
       fixture.detectChanges();
 
       expect(compiled.querySelector('app-campaign-detail .campaign-badge')?.textContent?.trim()).toBe('Programmée');
-      expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être annulée.');
+      expect(error).toHaveBeenCalledWith('La campagne n’a pas pu être annulée. La campagne 1 a une diffusion en cours ou imminente.');
     });
   });
   describe('publications de la campagne', () => {

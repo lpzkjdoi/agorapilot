@@ -28,7 +28,7 @@ const CONFIRMATIONS: Record<CampaignAction, { question: string, button: string }
     button: 'Confirmer la clôture',
   },
   cancel: {
-    question: 'Annuler la campagne ? Les diffusions déjà programmées de ses publications partiront quand même.',
+    question: 'Annuler la campagne ? Les diffusions programmées de ses publications seront déprogrammées.',
     button: 'Confirmer l’annulation',
   },
   archive: {

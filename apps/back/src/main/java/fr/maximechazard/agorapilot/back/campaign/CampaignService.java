@@ -107,7 +107,8 @@ public class CampaignService {
 
     /**
      * Annule une campagne qui n'est pas terminée — brouillon, programmée ou en
-     * cours. Les diffusions de ses publications ne sont pas touchées.
+     * cours — et déprogramme les diffusions à venir de ses publications. Si
+     * l'une d'elles est en cours ou imminente, rien n'est annulé ({@code 409}).
      */
     @Transactional
     public CampaignDTO cancel(Long campaignId) {
@@ -116,7 +117,10 @@ public class CampaignService {
         switch (campaign.statusAt(LocalDateTime.now())) {
             case CANCELED -> throw new CampaignNotCancelableException("La campagne " + campaignId + " est déjà annulée");
             case COMPLETED -> throw new CampaignNotCancelableException("La campagne " + campaignId + " est terminée");
-            default -> campaign.cancel();
+            default -> {
+                publicationOccurrenceService.cancelScheduledOfCampaign(campaignId);
+                campaign.cancel();
+            }
         }
 
         return mapper.toDTO(campaignRepository.save(campaign));
