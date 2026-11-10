@@ -6,10 +6,10 @@
         (click)="closed.emit()"
 ></button>
 
-<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-campaign-title">
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="campaign-form-title">
   <header class="modal-header">
     <div>
-      <h2 id="create-campaign-title">Créer une campagne</h2>
+      <h2 id="campaign-form-title">{{ editing() ? 'Modifier la campagne' : 'Créer une campagne' }}</h2>
       <p class="modal-subtitle">Regroupez vos publications sur une période donnée.</p>
     </div>
     <button type="button" class="modal-close" aria-label="Fermer" (click)="closed.emit()">
@@ -52,29 +52,37 @@
     <div class="campaign-form-dates">
       <div class="campaign-form-field">
         <label for="campaign-start">Date de début</label>
-        <input id="campaign-start" formControlName="startDate" type="date" [min]="minDate">
+        <input id="campaign-start" formControlName="startDate" type="date" [attr.min]="minDate()">
       </div>
 
       <div class="campaign-form-field">
         <label for="campaign-end">Date de fin</label>
-        <input id="campaign-end" formControlName="endDate" type="date" [min]="minDate">
+        <input id="campaign-end"
+               formControlName="endDate"
+               type="date"
+               [attr.min]="form.controls.startDate.value || minDate()"
+        >
       </div>
     </div>
+
+    @if (form.hasError('periodReversed')) {
+      <p class="campaign-form-error" role="alert">La date de fin doit suivre la date de début.</p>
+    }
 
     <p class="campaign-form-hint">
       Sans date de début, la campagne reste un brouillon.
     </p>
 
     <div class="modal-actions">
-      <button type="button" class="secondary" [disabled]="creating()" (click)="closed.emit()">
+      <button type="button" class="secondary" [disabled]="saving()" (click)="closed.emit()">
         Annuler
       </button>
-      <button type="submit" class="primary" [disabled]="creating()">
-        @if (creating()) {
+      <button type="submit" class="primary" [disabled]="saving()">
+        @if (saving()) {
           <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
-          <app-loader size="sm" variant="dark" label="Création en cours…" />
+          <app-loader size="sm" variant="dark" label="Enregistrement en cours…" />
         }
-        Créer la campagne
+        {{ editing() ? 'Enregistrer' : 'Créer la campagne' }}
       </button>
     </div>
   </form>

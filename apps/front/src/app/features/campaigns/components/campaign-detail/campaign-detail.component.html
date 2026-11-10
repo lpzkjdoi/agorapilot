@@ -6,6 +6,45 @@
     </span>
   </header>
 
+  @if (canWrite()) {
+    <div class="campaign-detail-actions">
+      @if (pending(); as action) {
+        <p class="campaign-detail-confirm" role="alert">{{ confirmations[action].question }}</p>
+        <button type="button" class="campaign-action" [disabled]="busy()" (click)="pending.set(null)">
+          Retour
+        </button>
+        <button type="button"
+                class="campaign-action campaign-action-danger"
+                [disabled]="busy()"
+                (click)="confirm()"
+        >
+          {{ confirmations[action].button }}
+        </button>
+      } @else {
+        <button type="button" class="campaign-action" [disabled]="busy()" (click)="edit.emit()">
+          Modifier
+        </button>
+        @if (closable()) {
+          <button type="button" class="campaign-action" [disabled]="busy()" (click)="pending.set('close')">
+            Clôturer
+          </button>
+        }
+        @if (cancelable()) {
+          <button type="button" class="campaign-action" [disabled]="busy()" (click)="pending.set('cancel')">
+            Annuler la campagne
+          </button>
+        }
+        <button type="button"
+                class="campaign-action campaign-action-danger"
+                [disabled]="busy()"
+                (click)="pending.set('archive')"
+        >
+          Supprimer
+        </button>
+      }
+    </div>
+  }
+
   @if (campaign().startDate || campaign().endDate) {
     <p class="campaign-detail-period">
       <svg xmlns="http://www.w3.org/2000/svg"
