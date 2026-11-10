@@ -480,6 +480,45 @@ class OccurrenceSlotsPersistenceTest {
                 .containsExactly(first, later);
     }
 
+    /** Annuler une campagne déprogramme ses diffusions à venir, et elles seules. */
+    @Test
+    void cancels_every_scheduled_occurrence_of_a_campaign_and_redistributes_the_day() {
+        Campaign campaign = campaignRepository.save(new Campaign("Fête de la musique", "", null, null));
+        Publication inCampaign = publicationRepository.findById(publicationId).orElseThrow();
+        inCampaign.setCampaign(campaign);
+        publicationRepository.save(inCampaign);
+        scheduleOn(DAY);
+        scheduleAt(DAY.plusDays(1).atTime(18, 30));
+
+        publicationId = publicationRepository.save(new Publication("Hors campagne", PublicationStatus.VERIFIED)).getId();
+        Long outside = scheduleOn(DAY);
+
+        assertThat(service.cancelScheduledOfCampaign(campaign.getId())).isEqualTo(2);
+
+        assertThat(service.findByCampaign(campaign.getId())).isEmpty();
+        assertThat(publicationOccurrenceRepository.findById(outside)).isPresent();
+        // Seule dans sa journée désormais, la diffusion restante est répartie à nouveau.
+        assertThat(service.findBetween(DAY, DAY.plusDays(1))).extracting(PublicationOccurrenceDTO::id).containsExactly(outside);
+    }
+
+    /** Tout ou rien : une diffusion imminente bloque l'annulation entière. */
+    @Test
+    void cancels_nothing_of_a_campaign_with_an_imminent_occurrence() {
+        Campaign campaign = campaignRepository.save(new Campaign("Fête de la musique", "", null, null));
+        Publication inCampaign = publicationRepository.findById(publicationId).orElseThrow();
+        inCampaign.setCampaign(campaign);
+        publicationRepository.save(inCampaign);
+        scheduleAt(DAY.atTime(18, 30));
+        scheduleOn(DAY.plusDays(1));
+
+        clock.set(DAY.atTime(18, 28));
+
+        assertThatThrownBy(() -> service.cancelScheduledOfCampaign(campaign.getId()))
+                .isInstanceOf(OccurrenceNotModifiableException.class)
+                .hasMessageContaining("imminente");
+        assertThat(service.findByCampaign(campaign.getId())).hasSize(2);
+    }
+
     // ------------------------------------------------------------ dates multiples
 
     @Test
