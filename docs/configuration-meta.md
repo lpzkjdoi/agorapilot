@@ -13,6 +13,20 @@ ensuite depuis l'interface (page « Canal Facebook »), cf.
 > Les libellés de la console Meta changent souvent et dépendent de la langue du
 > compte. Ce qui compte, c'est le résultat attendu à chaque étape, rappelé en gras.
 
+## En bref : les trois réglages sans lesquels la connexion échoue
+
+Constatés sur la préproduction le 2026-11-10. Il faut **les trois**, et chacun
+**enregistré** :
+
+| Où | Quoi | Erreur s'il manque |
+|---|---|---|
+| Paramètres de l'app → Général → **Domaines de l'app** | `preprod.chariotte-manager.fr` (une seule fois) | `1349048` « Le domaine de cette URL n'est pas inscrit… » |
+| Même page, en bas → **Ajouter une plateforme → Site web** | URL du site `https://preprod.chariotte-manager.fr/` | même erreur `1349048` |
+| Cas d'utilisation → Personnaliser → **Facebook Login → Paramètres** → URI de redirection OAuth valides | `https://preprod.chariotte-manager.fr/api/channels/facebook/callback` | même erreur `1349048`, même domaine et Site web en place |
+
+Le message de Facebook parle de **domaine** dans les trois cas : ne pas
+s'arrêter au premier réglage s'il ne suffit pas.
+
 ## Ce qu'il faut obtenir
 
 | Élément | Où il sert | Exemple |
@@ -45,15 +59,37 @@ App → Paramètres → Général (« Paramètres de base ») :
 
 - relever l'**identifiant** et la **clé secrète** de l'app ;
 - **domaines de l'app** : le domaine de l'environnement (`<PREPROD_HOST>`, par
-  exemple `preprod.chariotte-manager.fr`). **Obligatoire** : sans lui, Facebook
-  refuse la connexion avant même d'afficher la boîte de dialogue (« Le domaine de
-  cette URL n'est pas inscrit dans ceux de l'application ») ;
+  exemple `preprod.chariotte-manager.fr`), sans `https://` ni barre oblique, et
+  **une seule fois** (un doublon peut empêcher l'enregistrement). **Obligatoire** :
+  sans lui, Facebook refuse la connexion avant même d'afficher la boîte de
+  dialogue (code `1349048`) ;
+- tout en bas : **« Ajouter une plateforme » → « Site web »**, URL du site
+  `https://<PREPROD_HOST>/` ;
+- **« Enregistrer les modifications »**, en bas de page : sans ce clic, rien
+  n'est pris en compte ;
 - **URL de la politique de confidentialité** : requise pour passer l'app en
   mode Live (étape 6).
 
+Le bandeau rouge « Currently ineligible for submission » (icône, politique de
+confidentialité, catégorie manquantes) ne bloque **pas** la connexion en mode
+développement : il concerne la soumission à Meta (étape 6).
+
 ## 3. Facebook Login : URI de redirection
 
-App → Facebook Login → Paramètres :
+Selon la console, Facebook Login n'apparaît pas dans le menu de gauche : il est
+rangé dans un **cas d'utilisation**.
+
+1. Ouvrir `https://developers.facebook.com/apps/<FACEBOOK_CLIENT_ID>/use_cases/`
+   (liste des « Cas d'utilisation » de l'app) ;
+2. sur le cas d'utilisation de l'app, **« Personnaliser »** (ou le crayon) ;
+3. sous « Facebook Login » (ou « Facebook Login for Business »),
+   **« Paramètres »**.
+
+Sur une console plus ancienne : menu de gauche → « Produits » → « Facebook
+Login » → « Paramètres ». Si Facebook Login n'existe nulle part, l'ajouter :
+« Ajouter un cas d'utilisation » (ou « Ajouter un produit »).
+
+Sur cette page :
 
 - **Connexion OAuth cliente** et **Connexion OAuth web** : activées ;
 - **Imposer HTTPS** : activé ;
@@ -67,7 +103,8 @@ App → Facebook Login → Paramètres :
   Le back construit cette adresse à partir de `FRONTEND_URL`, que
   `docker-compose.preprod.yaml` pose à `https://${PREPROD_HOST}`. Un écart
   (http au lieu de https, barre oblique finale, autre domaine) suffit à faire
-  refuser la connexion par Facebook (« URL bloquée »).
+  refuser la connexion par Facebook (« URL bloquée », ou de nouveau le code
+  `1349048`).
 
 Le VPN de la préproduction ne gêne pas : la redirection passe par le navigateur
 de la personne qui connecte, jamais par les serveurs de Facebook.
@@ -110,6 +147,12 @@ l'environnement du back.
 
 Pour connecter la Page : page « Canal Facebook » → « Connecter la Page
 Facebook », accepter les permissions demandées, puis « Contrôler maintenant ».
+Si Facebook affiche « vous avez déjà autorisé l'app », continuer : c'est normal
+pour un compte qui a déjà connecté l'app.
+
+**Sans Page connectée, rien ne part sur Facebook** : les diffusions échouent avec
+le motif « Aucune Page Facebook connectée ». Après la connexion, les reprendre
+depuis le calendrier (« Reprendre »).
 
 **Résultat attendu** : la page affiche la Page connectée, un jeton **valide** et
 la permission `pages_manage_posts`.
@@ -118,8 +161,10 @@ la permission `pages_manage_posts`.
 
 En mode développement, **les posts publiés ne sont visibles que des comptes qui
 ont un rôle dans l'app**. Pour une Page publique, l'app doit passer en **mode
-Live** (bascule en haut de la console), ce qui demande au moins l'URL de
-politique de confidentialité.
+Live** (bascule en haut de la console). Meta exige pour cela, dans Paramètres
+→ Général : une **icône** 1024 × 1024, l'**URL de la politique de
+confidentialité** et une **catégorie** (c'est ce que liste le bandeau
+« Currently ineligible for submission »).
 
 Restent **à confirmer dans la console Meta** au moment de la mise en production :
 
@@ -134,12 +179,28 @@ Restent **à confirmer dans la console Meta** au moment de la mise en production
 Le motif d'un refus s'affiche sur la page « Canal Facebook » ; le détail est dans
 les logs du back (`Connexion Facebook`).
 
+Sur le VPS, dans `/opt/agorapilot/preprod/repo` :
+
+```bash
+# Motif des refus, côté back
+docker compose -f docker-compose.preprod.yaml logs --since 1h back | grep "Connexion Facebook"
+# Ce que Facebook a renvoyé au retour (code d'erreur Meta)
+docker compose -f docker-compose.preprod.yaml logs --since 1h front | grep -o "facebook/callback?error_code=[0-9]*"
+# La connexion a-t-elle abouti ?
+docker compose -f docker-compose.preprod.yaml exec -T db sh -c \
+  'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select page_name, connected_by, connected_at, last_check_result from facebook_connections;"'
+```
+
+Un journal de sécurité sans « Page Facebook connectée » (page « Comptes ») veut
+dire qu'aucune connexion n'a jamais abouti.
+
 | Message | Cause probable | Correctif |
 |---|---|---|
-| « Facebook a refusé la connexion : … le domaine de cette URL n'est pas inscrit dans ceux de l'application … » | Domaine de l'environnement absent des domaines de l'app | Étape 2 : ajouter `<PREPROD_HOST>` aux domaines de l'app |
+| « Facebook a refusé la connexion : … le domaine de cette URL n'est pas inscrit dans ceux de l'application … » (code `1349048` dans les logs nginx) | Un des trois réglages [« En bref »](#en-bref--les-trois-réglages-sans-lesquels-la-connexion-échoue) manque ou n'est pas enregistré | Les vérifier **tous les trois**, enregistrer, réessayer |
+| « Demande de connexion inconnue ou déjà utilisée » | Retour rejoué, ou version antérieure à la PR #69 qui masquait l'erreur de Facebook | Recommencer depuis AgoraPilot ; lire le motif réel dans les logs nginx (`/api/channels/facebook/callback?error_message=…`) |
 | « URL bloquée » (sur Facebook) | URI de redirection absente ou différente | Étape 3 : recopier l'URI exacte |
 | « Le compte Facebook connecté n'administre pas la Page … » | Mauvais compte, ou `FACEBOOK_PAGE_ID` erroné | Se connecter avec un administrateur de la Page ; vérifier l'identifiant |
 | « La permission pages_manage_posts n'a pas été accordée à AgoraPilot. » | Permission décochée dans la boîte de dialogue | Reconnecter en acceptant toutes les permissions |
 | « Facebook a refusé la connexion : … » | Secret erroné, app désactivée, compte sans rôle dans l'app | Étapes 2 et 4 |
-| « Demande de connexion expirée / inconnue » | Plus de 10 minutes sur Facebook, ou retour rejoué | Recommencer depuis AgoraPilot |
+| « Demande de connexion expirée » | Plus de 10 minutes sur Facebook | Recommencer depuis AgoraPilot |
 | Posts invisibles pour le public | App en mode développement | Étape 6 |
