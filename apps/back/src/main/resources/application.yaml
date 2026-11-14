@@ -107,6 +107,33 @@ agorapilot:
     window-start: ${PUBLICATION_WINDOW_START:15:00}
     window-end: ${PUBLICATION_WINDOW_END:22:00}
 
+  notifications:
+    # Interrupteur général. Sans URL, une cible est de toute façon ignorée : le
+    # développement local et les tests n'envoient donc rien par défaut.
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    # Affiché sur chaque notification (nom d'expéditeur, pied de carte), pour
+    # distinguer la préproduction d'une future production dans les mêmes salons.
+    environment: ${NOTIFICATIONS_ENVIRONMENT:${spring.profiles.active:dev}}
+    # Programme du jour (cron Spring, heure du fuseau TZ du conteneur).
+    daily-summary-cron: ${NOTIFICATIONS_DAILY_SUMMARY_CRON:0 0 7 * * *}
+    # Une cible par salon. Les URL de webhook portent leur jeton et le dépôt est
+    # public : elles ne viennent que de l'environnement, jamais d'ici.
+    # `type` : DISCORD (carte mise en forme) ou WEBHOOK (JSON brut).
+    # `events` : DAILY_SUMMARY, DELIVERY_FAILED, TEST.
+    targets:
+      - name: programme-du-jour
+        type: DISCORD
+        url: ${NOTIFICATIONS_DISCORD_PROGRAMME_URL:}
+        events: DAILY_SUMMARY
+      - name: alertes
+        type: DISCORD
+        url: ${NOTIFICATIONS_DISCORD_ALERTES_URL:}
+        events: DELIVERY_FAILED
+      - name: essais-notifications
+        type: DISCORD
+        url: ${NOTIFICATIONS_DISCORD_ESSAIS_URL:}
+        events: TEST
+
   media:
     # Volume disque monté sur le conteneur back en préproduction ; répertoire
     # local ignoré par git en développement.

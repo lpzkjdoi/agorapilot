@@ -15,7 +15,10 @@
 #               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
 #               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative)
 #   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY,
-#               AGORAPILOT_ADMIN_PASSWORD (facultatif)
+#               AGORAPILOT_ADMIN_PASSWORD (facultatif),
+#               NOTIFICATIONS_DISCORD_PROGRAMME_URL, NOTIFICATIONS_DISCORD_ALERTES_URL,
+#               NOTIFICATIONS_DISCORD_ESSAIS_URL (facultatifs : webhooks Discord,
+#               cf. docs/deploiement-preprod.md § Notifications Discord)
 #
 # ⚠️ `POSTGRES_PASSWORD` doit reprendre **le mot de passe déjà en place** sur le
 # VPS : PostgreSQL conserve celui fixé à l'initialisation du volume, une valeur
@@ -248,6 +251,10 @@ jobs:
           TZ: ${{ vars.TZ || 'Europe/Paris' }}
           AGORAPILOT_ADMIN_USERNAME: ${{ vars.AGORAPILOT_ADMIN_USERNAME }}
           AGORAPILOT_ADMIN_PASSWORD: ${{ secrets.AGORAPILOT_ADMIN_PASSWORD }}
+          # Facultatifs : sans eux, le salon correspondant ne reçoit rien.
+          NOTIFICATIONS_DISCORD_PROGRAMME_URL: ${{ secrets.NOTIFICATIONS_DISCORD_PROGRAMME_URL }}
+          NOTIFICATIONS_DISCORD_ALERTES_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ALERTES_URL }}
+          NOTIFICATIONS_DISCORD_ESSAIS_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ESSAIS_URL }}
           OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
@@ -277,6 +284,9 @@ jobs:
             printf 'TZ=%s\n'                    "$TZ"
             printf 'AGORAPILOT_ADMIN_USERNAME=%s\n' "$AGORAPILOT_ADMIN_USERNAME"
             printf 'AGORAPILOT_ADMIN_PASSWORD=%s\n' "$AGORAPILOT_ADMIN_PASSWORD"
+            printf 'NOTIFICATIONS_DISCORD_PROGRAMME_URL=%s\n' "$NOTIFICATIONS_DISCORD_PROGRAMME_URL"
+            printf 'NOTIFICATIONS_DISCORD_ALERTES_URL=%s\n'   "$NOTIFICATIONS_DISCORD_ALERTES_URL"
+            printf 'NOTIFICATIONS_DISCORD_ESSAIS_URL=%s\n'    "$NOTIFICATIONS_DISCORD_ESSAIS_URL"
           } > env.preprod
 
       - name: Sauvegarder le .env existant

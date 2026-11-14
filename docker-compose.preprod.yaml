@@ -77,6 +77,12 @@ services:
       # `preprod` tant qu'on ne veut pas les changer.
       PUBLICATION_WINDOW_START: ${PUBLICATION_WINDOW_START:-15:00}
       PUBLICATION_WINDOW_END: ${PUBLICATION_WINDOW_END:-22:00}
+      # Webhooks des salons Discord de notification. Facultatifs : une URL vide
+      # désactive simplement le salon correspondant. Ce sont des secrets (le
+      # jeton est dans l'URL), à saisir dans l'Environment GitHub `preprod`.
+      NOTIFICATIONS_DISCORD_PROGRAMME_URL: ${NOTIFICATIONS_DISCORD_PROGRAMME_URL:-}
+      NOTIFICATIONS_DISCORD_ALERTES_URL: ${NOTIFICATIONS_DISCORD_ALERTES_URL:-}
+      NOTIFICATIONS_DISCORD_ESSAIS_URL: ${NOTIFICATIONS_DISCORD_ESSAIS_URL:-}
       # Pas de token de page ici : il est obtenu en connectant la Page depuis
       # la page « Canal Facebook » et stocké en base (table facebook_connections).
       # Le contrôle quotidien du jeton tourne en cron "0 0 7 * * *", à l'heure TZ.

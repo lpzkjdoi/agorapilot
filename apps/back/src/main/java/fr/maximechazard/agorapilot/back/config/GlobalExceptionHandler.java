@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import fr.maximechazard.agorapilot.back.notification.NotificationTargetNotFoundException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
@@ -172,6 +173,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VerificationNotAllowedException.class)
     public ResponseEntity<ApiError> handleVerificationNotAllowedException(VerificationNotAllowedException exception) {
         return build(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    @ExceptionHandler(NotificationTargetNotFoundException.class)
+    public ResponseEntity<ApiError> handleNotificationTargetNotFoundException(NotificationTargetNotFoundException exception) {
+        return build(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {

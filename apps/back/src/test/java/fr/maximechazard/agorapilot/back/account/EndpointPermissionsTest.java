@@ -122,6 +122,9 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.POST, "/api/channels/facebook/connection/check", CHANNELS_MANAGE),
                 new Endpoint(HttpMethod.GET, "/admin/scheduler/status", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.GET, "/admin/notifications/targets", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/admin/notifications/test", CHANNELS_MANAGE),
+                new Endpoint(HttpMethod.POST, "/admin/notifications/daily-summary", CHANNELS_MANAGE),
 
                 new Endpoint(HttpMethod.GET, "/api/campaigns", CAMPAIGNS_READ),
                 new Endpoint(HttpMethod.POST, "/api/campaigns", CAMPAIGNS_WRITE),
