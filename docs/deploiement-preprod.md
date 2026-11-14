@@ -456,6 +456,79 @@ Une livraison `FAILED` n'est jamais retentée automatiquement. Une fois la cause
 réglée, la reprendre depuis le calendrier (bouton **« Reprendre »** dans la
 bulle du jour, ou `POST /api/occurrences/{id}/retry` avec `{"date": …}`).
 
+## Notifications Discord
+
+Le back poste dans trois salons Discord, chacun par son webhook (cf.
+[notifications](./notifications.md)). L'URL d'un webhook **suffit à poster dans
+le salon** : c'est un secret. Le dépôt étant public, elle n'est jamais écrite
+dans le code ni dans une variable GitHub.
+
+### Les secrets
+
+Ce sont trois **secrets** de l'Environment GitHub `preprod`, enregistrés le
+2026-11-14 :
+
+| Secret | Salon | Reçoit |
+|---|---|---|
+| `NOTIFICATIONS_DISCORD_PROGRAMME_URL` | `#programme-du-jour` | le programme du jour, à 7h (`DAILY_SUMMARY`) |
+| `NOTIFICATIONS_DISCORD_ALERTES_URL` | `#alertes` | les échecs de diffusion (`DELIVERY_FAILED`) |
+| `NOTIFICATIONS_DISCORD_ESSAIS_URL` | `#essais-notifications` | les envois de test (`TEST`) |
+
+Valeur attendue : l'URL complète du webhook,
+`https://discord.com/api/webhooks/<id>/<jeton>`, sans `?wait=true` (le back
+l'ajoute).
+
+**Facultatifs** : un secret absent ou vide ne fait pas échouer le déploiement.
+Le salon correspondant ne reçoit simplement rien.
+
+**Trajet** : secret de l'Environment `preprod` → étape « Générer le .env de
+préproduction » de `deploy-preprod.yml` → `.env` du VPS (en `600`) → variable
+d'environnement du conteneur `back` (`docker-compose.preprod.yaml`) → cible de
+même nom dans `application.yaml` (`agorapilot.notifications.targets`). Un
+changement de secret n'est donc pris en compte **qu'au déploiement suivant**.
+
+### Créer ou remplacer un webhook
+
+À faire si une URL a fuité (collée dans un ticket, un log, un commit…) ou si un
+salon est recréé :
+
+1. Dans Discord : *Modifier le salon → Intégrations → Webhooks*. Supprimer
+   l'ancien webhook, ce qui invalide aussitôt son URL, puis en créer un nouveau
+   et *Copier l'URL du webhook*.
+2. Mettre à jour le secret. Passer la valeur par l'entrée standard, pour
+   qu'elle n'apparaisse ni dans l'historique du shell ni dans la liste des
+   processus :
+
+   ```bash
+   gh secret set NOTIFICATIONS_DISCORD_ALERTES_URL --env preprod
+   ```
+
+   (`gh` demande la valeur ; on peut aussi passer par *Settings → Environments →
+   preprod → Environment secrets*.)
+3. Relancer le déploiement (*Actions → Deploy preprod → Run workflow*).
+4. Vérifier le salon (ci-dessous).
+
+`gh secret list --env preprod` montre les secrets présents et leur date de mise
+à jour, jamais leur valeur.
+
+### Vérifier
+
+Avec la session ouverte comme dans [Appeler l'API depuis le
+VPS](#appeler-lapi-depuis-le-vps) :
+
+```bash
+# Les cibles, et si chacune a bien reçu son URL (l'URL n'est jamais affichée)
+curl -s -H "$C" $B/admin/notifications/targets
+# Une carte de test dans un salon donné
+curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" "$B/admin/notifications/test?target=alertes"
+# Le programme du jour, tout de suite
+curl -s -X POST -H "$C" -H "X-XSRF-TOKEN: $XSRF" $B/admin/notifications/daily-summary
+```
+
+Chaque envoi répond, par salon, `delivered` et le motif d'un éventuel échec.
+`configured: false` signale un secret absent au dernier déploiement. Un
+`404 Not Found` de Discord signale un webhook supprimé.
+
 ## Déploiement automatique
 
 Depuis [`deploy-preprod.yml`](../.github/workflows/deploy-preprod.yml), toute
@@ -491,7 +564,7 @@ désormais la source de vérité, via un Environment `preprod`
 | **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `PREPROD_ALLOWED_CIDRS`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_API_VERSION`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_PAGE_ID`, `TZ` |
 | **Variables** (accès au VPS) | `PREPROD_SSH_HOST`, `PREPROD_SSH_USER`, `PREPROD_SSH_KNOWN_HOSTS`, `PREPROD_PATH` |
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
-| **Secrets** (facultatifs, notifications) | `NOTIFICATIONS_DISCORD_PROGRAMME_URL`, `NOTIFICATIONS_DISCORD_ALERTES_URL`, `NOTIFICATIONS_DISCORD_ESSAIS_URL` : webhooks des salons Discord, cf. [notifications](./notifications.md). Absents, le salon correspondant ne reçoit rien. |
+| **Secrets** (facultatifs) | `NOTIFICATIONS_DISCORD_PROGRAMME_URL`, `NOTIFICATIONS_DISCORD_ALERTES_URL`, `NOTIFICATIONS_DISCORD_ESSAIS_URL` : webhooks des salons Discord, cf. [Notifications Discord](#notifications-discord). Absents, le salon correspondant ne reçoit rien. |
 
 `PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
 `/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`

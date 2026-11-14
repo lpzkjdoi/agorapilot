@@ -82,9 +82,16 @@ Documentation de référence : [`docs/notifications.md`](../notifications.md).
 
 ## Mise en service
 
-Ajouter les trois URL comme **secrets** de l'Environment GitHub `preprod`, puis
-redéployer. Ensuite, depuis le VPS :
-`POST /admin/notifications/test?target=essais-notifications`.
+- Les trois URL sont enregistrées comme **secrets** de l'Environment GitHub
+  `preprod` (2026-11-14, `gh secret set` en passant la valeur par l'entrée
+  standard). Elles seront prises en compte au premier déploiement qui suit la
+  fusion. Procédure de remplacement et de vérification : runbook, section
+  [Notifications Discord](../deploiement-preprod.md#notifications-discord).
+- Rendu vérifié dans un vrai Discord : une carte de test, produite par le vrai
+  renderer et le vrai sender, a été acceptée et s'affiche correctement dans
+  `#essais-notifications`. Le texte échappé (`essais-notifications`) apparaît
+  sans barre oblique. Les heures `<t:…>` et les sous-lignes `-#` du programme
+  du jour n'ont pas encore été vues en réel.
 
 ## Commit
 

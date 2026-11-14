@@ -69,7 +69,13 @@ donc par défaut.
 | `NOTIFICATIONS_DAILY_SUMMARY_CRON` | Heure du programme du jour (`0 0 7 * * *`) |
 
 En préproduction, les trois URL sont des **secrets** de l'Environment GitHub
-`preprod`, recopiés dans le `.env` du VPS à chaque déploiement.
+`preprod`, recopiés dans le `.env` du VPS à chaque déploiement. Leur trajet,
+leur remplacement en cas de fuite et leur vérification sont décrits dans le
+runbook : [Notifications Discord](./deploiement-preprod.md#notifications-discord).
+
+En développement local, rien n'est configuré : pour essayer un salon, exporter
+la variable avant `mvn spring-boot:run`, ou l'ajouter au `.env` racine (ignoré
+par git) lu par `docker-compose.yaml`.
 
 ### Créer un webhook Discord
 

@@ -15,7 +15,10 @@
 #               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
 #               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative)
 #   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY,
-#               AGORAPILOT_ADMIN_PASSWORD (facultatif)
+#               AGORAPILOT_ADMIN_PASSWORD (facultatif),
+#               NOTIFICATIONS_DISCORD_PROGRAMME_URL, NOTIFICATIONS_DISCORD_ALERTES_URL,
+#               NOTIFICATIONS_DISCORD_ESSAIS_URL (facultatifs : webhooks Discord,
+#               cf. docs/deploiement-preprod.md § Notifications Discord)
 #
 # ⚠️ `POSTGRES_PASSWORD` doit reprendre **le mot de passe déjà en place** sur le
 # VPS : PostgreSQL conserve celui fixé à l'initialisation du volume, une valeur
