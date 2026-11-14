@@ -6,6 +6,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 - [`gitflow.md`](./gitflow.md) — modèle de branches, cycle de contribution, versionnage et conventions CI/CD. Référence mise à jour quand le processus évolue.
 - [`deploiement-preprod.md`](./deploiement-preprod.md) — runbook de la préproduction sur VPS : prérequis, variables d'environnement, commandes de déploiement et vérifications.
+- [`notifications.md`](./notifications.md) — notifications Discord et webhook : ce qui est notifié, architecture (factory de senders), configuration des salons, vérification et ajout d'un canal.
 - [`configuration-meta.md`](./configuration-meta.md) — configurer l'app Meta du canal Facebook (identifiants, URI de redirection, permissions, rôles, mode Live) et dépanner la connexion de la Page.
 - [`changelog/`](./changelog) — un compte-rendu par tâche/évolution significative : contexte, changements, vérification effectuée, lien vers le commit correspondant. Une nouvelle entrée est ajoutée à chaque tâche de développement.
 - [`proposals/`](./proposals) — propositions d'architecture validées sur le principe mais pas encore mises en œuvre, à ressortir le moment venu.
@@ -75,3 +76,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-10 | [Campagnes : suivre et piloter la planification de ses publications](./changelog/2026-11-10-campagnes-planification.md) | _voir PR_ |
 | 2026-11-10 | [Campagnes : le calendrier de la campagne](./changelog/2026-11-10-campagnes-calendrier.md) | _voir PR_ |
 | 2026-11-10 | [Annuler ou clôturer une campagne déprogramme ses diffusions](./changelog/2026-11-10-campagnes-annulation-diffusions.md) | _voir PR_ |
+| 2026-11-14 | [Notifications Discord : programme du jour et échecs de diffusion](./changelog/2026-11-14-notifications-discord.md) | _voir PR_ |

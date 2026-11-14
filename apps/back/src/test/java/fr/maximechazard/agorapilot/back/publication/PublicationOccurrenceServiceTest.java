@@ -23,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import fr.maximechazard.agorapilot.back.publication.events.OccurrenceFailedEvent;
 
 import java.lang.reflect.Field;
 import java.time.Clock;
@@ -70,6 +72,8 @@ class PublicationOccurrenceServiceTest {
     private PublisherRegistry publisherRegistry;
     @Mock
     private Publisher publisher;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private PublicationOccurrenceService service;
 
@@ -83,7 +87,8 @@ class PublicationOccurrenceServiceTest {
                 new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper()),
                 new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
                 mock(SecurityEventService.class),
-                CLOCK
+                CLOCK,
+                eventPublisher
         );
     }
 
@@ -261,6 +266,52 @@ class PublicationOccurrenceServiceTest {
 
             assertThat(occurrence.getStatus()).isEqualTo(PublicationOccurrenceStatus.FAILED);
             verify(publicationOccurrenceRepository).save(occurrence);
+        }
+
+        /** Le passage en échec est signalé, avec de quoi en parler hors transaction. */
+        @Test
+        void announces_the_transition_to_failed() {
+            PublicationOccurrence occurrence = occurrence();
+            occurrence.setPublication(publication());
+            PublicationDelivery failed = delivery(occurrence, DeliveryStatus.FAILED);
+            failed.setErrorMessage("(#190) session has expired");
+            when(publicationDeliveryRepository.findAllByOccurrence(occurrence))
+                    .thenReturn(List.of(delivery(occurrence, DeliveryStatus.PUBLISHED), failed));
+
+            service.refreshStatus(occurrence);
+
+            ArgumentCaptor<OccurrenceFailedEvent> event = ArgumentCaptor.forClass(OccurrenceFailedEvent.class);
+            verify(eventPublisher).publishEvent(event.capture());
+            assertThat(event.getValue().occurrenceId()).isEqualTo(42L);
+            assertThat(event.getValue().publicationId()).isEqualTo(PUBLICATION_ID);
+            assertThat(event.getValue().publicationContent()).isEqualTo("Marché de Noël samedi");
+            assertThat(event.getValue().scheduledAt()).isEqualTo(SCHEDULED_AT);
+            assertThat(event.getValue().failures()).containsExactly(new OccurrenceFailedEvent.FailedDelivery(
+                    failed.getChannel(), "(#190) session has expired"));
+        }
+
+        /** Déjà en échec, l'occurrence ne renotifie pas à chaque rafraîchissement. */
+        @Test
+        void does_not_announce_an_occurrence_already_failed() {
+            PublicationOccurrence occurrence = occurrence();
+            occurrence.setStatus(PublicationOccurrenceStatus.FAILED);
+            when(publicationDeliveryRepository.findAllByOccurrence(occurrence))
+                    .thenReturn(List.of(delivery(occurrence, DeliveryStatus.FAILED)));
+
+            service.refreshStatus(occurrence);
+
+            verifyNoInteractions(eventPublisher);
+        }
+
+        @Test
+        void does_not_announce_a_successful_occurrence() {
+            PublicationOccurrence occurrence = occurrence();
+            when(publicationDeliveryRepository.findAllByOccurrence(occurrence))
+                    .thenReturn(List.of(delivery(occurrence, DeliveryStatus.PUBLISHED)));
+
+            service.refreshStatus(occurrence);
+
+            verifyNoInteractions(eventPublisher);
         }
 
         @Test

@@ -491,6 +491,7 @@ désormais la source de vérité, via un Environment `preprod`
 | **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `PREPROD_ALLOWED_CIDRS`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_API_VERSION`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_PAGE_ID`, `TZ` |
 | **Variables** (accès au VPS) | `PREPROD_SSH_HOST`, `PREPROD_SSH_USER`, `PREPROD_SSH_KNOWN_HOSTS`, `PREPROD_PATH` |
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
+| **Secrets** (facultatifs, notifications) | `NOTIFICATIONS_DISCORD_PROGRAMME_URL`, `NOTIFICATIONS_DISCORD_ALERTES_URL`, `NOTIFICATIONS_DISCORD_ESSAIS_URL` : webhooks des salons Discord, cf. [notifications](./notifications.md). Absents, le salon correspondant ne reçoit rien. |
 
 `PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
 `/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`

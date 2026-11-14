@@ -248,6 +248,10 @@ jobs:
           TZ: ${{ vars.TZ || 'Europe/Paris' }}
           AGORAPILOT_ADMIN_USERNAME: ${{ vars.AGORAPILOT_ADMIN_USERNAME }}
           AGORAPILOT_ADMIN_PASSWORD: ${{ secrets.AGORAPILOT_ADMIN_PASSWORD }}
+          # Facultatifs : sans eux, le salon correspondant ne reçoit rien.
+          NOTIFICATIONS_DISCORD_PROGRAMME_URL: ${{ secrets.NOTIFICATIONS_DISCORD_PROGRAMME_URL }}
+          NOTIFICATIONS_DISCORD_ALERTES_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ALERTES_URL }}
+          NOTIFICATIONS_DISCORD_ESSAIS_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ESSAIS_URL }}
           OWNER: ${{ github.repository_owner }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
@@ -277,6 +281,9 @@ jobs:
             printf 'TZ=%s\n'                    "$TZ"
             printf 'AGORAPILOT_ADMIN_USERNAME=%s\n' "$AGORAPILOT_ADMIN_USERNAME"
             printf 'AGORAPILOT_ADMIN_PASSWORD=%s\n' "$AGORAPILOT_ADMIN_PASSWORD"
+            printf 'NOTIFICATIONS_DISCORD_PROGRAMME_URL=%s\n' "$NOTIFICATIONS_DISCORD_PROGRAMME_URL"
+            printf 'NOTIFICATIONS_DISCORD_ALERTES_URL=%s\n'   "$NOTIFICATIONS_DISCORD_ALERTES_URL"
+            printf 'NOTIFICATIONS_DISCORD_ESSAIS_URL=%s\n'    "$NOTIFICATIONS_DISCORD_ESSAIS_URL"
           } > env.preprod
 
       - name: Sauvegarder le .env existant

@@ -1,6 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication;
 
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
+import fr.maximechazard.agorapilot.back.publication.events.OccurrenceFailedEvent;
 import fr.maximechazard.agorapilot.back.publication.dtos.mappers.PublicationOccurrenceMapper;
 import fr.maximechazard.agorapilot.back.publication.exceptions.InvalidScheduleException;
 import fr.maximechazard.agorapilot.back.publication.exceptions.OccurrenceNotFoundException;
@@ -19,6 +20,7 @@ import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +61,7 @@ public class PublicationOccurrenceService {
     private final SchedulingProperties schedulingProperties;
     private final SecurityEventService events;
     private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Programme une diffusion : une occurrence porteuse d'une livraison
@@ -583,6 +586,13 @@ public class PublicationOccurrenceService {
         if (occurrence.getStatus() != status) {
             occurrence.setStatus(status);
             publicationOccurrenceRepository.save(occurrence);
+
+            // Sur le seul passage en échec : une occurrence déjà FAILED ne
+            // renotifie pas. Les écouteurs ne reçoivent l'événement qu'après
+            // validation de la transaction, donc pour un échec réellement tracé.
+            if (status == PublicationOccurrenceStatus.FAILED) {
+                eventPublisher.publishEvent(OccurrenceFailedEvent.of(occurrence, deliveries));
+            }
         }
     }
 
