@@ -120,7 +120,12 @@ ne rien perdre.
 - [ ] Implémentation du canal Intramuros (pour l'instant seulement une valeur d'enum et des tokens de design)
 - [ ] Appliquer Prettier au code front et le vérifier en CI (installé, scripts `format` / `format:check` présents, mais 136 fichiers non conformes)
 - [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe), avec `AGORAPILOT_ADMIN_USERNAME` / `AGORAPILOT_ADMIN_PASSWORD` : sans eux, une base locale vide n'a aucun compte
-- [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md)
+- [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md) ; **périmètre à réfléchir ensemble** avant toute mise en œuvre
+- [ ] **Export XLSX d'une publication** : endpoint back `POST /api/publications/{id}/xlsx` (le front appelle déjà `generateXlsx`, qui échoue faute d'endpoint) et action déplacée du menu « … » vers le menu « Diffuser » de la carte
+- [ ] **Carte publication** : remplacer le bouton « … » par un bouton « Supprimer » (visuels et campagne ont déjà leur accès direct sur la carte)
+- [ ] **Application responsive** : toutes les pages utilisables sur tablette et mobile
+- [ ] **Grille des publications plus dense** : jusqu'à 5 cartes par ligne en plein écran (3 aujourd'hui, colonnes de 22rem minimum)
+- [ ] **Médiathèque : retrouver ses visuels** — recherche et/ou dossiers, **à réfléchir ensemble**
 
 ### Fait
 
