@@ -80,7 +80,7 @@ ne rien perdre.
 - [ ] **Workflow de déploiement prod** : tag `vX.Y.Z` sur `main`, GitHub Environment `production` avec approbation manuelle (cf. [`gitflow.md`](docs/gitflow.md))
 - [ ] **Environnement de production** : compose et `.env` dédiés, domaine, DNS, certificat. Contrairement à la préprod, la prod est **ouverte sur Internet** (pas de filtre VPN) — choisir aussi la machine : le VPS actuel (1 vCPU, 3,9 Go, partagé) ou un autre
 - [ ] **Prérequis prod de `gitflow.md`** : `nginx.prod.conf` sans le proxy Swagger, tags d'image porteurs de l'environnement (`preprod-<sha>` / `prod-<version>`), images de base épinglées par digest
-- [ ] **Sauvegardes** automatiques et hors du VPS des deux volumes non reconstructibles (`db-data` **et** `media-data`), avec rétention, et une restauration testée au moins une fois
+- [ ] **Sauvegardes** automatiques et hors du VPS des deux volumes non reconstructibles (`db-data` **et** `media-data`), avec rétention, et une restauration testée au moins une fois — **mis de côté le 2026-11-17** à la demande de Maxime, à reprendre avant la mise en production
 - [x] **Connexion du canal Facebook depuis l’interface** : remplace le bootstrap à la main (Graph Explorer + `curl` sur la boucle locale du VPS) et le renouvellement actuel, qui ne se déclenche jamais (jeton de Page permanent) et dont le chemin de secours repose sur un jeton utilisateur expiré au bout d'environ 60 jours :
   - [x] page « Canal Facebook » (`channels:manage`) : état du jeton (valide, permissions, connecté par qui et quand, dernier contrôle) et bouton « Connecter / Reconnecter avec Facebook » via le flux OAuth de Facebook Login — attention, le cookie de session est en `SameSite=strict` et ne revient pas au callback depuis facebook.com : `state` à usage unique stocké côté serveur
   - [x] contrôle quotidien `debug_token` du jeton de Page (`is_valid`, `pages_manage_posts`, `data_access_expires_at`), résultat conservé en base : un jeton invalidé (mot de passe changé, rôle sur la Page perdu, autorisation retirée) suspend le canal **avant** qu'une diffusion n'échoue
@@ -122,9 +122,9 @@ ne rien perdre.
 - [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe), avec `AGORAPILOT_ADMIN_USERNAME` / `AGORAPILOT_ADMIN_PASSWORD` : sans eux, une base locale vide n'a aucun compte
 - [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md) ; **périmètre à réfléchir ensemble** avant toute mise en œuvre
 - [ ] **Export XLSX d'une publication** : endpoint back `POST /api/publications/{id}/xlsx` (le front appelle déjà `generateXlsx`, qui échoue faute d'endpoint) et action déplacée du menu « … » vers le menu « Diffuser » de la carte
-- [ ] **Carte publication** : remplacer le bouton « … » par un bouton « Supprimer » (visuels et campagne ont déjà leur accès direct sur la carte)
+- [x] **Carte publication** : remplacer le bouton « … » par un bouton « Supprimer » (2026-11-17, cf. [changelog](docs/changelog/2026-11-17-carte-bouton-supprimer.md))
 - [ ] **Application responsive** : toutes les pages utilisables sur tablette et mobile
-- [ ] **Grille des publications plus dense** : jusqu'à 5 cartes par ligne en plein écran (3 aujourd'hui, colonnes de 22rem minimum)
+- [x] **Grille des publications plus dense** : jusqu'à 5 cartes par ligne en plein écran (2026-11-17, cf. [changelog](docs/changelog/2026-11-17-grille-5-colonnes.md))
 - [ ] **Médiathèque : retrouver ses visuels** — recherche et/ou dossiers, **à réfléchir ensemble**
 
 ### Fait
