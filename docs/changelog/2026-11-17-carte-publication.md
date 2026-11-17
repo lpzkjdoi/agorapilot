@@ -41,6 +41,13 @@ des tokens existants.
 - **Droits** : une action qu'un compte ne peut pas faire n'est pas proposée.
   Entrées et sorties du composant inchangées, la page Publications n'a pas
   bougé.
+- **Styles partagés** : les boutons pleins (`.solid-button-*`), les
+  boutons-icônes (`.icon-button`) et les menus déroulants (`.dropdown-*`) sont
+  passés dans `styles.css`, pour d'autres écrans aussi. Ce déplacement est
+  aussi nécessaire parce qu'avec eux, la carte dépassait le budget de 4 kB par
+  composant défini dans `angular.json`. Elle fait maintenant 3,75 kB : c'est
+  sous la limite d'erreur, mais encore au-dessus du seuil d'avertissement
+  (3 kB).
 - **Spec de la page** : elle déclenche désormais les sorties de la carte
   (`emitFrom`) au lieu de cliquer sur ses boutons internes. Le détail des menus
   est couvert par le spec de la carte.

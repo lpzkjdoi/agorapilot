@@ -889,7 +889,7 @@ describe('PublicationsPageComponent', () => {
       const { fixture, compiled } = confirmDelete();
 
       expect(cardAt(fixture, 1).deleting()).toBe(true);
-      expect(compiled.querySelectorAll('app-publication-card')[1].querySelector('.button-pending')?.textContent)
+      expect(compiled.querySelectorAll('app-publication-card')[1].querySelector('.solid-button-pending')?.textContent)
         .toContain('Suppression…');
 
       httpTesting.expectOne('/api/publications/2').flush(null, { status: 204, statusText: 'No Content' });

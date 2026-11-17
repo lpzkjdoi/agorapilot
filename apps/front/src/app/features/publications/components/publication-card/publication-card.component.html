@@ -116,10 +116,10 @@
         Ses diffusions programmées seront annulées.
       </p>
       <div class="confirm-actions">
-        <button type="button" class="button button-secondary action-cancel" (click)="confirmingDelete.set(false)">
+        <button type="button" class="solid-button solid-button-secondary action-cancel" (click)="confirmingDelete.set(false)">
           Annuler
         </button>
-        <button type="button" class="button button-danger action-confirm-delete" (click)="confirmDelete()">
+        <button type="button" class="solid-button solid-button-danger action-confirm-delete" (click)="confirmDelete()">
           Supprimer
         </button>
       </div>
@@ -127,18 +127,18 @@
   } @else {
     <div class="footer">
       @if (deleting()) {
-        <button type="button" class="button button-pending" disabled>
+        <button type="button" class="solid-button solid-button-pending" disabled>
           <app-loader size="sm" label="Suppression en cours…" />
           Suppression…
         </button>
       } @else if (publishing()) {
-        <button type="button" class="button button-pending action-publishing" disabled>
+        <button type="button" class="solid-button solid-button-pending action-publishing" disabled>
           <app-loader size="sm" label="Publication en cours…" />
           Publication sur Facebook…
         </button>
       } @else if (verified() && canDiffuse()) {
         <button type="button"
-                class="button button-primary action-diffuse"
+                class="solid-button solid-button-primary action-diffuse"
                 aria-haspopup="menu"
                 [attr.aria-expanded]="openMenu() === 'diffuse'"
                 (click)="toggleMenu('diffuse')"
@@ -155,7 +155,7 @@
           </svg>
         </button>
       } @else if (!verified() && canEdit()) {
-        <button type="button" class="button button-dark action-review" (click)="edit.emit(publication())">
+        <button type="button" class="solid-button solid-button-dark action-review" (click)="edit.emit(publication())">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12.5l4.5 4.5L19 7.5" />
@@ -191,31 +191,31 @@
       </button>
 
       @if (openMenu() === 'diffuse') {
-        <div class="menu menu-start" role="menu" aria-label="Diffuser">
+        <div class="dropdown menu-start" role="menu" aria-label="Diffuser">
           @if (canPublish()) {
-            <button type="button" role="menuitem" class="menu-item action-facebook" (click)="pick(publishOnFacebook)">
-              <span class="menu-item-icon menu-item-icon-facebook" aria-hidden="true">
+            <button type="button" role="menuitem" class="dropdown-item action-facebook" (click)="pick(publishOnFacebook)">
+              <span class="dropdown-item-icon facebook-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path
                     d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
                 </svg>
               </span>
-              <span class="menu-item-text">
+              <span class="dropdown-item-text">
                 <strong>Publier maintenant</strong>
                 <span>sur la page Facebook</span>
               </span>
             </button>
           }
           @if (canSchedule()) {
-            <button type="button" role="menuitem" class="menu-item action-schedule" (click)="pick(schedule)">
-              <span class="menu-item-icon" aria-hidden="true">
+            <button type="button" role="menuitem" class="dropdown-item action-schedule" (click)="pick(schedule)">
+              <span class="dropdown-item-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="5" width="18" height="16" rx="2" />
                   <path d="M3 10h18M8 3v4M16 3v4" />
                 </svg>
               </span>
-              <span class="menu-item-text">
+              <span class="dropdown-item-text">
                 <strong>Programmer…</strong>
                 <span>choisir la date et les canaux</span>
               </span>
@@ -225,9 +225,9 @@
       }
 
       @if (openMenu() === 'more') {
-        <div class="menu menu-end" role="menu" aria-label="Plus d'actions">
+        <div class="dropdown menu-end" role="menu" aria-label="Plus d'actions">
           @if (canManageMedias()) {
-            <button type="button" role="menuitem" class="menu-item action-medias" (click)="pick(manageMedias)">
+            <button type="button" role="menuitem" class="dropdown-item action-medias" (click)="pick(manageMedias)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -238,7 +238,7 @@
             </button>
           }
           @if (canAssignCampaign()) {
-            <button type="button" role="menuitem" class="menu-item action-campaign" (click)="pick(assignCampaign)">
+            <button type="button" role="menuitem" class="dropdown-item action-campaign" (click)="pick(assignCampaign)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z" />
@@ -247,7 +247,7 @@
               {{ campaignName() ? 'Changer de campagne' : 'Ajouter à une campagne' }}
             </button>
           }
-          <button type="button" role="menuitem" class="menu-item action-xlsx" (click)="pick(generateXlsx)">
+          <button type="button" role="menuitem" class="dropdown-item action-xlsx" (click)="pick(generateXlsx)">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
@@ -256,8 +256,8 @@
             Exporter en XLSX
           </button>
           @if (canDelete()) {
-            <hr class="menu-separator" />
-            <button type="button" role="menuitem" class="menu-item menu-item-danger action-delete" (click)="askDelete()">
+            <hr class="dropdown-separator" />
+            <button type="button" role="menuitem" class="dropdown-item dropdown-item-danger action-delete" (click)="askDelete()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />

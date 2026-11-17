@@ -406,7 +406,7 @@ describe('PublicationCardComponent', () => {
     fixture.componentRef.setInput('deleting', true);
     fixture.detectChanges();
 
-    const button = el(fixture).querySelector<HTMLButtonElement>('.button-pending');
+    const button = el(fixture).querySelector<HTMLButtonElement>('.solid-button-pending');
     expect(button?.disabled).toBe(true);
     expect(button?.textContent).toContain('Suppression…');
     expect(el(fixture).querySelector('.action-diffuse')).toBeNull();
