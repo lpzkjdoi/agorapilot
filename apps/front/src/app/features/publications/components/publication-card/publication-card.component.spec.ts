@@ -229,49 +229,36 @@ describe('PublicationCardComponent', () => {
     expect(edit).toHaveBeenCalledWith(verified);
   });
 
-  it('should gather the secondary actions in the `⋯` menu', async () => {
-    const fixture = await render({ ...verified, medias: [image(4), image(5)] });
-    const component = fixture.componentInstance;
-    const xlsx = vi.fn();
-    const medias = vi.fn();
-    const campaign = vi.fn();
-    component.generateXlsx.subscribe(xlsx);
-    component.manageMedias.subscribe(medias);
-    component.assignCampaign.subscribe(campaign);
-
-    click(fixture, '.action-more');
-    expect(el(fixture).querySelector('.action-medias')?.textContent).toContain('Gérer les visuels (2)');
-    expect(el(fixture).querySelector('.action-campaign')?.textContent).toContain('Ajouter à une campagne');
-    click(fixture, '.action-xlsx');
-    click(fixture, '.action-more');
-    click(fixture, '.action-medias');
-    click(fixture, '.action-more');
-    click(fixture, '.action-campaign');
-
-    expect(xlsx).toHaveBeenCalledTimes(1);
-    expect(medias).toHaveBeenCalledTimes(1);
-    expect(campaign).toHaveBeenCalledTimes(1);
-  });
-
-  it('should keep a single menu open at a time', async () => {
+  it('should offer the XLSX export in the « Diffuser » menu', async () => {
     const fixture = await render(verified);
+    const xlsx = vi.fn();
+    fixture.componentInstance.generateXlsx.subscribe(xlsx);
 
     click(fixture, '.action-diffuse');
-    click(fixture, '.action-more');
+    click(fixture, '.action-xlsx');
 
-    expect(el(fixture).querySelectorAll('[role="menu"]').length).toBe(1);
-    expect(el(fixture).querySelector('.action-xlsx')).not.toBeNull();
+    expect(xlsx).toHaveBeenCalledWith(verified);
+    expect(el(fixture).querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('should no longer have a `⋯` menu: visuals and campaign are reached from the card itself', async () => {
+    const fixture = await render({ ...verified, medias: [image(4), image(5)] });
+
+    expect(el(fixture).querySelector('.action-more')).toBeNull();
+    expect(el(fixture).querySelector('.action-medias')).toBeNull();
+    expect(el(fixture).querySelector('.media-button')).not.toBeNull();
+    expect(el(fixture).querySelector('button.campaign')).not.toBeNull();
   });
 
   it('should close the menu on Escape and on a click outside the card', async () => {
     const fixture = await render(verified);
 
-    click(fixture, '.action-more');
+    click(fixture, '.action-diffuse');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
     expect(el(fixture).querySelector('[role="menu"]')).toBeNull();
 
-    click(fixture, '.action-more');
+    click(fixture, '.action-diffuse');
     document.body.click();
     fixture.detectChanges();
     expect(el(fixture).querySelector('[role="menu"]')).toBeNull();
@@ -285,14 +272,9 @@ describe('PublicationCardComponent', () => {
     }
     fixture.detectChanges();
 
-    for (const selector of ['.action-diffuse', '.action-review', '.action-edit', '.campaign', '.media-add']) {
+    for (const selector of ['.action-diffuse', '.action-review', '.action-edit', '.action-delete', '.campaign', '.media-add']) {
       expect(el(fixture).querySelector(selector), selector).toBeNull();
     }
-    click(fixture, '.action-more');
-    for (const selector of ['.action-delete', '.action-medias', '.action-campaign']) {
-      expect(el(fixture).querySelector(selector), selector).toBeNull();
-    }
-    expect(el(fixture).querySelector('.action-xlsx')).not.toBeNull();
   });
 
   // ------------------------------- Visuels -------------------------------
@@ -373,7 +355,6 @@ describe('PublicationCardComponent', () => {
     const remove = vi.fn();
     fixture.componentInstance.remove.subscribe(remove);
 
-    click(fixture, '.action-more');
     click(fixture, '.action-delete');
 
     expect(remove).not.toHaveBeenCalled();
@@ -391,7 +372,6 @@ describe('PublicationCardComponent', () => {
     const remove = vi.fn();
     fixture.componentInstance.remove.subscribe(remove);
 
-    click(fixture, '.action-more');
     click(fixture, '.action-delete');
     click(fixture, '.action-cancel');
 
@@ -410,5 +390,13 @@ describe('PublicationCardComponent', () => {
     expect(button?.disabled).toBe(true);
     expect(button?.textContent).toContain('Suppression…');
     expect(el(fixture).querySelector('.action-diffuse')).toBeNull();
+    expect(el(fixture).querySelector<HTMLButtonElement>('.action-delete')?.disabled).toBe(true);
+  });
+
+  it('should show the delete button directly in the footer, for drafts as for verified publications', async () => {
+    for (const publication of [draft, verified]) {
+      const button = el(await render(publication)).querySelector<HTMLButtonElement>('.footer > .action-delete');
+      expect(button?.getAttribute('aria-label')).toBe('Supprimer');
+    }
   });
 });
