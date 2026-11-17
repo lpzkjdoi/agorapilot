@@ -1,13 +1,17 @@
 package fr.maximechazard.agorapilot.back.publication;
 
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeries;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +52,19 @@ public class PublicationOccurrence {
 
     @OneToMany(mappedBy = "occurrence", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PublicationDelivery> deliveries = new ArrayList<>();
+
+    /**
+     * Série qui l'a créée, pour une diffusion programmée par fréquence ; nulle
+     * sinon. {@code seriesDate} est sa date d'origine dans la série, conservée
+     * même si la diffusion est ensuite déplacée.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "series_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private OccurrenceSeries series;
+
+    private LocalDate seriesDate;
 
     @CreatedDate
     @Column(updatable = false)

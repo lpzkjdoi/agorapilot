@@ -42,7 +42,8 @@ class DashboardControllerTest {
                         null, null, null, null),
                 List.of(new PublicationDeliveryDTO(4L, 9L, DeliveryChannel.FACEBOOK, DeliveryStatus.PENDING, null, null, null)),
                 "camille",
-                false);
+                false,
+                null);
         when(dashboardService.getSummary()).thenReturn(new DashboardDTO(2, 6, 3, 1, List.of(upcoming)));
 
         mockMvc.perform(get("/api/dashboard"))

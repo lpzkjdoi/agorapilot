@@ -201,7 +201,7 @@ public class PublicationService {
     private static final int EXCERPT_LENGTH = 60;
 
     /** Le début du texte, entre guillemets : de quoi reconnaître la publication dans le journal. */
-    static String excerpt(Publication publication) {
+    public static String excerpt(Publication publication) {
         String content = publication.getContent().strip().replaceAll("\\s+", " ");
         return "« " + (content.length() <= EXCERPT_LENGTH ? content : content.substring(0, EXCERPT_LENGTH) + "…") + " »";
     }

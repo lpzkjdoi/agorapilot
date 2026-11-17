@@ -17,6 +17,9 @@ import java.util.List;
  * <p>{@code held} : la diffusion est passée son heure mais retenue par la
  * suspension d'un canal (cf. {@code OccurrenceHold}). Elle reste
  * {@code SCHEDULED}, et peut encore être déplacée ou annulée.
+ *
+ * <p>{@code seriesId} : la série qui l'a créée, pour une diffusion programmée
+ * par fréquence ; nul sinon.
  */
 public record PublicationOccurrenceDTO(
         Long id,
@@ -26,6 +29,7 @@ public record PublicationOccurrenceDTO(
         PublicationDTO publication,
         List<PublicationDeliveryDTO> deliveries,
         String createdBy,
-        boolean held
+        boolean held,
+        Long seriesId
 ) {
 }

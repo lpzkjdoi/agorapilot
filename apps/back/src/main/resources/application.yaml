@@ -111,6 +111,15 @@ agorapilot:
     window-start: ${PUBLICATION_WINDOW_START:15:00}
     window-end: ${PUBLICATION_WINDOW_END:22:00}
 
+  recurrence:
+    # Programmation par fréquence : les diffusions d'une série sont créées à
+    # l'avance, chaque nuit, jusqu'à horizon-days jours devant, sans dépasser
+    # horizon-count diffusions à venir par série.
+    horizon-days: ${RECURRENCE_HORIZON_DAYS:62}
+    horizon-count: ${RECURRENCE_HORIZON_COUNT:31}
+    # Heure du job quotidien (cron Spring : s m h j M jS).
+    cron: ${RECURRENCE_CRON:0 5 0 * * *}
+
   notifications:
     # Interrupteur général. Sans URL, une cible est de toute façon ignorée : le
     # développement local et les tests n'envoient donc rien par défaut.

@@ -30,7 +30,8 @@ public class PublicationOccurrenceMapper {
                 publicationMapper.toDTO(occurrence.getPublication()),
                 deliveries,
                 occurrence.getCreatedBy(),
-                occurrenceHold.isHeld(occurrence)
+                occurrenceHold.isHeld(occurrence),
+                occurrence.getSeries() == null ? null : occurrence.getSeries().getId()
         );
     }
 }

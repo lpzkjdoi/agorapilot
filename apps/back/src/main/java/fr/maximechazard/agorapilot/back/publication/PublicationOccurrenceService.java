@@ -15,6 +15,9 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepo
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrencesRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeries;
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeriesRepository;
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeriesStatus;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventService;
 import fr.maximechazard.agorapilot.back.account.events.SecurityEventType;
@@ -28,6 +31,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -63,6 +67,7 @@ public class PublicationOccurrenceService {
     private final Clock clock;
     private final ApplicationEventPublisher eventPublisher;
     private final OccurrenceHold occurrenceHold;
+    private final OccurrenceSeriesRepository occurrenceSeriesRepository;
 
     /**
      * Programme une diffusion : une occurrence porteuse d'une livraison
@@ -88,7 +93,7 @@ public class PublicationOccurrenceService {
         checkPublishers(request.getChannels());
 
         return publicationOccurrenceMapper.toDTO(
-                schedule(publication, request.getChannels(), request.getDate(), request.getScheduledAt()));
+                schedule(publication, request.getChannels(), request.getDate(), request.getScheduledAt(), null, null));
     }
 
     /**
@@ -111,7 +116,7 @@ public class PublicationOccurrenceService {
         checkPublishers(request.getChannels());
 
         List<PublicationOccurrence> created = request.getSlots().stream()
-                .map(slot -> schedule(publication, request.getChannels(), slot.getDate(), slot.getScheduledAt()))
+                .map(slot -> schedule(publication, request.getChannels(), slot.getDate(), slot.getScheduledAt(), null, null))
                 .toList();
 
         // Converties à la fin : une date ajoutée plus tard le même jour a pu
@@ -144,14 +149,43 @@ public class PublicationOccurrenceService {
     }
 
     /**
+     * Crée la diffusion d'une série pour sa date {@code date}, à l'heure fixe de
+     * la série ou en heure automatique, avec les mêmes règles qu'une
+     * programmation à la main.
+     * <p>
+     * Ne lève rien pour une date qui ne peut plus l'accueillir (fenêtre du jour
+     * close, heure fixe passée ou imminente) : elle est simplement écartée, le
+     * job ne doit pas échouer pour autant.
+     *
+     * @return vrai si la diffusion a été créée
+     */
+    @Transactional
+    public boolean scheduleFromSeries(OccurrenceSeries series, LocalDate date) {
+        LocalTime time = series.getPublishTime();
+
+        if (time == null ? remainingWindow(date).isEmpty() : !date.atTime(time).isAfter(frozenUntil())) {
+            log.info("Série {} : le {} ne peut plus accueillir de diffusion, date écartée.", series.getId(), date);
+            return false;
+        }
+
+        schedule(series.getPublication(), series.channelSet(),
+                time == null ? date : null, time == null ? null : date.atTime(time), series, date);
+        return true;
+    }
+
+    /**
      * Crée une occurrence épinglée à {@code scheduledAt}, ou automatique le jour
-     * {@code date} — exactement l'un des deux.
+     * {@code date} — exactement l'un des deux. {@code series} et
+     * {@code seriesDate} la rattachent à sa série, s'il y a lieu.
      *
      * @throws InvalidScheduleException jour passé, ou fenêtre du jour close
      */
     private PublicationOccurrence schedule(Publication publication, Set<DeliveryChannel> channels,
-                                           LocalDate date, LocalDateTime scheduledAt) {
+                                           LocalDate date, LocalDateTime scheduledAt,
+                                           OccurrenceSeries series, LocalDate seriesDate) {
         PublicationOccurrence occurrence = new PublicationOccurrence();
+        occurrence.setSeries(series);
+        occurrence.setSeriesDate(seriesDate);
 
         for (DeliveryChannel channel : channels) {
             PublicationDelivery delivery = new PublicationDelivery();
@@ -324,6 +358,53 @@ public class PublicationOccurrenceService {
         publicationOccurrenceRepository.flush();
         days.forEach(this::redistribute);
 
+        // Une campagne arrêtée ne diffuse plus : ses séries cessent aussi de produire.
+        for (OccurrenceSeries series : occurrenceSeriesRepository
+                .findAllByPublicationCampaignIdAndStatus(campaignId, OccurrenceSeriesStatus.ACTIVE)) {
+            stopSeries(series, "Campagne clôturée ou annulée.");
+        }
+
+        return scheduled.size();
+    }
+
+    /**
+     * Arrête une série : ses diffusions encore programmées sont annulées (les
+     * jours touchés répartis à nouveau), celles déjà parties restent. Tout ou
+     * rien, comme pour une campagne : si une diffusion est en cours ou imminente,
+     * rien n'est touché.
+     *
+     * @return le nombre de diffusions annulées
+     * @throws OccurrenceNotModifiableException une diffusion de la série est en cours ou imminente
+     */
+    @Transactional
+    public int stopSeries(OccurrenceSeries series, String reason) {
+        List<PublicationOccurrence> scheduled = publicationOccurrenceRepository
+                .findAllBySeriesAndStatus(series, PublicationOccurrenceStatus.SCHEDULED);
+
+        for (PublicationOccurrence occurrence : scheduled) {
+            if (!isModifiable(occurrence)) {
+                throw new OccurrenceNotModifiableException("La série " + series.getId()
+                        + " a une diffusion en cours ou imminente (moins de " + FROZEN_HORIZON.toMinutes()
+                        + " minutes) : réessayer une fois la diffusion passée.");
+            }
+        }
+
+        Set<LocalDate> days = new TreeSet<>();
+        for (PublicationOccurrence occurrence : scheduled) {
+            days.add(occurrence.getScheduledAt().toLocalDate());
+            occurrence.getPublication().getOccurrences().remove(occurrence);
+            publicationOccurrenceRepository.delete(occurrence);
+        }
+
+        publicationOccurrenceRepository.flush();
+        days.forEach(this::redistribute);
+
+        series.stop(reason);
+        occurrenceSeriesRepository.save(series);
+        events.recordAction(SecurityEventType.SERIES_STOPPED, "Série " + series.getId() + " de "
+                + PublicationService.excerpt(series.getPublication()) + " : " + reason
+                + (scheduled.isEmpty() ? "" : " (" + scheduled.size() + " diffusion(s) à venir annulée(s))"));
+
         return scheduled.size();
     }
 
@@ -366,7 +447,23 @@ public class PublicationOccurrenceService {
         publicationOccurrenceRepository.flush();
         days.forEach(this::redistribute);
 
-        return !occurrences.isEmpty();
+        // Les séries suivent leur publication. Gardée comme historique, elle garde
+        // ses séries, arrêtées ; effacée, elle les emporte — aucune diffusion
+        // restante n'y renvoie plus.
+        boolean keptAsHistory = !occurrences.isEmpty();
+        for (OccurrenceSeries series : occurrenceSeriesRepository.findAllByPublication(publication)) {
+            if (keptAsHistory) {
+                if (series.getStatus() == OccurrenceSeriesStatus.ACTIVE) {
+                    series.stop("Publication supprimée.");
+                    occurrenceSeriesRepository.save(series);
+                }
+            } else {
+                occurrenceSeriesRepository.delete(series);
+            }
+        }
+        occurrenceSeriesRepository.flush();
+
+        return keptAsHistory;
     }
 
     /**
