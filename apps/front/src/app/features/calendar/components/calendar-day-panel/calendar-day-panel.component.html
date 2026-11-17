@@ -37,6 +37,9 @@
                   [class.occurrence-badge-failed]="occurrence.status === 'FAILED'"
             >{{ statusLabels[occurrence.status] }}</span>
           }
+          @if (occurrence.seriesId) {
+            <span class="occurrence-badge occurrence-badge-series" title="Fait partie d’une répétition">↻ Répétée</span>
+          }
           <span class="day-panel-time">
             {{ time(occurrence) }} · {{ occurrence.pinned ? 'heure fixe' : 'heure auto' }}
             @if (occurrence.createdBy) {
@@ -66,6 +69,18 @@
           }
         } @else if (occurrence.status === 'SCHEDULED') {
           <p class="day-panel-note">Diffusion imminente ou en cours : elle ne peut plus être modifiée.</p>
+        }
+
+        @if (occurrence.seriesId && occurrence.status === 'SCHEDULED' && canSchedule()) {
+          @if (confirmingStop() === occurrence.id) {
+            <p class="day-panel-note">Arrêter la répétition annule toutes ses diffusions à venir.</p>
+            <button type="button" class="day-panel-edit day-panel-stop-confirm" (click)="confirmStop(occurrence)">Arrêter</button>
+            <button type="button" class="day-panel-edit day-panel-stop-keep" (click)="confirmingStop.set(null)">Garder</button>
+          } @else {
+            <button type="button" class="day-panel-edit day-panel-stop" (click)="confirmingStop.set(occurrence.id)">
+              Arrêter la répétition
+            </button>
+          }
         }
       </li>
     }

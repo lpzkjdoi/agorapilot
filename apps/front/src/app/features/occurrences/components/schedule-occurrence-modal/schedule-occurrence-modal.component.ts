@@ -3,7 +3,9 @@ import {
   Component,
   HostListener,
   input,
+  OnInit,
   output,
+  signal,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -16,7 +18,8 @@ import {
 } from "@angular/forms";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
 import { Publication } from "../../../publications/publication.model";
-import { ScheduleFormValue, ScheduleSlotValue } from "../../occurrence.model";
+import { RepeatFormValue, ScheduleFormValue, ScheduleSlotValue } from "../../occurrence.model";
+import { createRepeatGroup, RepeatFieldsComponent, repeatRule, repeatSummary } from "../repeat-fields/repeat-fields.component";
 import { toIsoDate } from "../../occurrence.utils";
 
 /** Plafond du back (`CreatePublicationOccurrencesRequest.MAX_SLOTS`). */
@@ -38,7 +41,8 @@ function distinctSlots(control: AbstractControl): ValidationErrors | null {
 
 /**
  * Programme la diffusion d'une publication, à un ou plusieurs jours (le 11/11,
- * le 4/12, le 5/02…).
+ * le 4/12, le 5/02…), ou selon une fréquence (« Répéter » : chaque lundi, tous
+ * les 3 mois…).
  *
  * Pour chaque jour, l'heure est facultative : laissée vide, le back choisit le
  * créneau dans la fenêtre de publication du jour, en répartissant les
@@ -46,20 +50,29 @@ function distinctSlots(control: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-schedule-occurrence-modal',
-  imports: [ReactiveFormsModule, LoaderComponent],
+  imports: [ReactiveFormsModule, LoaderComponent, RepeatFieldsComponent],
   templateUrl: './schedule-occurrence-modal.component.html',
   styleUrl: './schedule-occurrence-modal.component.css',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ScheduleOccurrenceModalComponent {
+export class ScheduleOccurrenceModalComponent implements OnInit {
   readonly publication = input.required<Publication>();
+
+  /** Fin de la campagne de la publication (`AAAA-MM-JJ`) : fin proposée d'une répétition. */
+  readonly campaignEnd = input<string | null>(null);
 
   /** Vrai tant que la requête de programmation est en vol. */
   readonly saving = input(false);
 
   readonly closed = output<void>();
   readonly submitted = output<ScheduleFormValue>();
+  readonly repeatSubmitted = output<RepeatFormValue>();
+
+  /** « Dates précises » (une ligne par jour) ou « Répéter » (une fréquence). */
+  protected readonly mode = signal<'dates' | 'repeat'>('dates');
+
+  readonly repeat = createRepeatGroup();
 
   /**
    * Aujourd'hui reste proposé : le back l'accepte tant que la fenêtre du jour
@@ -73,6 +86,15 @@ export class ScheduleOccurrenceModalComponent {
     slots: new FormArray<SlotGroup>([ScheduleOccurrenceModalComponent.slot()], { validators: [distinctSlots] }),
     facebook: new FormControl(true, { nonNullable: true, validators: [Validators.requiredTrue] }),
   });
+
+  ngOnInit(): void {
+    const end = this.campaignEnd();
+
+    // Par défaut, une répétition s'arrête avec la campagne, si elle n'est pas déjà finie.
+    if (end && end >= this.minDate) {
+      this.repeat.patchValue({ endKind: 'until', until: end });
+    }
+  }
 
   get slots(): FormArray<SlotGroup> {
     return this.form.controls.slots;
@@ -109,6 +131,11 @@ export class ScheduleOccurrenceModalComponent {
       return;
     }
 
+    if (this.mode() === 'repeat') {
+      this.submitRepeat();
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -121,5 +148,24 @@ export class ScheduleOccurrenceModalComponent {
       .sort((a, b) => `${ a.date }T${ a.time }`.localeCompare(`${ b.date }T${ b.time }`));
 
     this.submitted.emit({ slots, channels: ['FACEBOOK'] });
+  }
+
+  private submitRepeat(): void {
+    const channel = this.form.controls.facebook;
+
+    if (this.repeat.invalid || channel.invalid) {
+      this.repeat.markAllAsTouched();
+      channel.markAsTouched();
+      return;
+    }
+
+    const { startDate, time } = this.repeat.getRawValue();
+    this.repeatSubmitted.emit({
+      startDate,
+      time,
+      rule: repeatRule(this.repeat),
+      channels: ['FACEBOOK'],
+      summary: repeatSummary(this.repeat),
+    });
   }
 }

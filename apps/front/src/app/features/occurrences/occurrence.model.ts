@@ -32,6 +32,48 @@ export interface Occurrence {
    * maximal. En attendant, elle se déplace et s'annule.
    */
   held?: boolean
+  /** Série qui l'a créée (programmation par fréquence) ; absent ou nul sinon. */
+  seriesId?: number | null
+}
+
+export type SeriesStatus = 'ACTIVE' | 'COMPLETED' | 'STOPPED';
+
+/** Reflète `OccurrenceSeriesDTO` (`/api/occurrence-series`). */
+export interface OccurrenceSeries {
+  id: number
+  publicationId: number
+  /** `RRULE` normalisée, sans `DTSTART` : `FREQ=WEEKLY;INTERVAL=2`. */
+  rule: string
+  startDate: string
+  /** `HH:mm:ss`, ou nulle pour une heure automatique. */
+  publishTime: string | null
+  channels: DeliveryChannel[]
+  status: SeriesStatus
+  stopReason: string | null
+  /** Diffusions de la série encore programmées. */
+  upcoming: number
+  createdBy?: string | null
+  createdAt?: string | null
+}
+
+/** Corps de `POST /api/occurrence-series`. `time` absent : heure automatique. */
+export interface CreateSeriesRequest {
+  publicationId: number
+  channels: DeliveryChannel[]
+  rule: string
+  startDate: string
+  time: string | null
+}
+
+/** Saisie « Répéter » de la modale « Programmer ». */
+export interface RepeatFormValue {
+  startDate: string
+  /** Vide : heure automatique. */
+  time: string
+  rule: string
+  channels: DeliveryChannel[]
+  /** La répétition en une phrase, reprise dans l'annonce de succès. */
+  summary: string
 }
 
 export type WeeklyOccurrences = Map<string, Occurrence[]>

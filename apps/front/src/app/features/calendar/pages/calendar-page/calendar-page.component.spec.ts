@@ -306,6 +306,44 @@ describe('CalendarPageComponent', () => {
 
       expect(cell(5).querySelector('.day-panel-edit')).toBeNull();
     });
+
+    it('should stop a repetition after confirmation and reload the month', () => {
+      render([occurrence(1, '2026-10-12T16:45:00', { seriesId: 3 }), occurrence(5, '2026-10-19T16:45:00', { seriesId: 3 })]);
+      openDay(12);
+
+      cell(12).querySelector<HTMLButtonElement>('.day-panel-stop')!.click();
+      fixture.detectChanges();
+      cell(12).querySelector<HTMLButtonElement>('.day-panel-stop-confirm')!.click();
+
+      const request = httpTesting.expectOne('/api/occurrence-series/3');
+      expect(request.request.method).toBe('DELETE');
+      request.flush({ id: 3, status: 'STOPPED', upcoming: 0 });
+      reloadWith([]);
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({ level: 'success', message: 'Répétition arrêtée : ses diffusions à venir sont annulées.' }),
+      ]);
+      expect(element.querySelector('app-calendar-day-panel')).toBeNull();
+    });
+
+    it('should explain why a repetition could not be stopped', () => {
+      render([occurrence(1, '2026-10-12T16:45:00', { seriesId: 3 })]);
+      openDay(12);
+      cell(12).querySelector<HTMLButtonElement>('.day-panel-stop')!.click();
+      fixture.detectChanges();
+      cell(12).querySelector<HTMLButtonElement>('.day-panel-stop-confirm')!.click();
+
+      httpTesting.expectOne('/api/occurrence-series/3').flush(
+        { message: 'La série 3 est déjà terminée ou arrêtée.' }, { status: 409, statusText: 'Conflict' });
+      reloadWith([]);
+
+      expect(notifications.notifications()).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          message: 'La répétition n’a pas pu être arrêtée. La série 3 est déjà terminée ou arrêtée.',
+        }),
+      ]);
+    });
   });
 
   describe('reprise d’une diffusion en échec', () => {

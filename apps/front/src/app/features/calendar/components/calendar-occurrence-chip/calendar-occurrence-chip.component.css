@@ -47,6 +47,11 @@
   font-weight: 700;
 }
 
+.chip-series {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
 .chip-time {
   flex-shrink: 0;
   font-weight: 600;

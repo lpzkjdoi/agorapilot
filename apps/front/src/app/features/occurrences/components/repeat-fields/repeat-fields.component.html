@@ -1,0 +1,111 @@
+@let group = form();
+<div class="repeat" [formGroup]="group">
+  <div class="repeat-row">
+    <div class="repeat-field">
+      <label for="repeat-start">À partir du</label>
+      <input id="repeat-start" formControlName="startDate" type="date" [min]="minDate()">
+      @if (group.controls.startDate.touched && group.controls.startDate.invalid) {
+        <p class="repeat-error">Choisissez le jour de départ.</p>
+      }
+    </div>
+    <div class="repeat-field">
+      <label for="repeat-time">Heure (facultatif)</label>
+      <input id="repeat-time" formControlName="time" type="time">
+    </div>
+  </div>
+
+  <div class="repeat-field">
+    <label for="repeat-preset">Répéter</label>
+    <select id="repeat-preset" formControlName="preset">
+      @for (preset of presets; track preset[0]) {
+        <option [value]="preset[0]">{{ preset[1] }}</option>
+      }
+    </select>
+  </div>
+
+  @if (group.controls.preset.value === 'CUSTOM') {
+    <fieldset class="repeat-custom">
+      <legend>Personnaliser</legend>
+      <div class="repeat-inline">
+        <label for="repeat-interval">Tous les</label>
+        <input id="repeat-interval" class="repeat-number" formControlName="interval" type="number" min="1" max="999">
+        <select aria-label="Unité de la fréquence" formControlName="frequency">
+          @for (unit of units; track unit[0]) {
+            <option [value]="unit[0]">{{ unit[1] }}</option>
+          }
+        </select>
+      </div>
+
+      @switch (group.controls.frequency.value) {
+        @case ('WEEKLY') {
+          <div class="repeat-chips" role="group" aria-label="Jours de la semaine">
+            @for (day of weekdays; track day) {
+              <button type="button" class="repeat-chip repeat-weekday" [attr.aria-pressed]="has('weekdays', day)"
+                      [attr.aria-label]="weekdayLabels[day]" (click)="toggle('weekdays', day)">
+                {{ weekdayLabels[day].slice(0, 2) }}
+              </button>
+            }
+          </div>
+        }
+        @case ('YEARLY') {
+          <div class="repeat-chips" role="group" aria-label="Mois de l'année">
+            @for (month of monthLabels; track month; let i = $index) {
+              <button type="button" class="repeat-chip repeat-month" [attr.aria-pressed]="has('months', i + 1)"
+                      [attr.aria-label]="month" (click)="toggle('months', i + 1)">
+                {{ monthShort[i] }}
+              </button>
+            }
+          </div>
+        }
+      }
+
+      @if (group.controls.frequency.value === 'MONTHLY' || group.controls.frequency.value === 'YEARLY') {
+        <div class="repeat-inline">
+          <label><input type="radio" formControlName="monthMode" value="days"> Le(s) jour(s)</label>
+          <label><input type="radio" formControlName="monthMode" value="ordinal"> Le</label>
+          <select aria-label="Rang" formControlName="ordinal">
+            @for (ordinal of ordinals; track ordinal) {
+              <option [ngValue]="ordinal">{{ ordinalLabels[ordinal] }}</option>
+            }
+          </select>
+          <select aria-label="Jour" formControlName="ordinalDay">
+            @for (day of weekdays; track day) {
+              <option [value]="day">{{ weekdayLabels[day] }}</option>
+            }
+          </select>
+        </div>
+        @if (group.controls.monthMode.value === 'days') {
+          <div class="repeat-grid" role="group" aria-label="Jours du mois">
+            @for (day of monthDays; track day) {
+              <button type="button" class="repeat-chip repeat-monthday" [attr.aria-pressed]="has('monthDays', day)"
+                      (click)="toggle('monthDays', day)">{{ day }}</button>
+            }
+          </div>
+          <p class="repeat-hint">Sans choix, le jour de départ. Un 31 absent du mois tombe le dernier jour.</p>
+        }
+      }
+    </fieldset>
+  }
+
+  <fieldset class="repeat-end">
+    <legend>Fin de la répétition</legend>
+    <label><input type="radio" formControlName="endKind" value="never"> Jamais</label>
+    <div class="repeat-inline">
+      <label><input type="radio" formControlName="endKind" value="until"> Le</label>
+      <input aria-label="Date de fin" formControlName="until" type="date" [min]="minDate()">
+    </div>
+    <div class="repeat-inline">
+      <label><input type="radio" formControlName="endKind" value="count"> Après</label>
+      <input aria-label="Nombre de diffusions" class="repeat-number" formControlName="count" type="number" min="1" max="999">
+      <span>diffusions</span>
+    </div>
+    @if (group.hasError('endBeforeStart')) {
+      <p class="repeat-error">La fin doit suivre le jour de départ.</p>
+    }
+    @if (group.hasError('untilMissing') && group.touched) {
+      <p class="repeat-error">Choisissez la date de fin.</p>
+    }
+  </fieldset>
+
+  <p class="repeat-summary" aria-live="polite">{{ summary() }}</p>
+</div>

@@ -181,4 +181,74 @@ describe('ScheduleOccurrenceModalComponent', () => {
 
     expect(closed).toHaveBeenCalledTimes(2);
   });
+
+  describe('répétition', () => {
+    function repeatMode(): void {
+      element.querySelector<HTMLButtonElement>('.schedule-mode-repeat')!.click();
+      fixture.detectChanges();
+    }
+
+    it('should switch to the repeat fields and back', () => {
+      repeatMode();
+      expect(element.querySelector('app-repeat-fields')).not.toBeNull();
+      expect(element.querySelector('.schedule-slots')).toBeNull();
+      expect(element.querySelector('.primary')?.textContent).toContain('Programmer la répétition');
+
+      element.querySelector<HTMLButtonElement>('.schedule-mode-dates')!.click();
+      fixture.detectChanges();
+      expect(element.querySelector('.schedule-slots')).not.toBeNull();
+    });
+
+    it('should emit the rule, the start, the time and a summary', () => {
+      const repeated = vi.fn();
+      const submitted = vi.fn();
+      component.repeatSubmitted.subscribe(repeated);
+      component.submitted.subscribe(submitted);
+      repeatMode();
+
+      component.repeat.patchValue({ startDate: '2026-11-23', time: '18:00', preset: 'BIWEEKLY', endKind: 'count', count: 6 });
+      component.onSubmit();
+
+      expect(submitted).not.toHaveBeenCalled();
+      expect(repeated).toHaveBeenCalledWith({
+        startDate: '2026-11-23',
+        time: '18:00',
+        rule: 'FREQ=WEEKLY;INTERVAL=2;COUNT=6',
+        channels: ['FACEBOOK'],
+        summary: 'Toutes les 2 semaines, à partir du 23/11/2026, à 18:00, 6 fois.',
+      });
+    });
+
+    it('should not emit without a start day, nor with an end before the start', () => {
+      const repeated = vi.fn();
+      component.repeatSubmitted.subscribe(repeated);
+      repeatMode();
+
+      component.onSubmit();
+      component.repeat.patchValue({ startDate: '2026-11-23', endKind: 'until', until: '2026-11-01' });
+      component.onSubmit();
+      fixture.detectChanges();
+
+      expect(repeated).not.toHaveBeenCalled();
+      expect(element.textContent).toContain('La fin doit suivre le jour de départ.');
+    });
+
+    it('should propose the end of the campaign as end of the repetition', () => {
+      const modal = TestBed.createComponent(ScheduleOccurrenceModalComponent);
+      modal.componentRef.setInput('publication', publication);
+      modal.componentRef.setInput('campaignEnd', '2099-03-31');
+      modal.detectChanges();
+
+      expect(modal.componentInstance.repeat.getRawValue()).toEqual(expect.objectContaining({ endKind: 'until', until: '2099-03-31' }));
+    });
+
+    it('should not propose a campaign end already past', () => {
+      const modal = TestBed.createComponent(ScheduleOccurrenceModalComponent);
+      modal.componentRef.setInput('publication', publication);
+      modal.componentRef.setInput('campaignEnd', '2000-01-01');
+      modal.detectChanges();
+
+      expect(modal.componentInstance.repeat.controls.endKind.value).toBe('never');
+    });
+  });
 });
