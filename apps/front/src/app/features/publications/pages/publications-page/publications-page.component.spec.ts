@@ -3,10 +3,12 @@ import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ChannelSuspensionsService } from '../../../../core/channel-suspensions/channel-suspensions.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Campaign } from '../../../campaigns/campaign.model';
 import { Publication } from '../../publication.model';
+import { PublicationCardComponent } from '../../components/publication-card/publication-card.component';
 import { PublicationsPageComponent } from './publications-page.component';
 import { provideSignedInAs, signInAs } from '../../../../core/auth/auth.testing';
 
@@ -17,6 +19,23 @@ const publications: Publication[] = [
   { id: 2, content: 'Conseil municipal reporté', status: 'DRAFT', medias: [], campaign: null },
   { id: 3, content: 'Inscriptions au centre de loisirs', status: 'DRAFT', medias: [], campaign: null },
 ];
+
+/** La carte d'indice `index`, pour lire ce que la page lui transmet. */
+function cardAt(fixture: ComponentFixture<PublicationsPageComponent>, index: number): PublicationCardComponent {
+  return fixture.debugElement.queryAll(By.directive(PublicationCardComponent))[index].componentInstance;
+}
+
+type CardAction = 'publishOnFacebook' | 'generateXlsx' | 'assignCampaign' | 'schedule' | 'manageMedias' | 'edit' | 'remove';
+
+/**
+ * Déclenche une action de la carte d'indice `index` comme si elle avait été
+ * choisie : le détail des menus de la carte est couvert par son propre spec.
+ */
+function emitFrom(fixture: ComponentFixture<PublicationsPageComponent>, index: number, action: CardAction): void {
+  const card = cardAt(fixture, index);
+  card[action].emit(card.publication());
+  fixture.detectChanges();
+}
 
 const campaigns: Campaign[] = [
   {
@@ -213,13 +232,11 @@ describe('PublicationsPageComponent', () => {
     const fixture = render();
     const compiled = fixture.nativeElement as HTMLElement;
 
-    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
-    fixture.detectChanges();
+    emitFrom(fixture, 0, 'publishOnFacebook');
 
-    // Le bouton de la carte concernée se verrouille le temps de la diffusion.
-    const button = compiled.querySelector<HTMLButtonElement>('.action-facebook');
-    expect(button?.disabled).toBe(true);
-    expect(button?.textContent).toContain('Publication…');
+    // La carte concernée se verrouille le temps de la diffusion.
+    expect(cardAt(fixture, 0).publishing()).toBe(true);
+    expect(compiled.querySelector('.action-publishing')?.textContent).toContain('Publication sur Facebook…');
 
     const request = httpTesting.expectOne('/api/publications/1/deliveries');
     expect(request.request.method).toBe('POST');
@@ -241,17 +258,13 @@ describe('PublicationsPageComponent', () => {
         message: 'Publication diffusée sur Facebook.',
       }),
     ]);
-    expect(
-      compiled.querySelector<HTMLButtonElement>('.action-facebook')?.disabled,
-    ).toBe(false);
+    expect(cardAt(fixture, 0).publishing()).toBe(false);
   });
 
   it('should relay the reason returned with the 502 when Facebook refuses the post', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
-    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
-    fixture.detectChanges();
+    emitFrom(fixture, 0, 'publishOnFacebook');
 
     httpTesting.expectOne('/api/publications/1/deliveries').flush(
       { message: 'No token available', code: 502 },
@@ -268,18 +281,14 @@ describe('PublicationsPageComponent', () => {
       }),
     ]);
     // L'échec débloque la carte : l'utilisateur peut réessayer.
-    expect(
-      compiled.querySelector<HTMLButtonElement>('.action-facebook')?.disabled,
-    ).toBe(false);
+    expect(cardAt(fixture, 0).publishing()).toBe(false);
   });
 
   it('should relay a suspended channel and refresh the suspension banner', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
     const suspensions = TestBed.inject(ChannelSuspensionsService);
 
-    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
-    fixture.detectChanges();
+    emitFrom(fixture, 0, 'publishOnFacebook');
 
     httpTesting.expectOne('/api/publications/1/deliveries').flush(
       { message: 'Diffusions Facebook suspendues depuis le 16/10/2026 à 14:05 : Confirmez votre identité (Facebook, code 368)', code: 409 },
@@ -303,12 +312,9 @@ describe('PublicationsPageComponent', () => {
 
   it('should not fire a second request while a publication is already in flight', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
-    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
-    fixture.detectChanges();
-    compiled.querySelector<HTMLButtonElement>('.action-facebook')?.click();
-    fixture.detectChanges();
+    emitFrom(fixture, 0, 'publishOnFacebook');
+    emitFrom(fixture, 0, 'publishOnFacebook');
 
     httpTesting.expectOne('/api/publications/1/deliveries').flush({
       id: 99,
@@ -322,10 +328,8 @@ describe('PublicationsPageComponent', () => {
 
   it('should warn that generating the XLSX has no endpoint yet', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
-    compiled.querySelector<HTMLButtonElement>('.action-xlsx')?.click();
-    fixture.detectChanges();
+    emitFrom(fixture, 0, 'generateXlsx');
 
     expect(notifications.notifications()).toEqual([
       expect.objectContaining({
@@ -343,8 +347,7 @@ describe('PublicationsPageComponent', () => {
       const fixture = render();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      compiled.querySelectorAll<HTMLButtonElement>('.action-campaign')[index].click();
-      fixture.detectChanges();
+      emitFrom(fixture, index, 'assignCampaign');
 
       return { fixture, compiled };
     }
@@ -431,8 +434,7 @@ describe('PublicationsPageComponent', () => {
       const fixture = render();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      compiled.querySelectorAll<HTMLButtonElement>('.action-schedule')[index].click();
-      fixture.detectChanges();
+      emitFrom(fixture, index, 'schedule');
 
       return { fixture, compiled };
     }
@@ -467,9 +469,11 @@ describe('PublicationsPageComponent', () => {
 
     it('should not let a draft be scheduled', () => {
       const fixture = render();
-      const button = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.action-schedule')[1];
+      const draftCard = (fixture.nativeElement as HTMLElement).querySelectorAll('app-publication-card')[1];
 
-      expect(button.disabled).toBe(true);
+      // Un brouillon ne propose pas « Diffuser », seulement « Relire et valider ».
+      expect(draftCard.querySelector('.action-diffuse')).toBeNull();
+      expect(draftCard.querySelector('.action-review')).not.toBeNull();
     });
 
     it('should POST a day-only schedule and announce the time chosen by the back', () => {
@@ -701,9 +705,8 @@ describe('PublicationsPageComponent', () => {
     /** Rend la page puis ouvre le sélecteur sur la première publication. */
     function open(): ComponentFixture<PublicationsPageComponent> {
       const fixture = render();
-      const compiled = fixture.nativeElement as HTMLElement;
 
-      (compiled.querySelectorAll('.action-medias')[0] as HTMLButtonElement).click();
+      emitFrom(fixture, 0, 'manageMedias');
       fixture.detectChanges();
       return fixture;
     }
@@ -737,7 +740,7 @@ describe('PublicationsPageComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       (compiled.querySelector('.modal-close') as HTMLButtonElement).click();
       fixture.detectChanges();
-      (compiled.querySelectorAll('.action-medias')[0] as HTMLButtonElement).click();
+      emitFrom(fixture, 0, 'manageMedias');
       fixture.detectChanges();
 
       // La médiathèque ne change pas pendant qu'on parcourt la page.
@@ -800,7 +803,7 @@ describe('PublicationsPageComponent', () => {
       const fixture = render();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      compiled.querySelectorAll<HTMLButtonElement>('.action-edit')[index].click();
+      emitFrom(fixture, index, 'edit');
       fixture.detectChanges();
 
       return { fixture, compiled };
@@ -862,12 +865,7 @@ describe('PublicationsPageComponent', () => {
     function confirmDelete(index = 1) {
       const fixture = render();
       const compiled = fixture.nativeElement as HTMLElement;
-      const card = compiled.querySelectorAll('app-publication-card')[index];
-
-      card.querySelector<HTMLButtonElement>('.action-delete')!.click();
-      fixture.detectChanges();
-      card.querySelector<HTMLButtonElement>('.action-delete')!.click();
-      fixture.detectChanges();
+      emitFrom(fixture, index, 'remove');
 
       return { fixture, compiled };
     }
@@ -890,8 +888,9 @@ describe('PublicationsPageComponent', () => {
     it('should lock the delete button while the request is in flight', () => {
       const { fixture, compiled } = confirmDelete();
 
-      const card = compiled.querySelectorAll('app-publication-card')[1];
-      expect(card.querySelector<HTMLButtonElement>('.action-delete')?.disabled).toBe(true);
+      expect(cardAt(fixture, 1).deleting()).toBe(true);
+      expect(compiled.querySelectorAll('app-publication-card')[1].querySelector('.solid-button-pending')?.textContent)
+        .toContain('Suppression…');
 
       httpTesting.expectOne('/api/publications/2').flush(null, { status: 204, statusText: 'No Content' });
       fixture.detectChanges();
@@ -927,9 +926,12 @@ describe('PublicationsPageComponent', () => {
 
       expect(compiled.querySelector('.publications-create')).toBeNull();
       expect(compiled.querySelectorAll('app-publication-card')).toHaveLength(3);
-      for (const selector of ['.action-edit', '.action-delete', '.action-facebook', '.action-schedule',
-                              '.action-medias', '.action-campaign']) {
-        expect(compiled.querySelector(selector)).toBeNull();
+      for (const right of ['canEdit', 'canDelete', 'canPublish', 'canSchedule', 'canManageMedias',
+                           'canAssignCampaign'] as const) {
+        expect(cardAt(fixture, 0)[right](), right).toBe(false);
+      }
+      for (const selector of ['.action-diffuse', '.action-review', '.action-edit', 'button.campaign', '.media-add']) {
+        expect(compiled.querySelector(selector), selector).toBeNull();
       }
     });
 
@@ -938,7 +940,7 @@ describe('PublicationsPageComponent', () => {
       const fixture = render();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      compiled.querySelectorAll<HTMLButtonElement>('.action-edit')[0].click();
+      emitFrom(fixture, 0, 'edit');
       fixture.detectChanges();
       expect(compiled.querySelector('app-create-publication-modal [role="note"]')?.textContent)
         .toContain('repassera en brouillon');

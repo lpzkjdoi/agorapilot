@@ -1,175 +1,276 @@
 <article class="card">
-  <!-- Aperçu média : la première image rattachée sert de vignette, à défaut
-       l'icône « sans média » de la maquette. -->
-  <div class="media">
+  <!-- Visuel : la première image sert de vignette. Quand le compte peut gérer
+       les visuels, toute la zone est le bouton qui y mène. -->
+  @if (thumbnailUrl() || mediaCount() > 0) {
+    @if (canManageMedias()) {
+      <button type="button"
+              class="media media-button"
+              [attr.aria-label]="'Gérer les visuels (' + mediaCount() + ')'"
+              (click)="manageMedias.emit(publication())"
+      >
+        <ng-container *ngTemplateOutlet="mediaContent" />
+      </button>
+    } @else {
+      <div class="media">
+        <ng-container *ngTemplateOutlet="mediaContent" />
+      </div>
+    }
+  } @else if (canManageMedias()) {
+    <div class="media-empty">
+      <button type="button" class="media-add" (click)="manageMedias.emit(publication())">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M12 9v6M9 12h6" />
+        </svg>
+        Ajouter un visuel
+      </button>
+    </div>
+  }
+
+  <ng-template #mediaContent>
     @if (thumbnailUrl(); as url) {
       <img class="media-thumbnail" [src]="url" [alt]="thumbnailAlt()" loading="lazy" decoding="async" />
     } @else {
-      <svg xmlns="http://www.w3.org/2000/svg"
-           height="40px"
-           viewBox="0 -960 960 960"
-           width="40px"
-           fill="currentColor"
-           aria-hidden="true"
-      >
+      <svg class="media-placeholder" xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960"
+           width="40px" fill="currentColor" aria-hidden="true">
         <path
           d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
       </svg>
     }
-
     @if (mediaCount() > 1) {
-      <span class="media-count">+{{ mediaCount() - 1 }}</span>
+      <span class="media-count">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <circle cx="9" cy="10" r="2" />
+          <path d="M21 16l-5-5-9 9" />
+        </svg>
+        {{ mediaCount() }}
+      </span>
     }
-
-    <span class="status"
-          [class.status-verified]="verified()"
-          [class.status-draft]="!verified()"
-    >{{ verified() ? 'Vérifié' : 'Brouillon' }}</span>
-  </div>
+  </ng-template>
 
   <div class="body">
+    <span class="status" [class.status-verified]="verified()" [class.status-draft]="!verified()">
+      {{ verified() ? 'Vérifiée' : 'Brouillon' }}
+    </span>
+
+    <h3 class="title">{{ title() }}</h3>
+    @if (excerpt()) {
+      <p class="excerpt">{{ excerpt() }}</p>
+    }
+
+    <!-- Campagne : l'étiquette elle-même permet d'en changer. -->
+    @if (canAssignCampaign()) {
+      <button type="button"
+              class="campaign"
+              [class.campaign-empty]="!campaignName()"
+              [attr.aria-label]="campaignName() ? 'Campagne : ' + campaignName() + '. Changer de campagne' : null"
+              (click)="assignCampaign.emit(publication())"
+      >
+        @if (campaignName(); as name) {
+          <ng-container *ngTemplateOutlet="campaignIcon" />
+          {{ name }}
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        } @else {
+          + Campagne
+        }
+      </button>
+    } @else if (campaignName(); as name) {
+      <span class="campaign">
+        <ng-container *ngTemplateOutlet="campaignIcon" />
+        {{ name }}
+      </span>
+    }
+
+    <ng-template #campaignIcon>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z" />
+        <path d="M17 8a5 5 0 0 1 0 8" />
+      </svg>
+    </ng-template>
+
     @if (publication().createdAt; as createdAt) {
       <p class="date">
         {{ createdAt | date: 'd MMMM y' : undefined : 'fr-FR' }}
-        •
-        {{ createdAt | date: 'HH:mm' : undefined : 'fr-FR' }}
+        à {{ createdAt | date: 'HH:mm' : undefined : 'fr-FR' }}
         @if (publication().createdBy; as author) {
-          par {{ author }}
+          · par {{ author }}
         }
         @if (modification(); as modified) {
-          • {{ modified }}
+          · {{ modified }}
         }
       </p>
     }
+  </div>
 
-    <p class="content">{{ publication().content }}</p>
-
-    <p class="campaign" [class.campaign-none]="!campaignName()">
-      <svg xmlns="http://www.w3.org/2000/svg"
-           height="14px"
-           viewBox="0 -960 960 960"
-           width="14px"
-           fill="currentColor"
-           aria-hidden="true"
-      >
-        <path
-          d="M856-390 570-104q-12 12-27 18t-30 6q-15 0-30-6t-27-18L103-457q-11-11-17-25.5T80-513v-287q0-33 23.5-56.5T160-880h287q16 0 30.5 6t25.5 17l353 354q12 12 17.5 27t5.5 30q0 15-5.5 29.5T856-390ZM513-160l286-286-353-354H160v286l353 354ZM260-640q25 0 42.5-17.5T320-700q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm220 160Z" />
-      </svg>
-      {{ campaignName() ?? 'Sans campagne' }}
-    </p>
-
-    <div class="actions">
-      <button type="button" class="action action-xlsx" (click)="generateXlsx.emit(publication())">
-        <svg xmlns="http://www.w3.org/2000/svg"
-             height="16px"
-             viewBox="0 -960 960 960"
-             width="16px"
-             fill="currentColor"
-             aria-hidden="true"
+  @if (confirmingDelete()) {
+    <div class="confirm" role="alert">
+      <p class="confirm-text">
+        <strong>Supprimer cette publication&nbsp;?</strong>
+        Ses diffusions programmées seront annulées.
+      </p>
+      <div class="confirm-actions">
+        <button type="button" class="solid-button solid-button-secondary action-cancel" (click)="confirmingDelete.set(false)">
+          Annuler
+        </button>
+        <button type="button" class="solid-button solid-button-danger action-confirm-delete" (click)="confirmDelete()">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="footer">
+      @if (deleting()) {
+        <button type="button" class="solid-button solid-button-pending" disabled>
+          <app-loader size="sm" label="Suppression en cours…" />
+          Suppression…
+        </button>
+      } @else if (publishing()) {
+        <button type="button" class="solid-button solid-button-pending action-publishing" disabled>
+          <app-loader size="sm" label="Publication en cours…" />
+          Publication sur Facebook…
+        </button>
+      } @else if (verified() && canDiffuse()) {
+        <button type="button"
+                class="solid-button solid-button-primary action-diffuse"
+                aria-haspopup="menu"
+                [attr.aria-expanded]="openMenu() === 'diffuse'"
+                (click)="toggleMenu('diffuse')"
         >
-          <path
-            d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2 11 13" />
+            <path d="m22 2-7 20-4-9-9-4z" />
+          </svg>
+          Diffuser
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      } @else if (!verified() && canEdit()) {
+        <button type="button" class="solid-button solid-button-dark action-review" (click)="edit.emit(publication())">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+          Relire et valider
+        </button>
+      }
+
+      @if (verified() && canEdit()) {
+        <button type="button" class="icon-button action-edit" aria-label="Modifier" title="Modifier"
+                (click)="edit.emit(publication())">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20h4L19 9l-4-4L4 16z" />
+          </svg>
+        </button>
+      }
+
+      <button type="button"
+              class="icon-button action-more"
+              aria-label="Plus d'actions"
+              title="Plus d'actions"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="openMenu() === 'more'"
+              (click)="toggleMenu('more')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+             aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
         </svg>
-        Générer XLSX
       </button>
 
-      @if (canPublish()) {
-        <button type="button"
-                class="action action-facebook"
-                [disabled]="publishing() || !verified()"
-                [attr.title]="verified() ? null : 'À vérifier avant de la diffuser'"
-                (click)="publishOnFacebook.emit(publication())"
-        >
-          @if (publishing()) {
-            <app-loader size="sm" label="Publication en cours…" />
-          } @else {
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 height="16px"
-                 viewBox="0 0 24 24"
-                 width="16px"
-                 fill="currentColor"
-                 aria-hidden="true"
-            >
-              <path
-                d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
-            </svg>
+      @if (openMenu() === 'diffuse') {
+        <div class="dropdown menu-start" role="menu" aria-label="Diffuser">
+          @if (canPublish()) {
+            <button type="button" role="menuitem" class="dropdown-item action-facebook" (click)="pick(publishOnFacebook)">
+              <span class="dropdown-item-icon facebook-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z" />
+                </svg>
+              </span>
+              <span class="dropdown-item-text">
+                <strong>Publier maintenant</strong>
+                <span>sur la page Facebook</span>
+              </span>
+            </button>
           }
-          {{ publishing() ? 'Publication…' : 'Publier sur Facebook' }}
-        </button>
+          @if (canSchedule()) {
+            <button type="button" role="menuitem" class="dropdown-item action-schedule" (click)="pick(schedule)">
+              <span class="dropdown-item-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="5" width="18" height="16" rx="2" />
+                  <path d="M3 10h18M8 3v4M16 3v4" />
+                </svg>
+              </span>
+              <span class="dropdown-item-text">
+                <strong>Programmer…</strong>
+                <span>choisir la date et les canaux</span>
+              </span>
+            </button>
+          }
+        </div>
       }
 
-      @if (canSchedule()) {
-        <button type="button"
-                class="action action-schedule"
-                [disabled]="!verified()"
-                [attr.title]="verified() ? null : 'À vérifier avant de la programmer'"
-                (click)="schedule.emit(publication())">
-          <svg xmlns="http://www.w3.org/2000/svg"
-               height="16px"
-               viewBox="0 -960 960 960"
-               width="16px"
-               fill="currentColor"
-               aria-hidden="true"
-          >
-            <path
-              d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Zm280 240q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-160 0q-17 0-28.5-11.5T280-440q0-17 11.5-28.5T320-480q17 0 28.5 11.5T360-440q0 17-11.5 28.5T320-400Zm320 0q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400Z" />
-          </svg>
-          Programmer
-        </button>
-      }
-
-      @if (canManageMedias()) {
-        <button type="button" class="action action-medias" (click)="manageMedias.emit(publication())">
-          <svg xmlns="http://www.w3.org/2000/svg"
-               height="16px"
-               viewBox="0 -960 960 960"
-               width="16px"
-               fill="currentColor"
-               aria-hidden="true"
-          >
-            <path
-              d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z" />
-          </svg>
-          {{ mediaCount() > 0 ? 'Modifier les visuels (' + mediaCount() + ')' : 'Ajouter un visuel' }}
-        </button>
-      }
-
-      @if (canAssignCampaign()) {
-        <button type="button"
-                class="action action-campaign"
-                [class.action-campaign-empty]="!campaignName()"
-                (click)="assignCampaign.emit(publication())"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg"
-               height="16px"
-               viewBox="0 -960 960 960"
-               width="16px"
-               fill="currentColor"
-               aria-hidden="true"
-          >
-            <path
-              d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm240-182v-196l-98 58H160v80h182l98 58Zm120 36v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346ZM300-480Z" />
-          </svg>
-          {{ campaignName() ? 'Changer de campagne' : 'Ajouter à une campagne' }}
-        </button>
-      }
-
-      @if (confirmingDelete()) {
-        <p class="manage-confirm" role="alert">Supprimer, et annuler ses diffusions programmées&nbsp;?</p>
-        <button type="button" class="action action-cancel" (click)="confirmingDelete.set(false)">Annuler</button>
-        <button type="button" class="action action-delete" [disabled]="deleting()" (click)="confirmDelete()">
-          Confirmer la suppression
-        </button>
-      } @else {
-        @if (canEdit()) {
-          <button type="button" class="action action-edit" (click)="edit.emit(publication())">Modifier</button>
-        }
-        @if (canDelete()) {
-          <button type="button" class="action action-delete" [disabled]="deleting()" (click)="confirmingDelete.set(true)">
-            {{ deleting() ? 'Suppression…' : 'Supprimer' }}
+      @if (openMenu() === 'more') {
+        <div class="dropdown menu-end" role="menu" aria-label="Plus d'actions">
+          @if (canManageMedias()) {
+            <button type="button" role="menuitem" class="dropdown-item action-medias" (click)="pick(manageMedias)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="9" cy="10" r="2" />
+                <path d="M21 16l-5-5-9 9" />
+              </svg>
+              {{ mediaCount() > 0 ? 'Gérer les visuels (' + mediaCount() + ')' : 'Ajouter un visuel' }}
+            </button>
+          }
+          @if (canAssignCampaign()) {
+            <button type="button" role="menuitem" class="dropdown-item action-campaign" (click)="pick(assignCampaign)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z" />
+                <path d="M17 8a5 5 0 0 1 0 8" />
+              </svg>
+              {{ campaignName() ? 'Changer de campagne' : 'Ajouter à une campagne' }}
+            </button>
+          }
+          <button type="button" role="menuitem" class="dropdown-item action-xlsx" (click)="pick(generateXlsx)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+              <path d="M14 3v5h5M9 13h6M9 17h6" />
+            </svg>
+            Exporter en XLSX
           </button>
-        }
+          @if (canDelete()) {
+            <hr class="dropdown-separator" />
+            <button type="button" role="menuitem" class="dropdown-item dropdown-item-danger action-delete" (click)="askDelete()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+              </svg>
+              Supprimer
+            </button>
+          }
+        </div>
       }
     </div>
-  </div>
+
+    @if (!verified() && canDiffuse()) {
+      <p class="hint">La diffusion se débloque une fois la publication vérifiée.</p>
+    }
+  }
 </article>
