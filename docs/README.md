@@ -82,3 +82,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-17 | [Diffusions retenues par une suspension : « En attente », déplaçables et annulables](./changelog/2026-11-17-diffusions-retenues.md) | _voir PR_ |
 | 2026-11-17 | [Grille des publications : jusqu'à 5 cartes par ligne](./changelog/2026-11-17-grille-5-colonnes.md) | _voir PR_ |
 | 2026-11-17 | [Export XLSX d'une publication au format EventProxy](./changelog/2026-11-17-export-xlsx-eventproxy.md) | _voir PR_ |
+| 2026-11-17 | [Programmation par fréquence : le back (séries, RRULE, job quotidien)](./changelog/2026-11-17-frequence-back.md) | _voir PR_ |

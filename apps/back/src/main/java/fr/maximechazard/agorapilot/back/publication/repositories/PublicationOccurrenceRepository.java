@@ -2,6 +2,7 @@ package fr.maximechazard.agorapilot.back.publication.repositories;
 
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrence;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeries;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -25,6 +26,11 @@ public interface PublicationOccurrenceRepository extends JpaRepository<Publicati
     long countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan(PublicationOccurrenceStatus status, LocalDateTime start, LocalDateTime end);
 
     long countByStatus(PublicationOccurrenceStatus status);
+
+    List<PublicationOccurrence> findAllBySeriesAndStatus(OccurrenceSeries series, PublicationOccurrenceStatus status);
+
+    /** Les diffusions de la série encore programmées après {@code from}. */
+    long countBySeriesAndStatusAndScheduledAtAfter(OccurrenceSeries series, PublicationOccurrenceStatus status, LocalDateTime from);
 
     /** Les cinq prochaines occurrences d'un statut à partir de {@code from}, la plus proche d'abord. */
     List<PublicationOccurrence> findTop5ByStatusAndScheduledAtGreaterThanEqualOrderByScheduledAtAsc(PublicationOccurrenceStatus status, LocalDateTime from);

@@ -5,12 +5,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import fr.maximechazard.agorapilot.back.publication.recurrence.RecurrenceProperties;
 
 import java.time.Clock;
 
 @Configuration
 @EnableScheduling
-@EnableConfigurationProperties(SchedulingProperties.class)
+@EnableConfigurationProperties({SchedulingProperties.class, RecurrenceProperties.class})
 public class AppConfig {
 
     /**

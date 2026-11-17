@@ -212,7 +212,8 @@ class CampaignControllerTest {
                     campaign().publications().getFirst(),
                     List.of(),
                     "maxime",
-                    false
+                    false,
+                    null
             )));
 
             mockMvc.perform(get("/api/campaigns/3/occurrences"))

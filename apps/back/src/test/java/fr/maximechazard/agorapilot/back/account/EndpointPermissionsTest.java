@@ -108,6 +108,9 @@ class EndpointPermissionsTest {
                 new Endpoint(HttpMethod.POST, "/api/publications/999/deliveries", PUBLICATIONS_PUBLISH),
 
                 new Endpoint(HttpMethod.GET, "/api/occurrences/weekly", PUBLICATIONS_READ),
+                new Endpoint(HttpMethod.GET, "/api/occurrence-series?publicationId=999", PUBLICATIONS_READ),
+                new Endpoint(HttpMethod.POST, "/api/occurrence-series", OCCURRENCES_SCHEDULE),
+                new Endpoint(HttpMethod.DELETE, "/api/occurrence-series/999", OCCURRENCES_SCHEDULE),
                 new Endpoint(HttpMethod.GET, "/api/occurrences?from=2026-10-01&to=2026-11-01", PUBLICATIONS_READ),
                 new Endpoint(HttpMethod.POST, "/api/occurrences", OCCURRENCES_SCHEDULE),
                 new Endpoint(HttpMethod.POST, "/api/occurrences/batch", OCCURRENCES_SCHEDULE),

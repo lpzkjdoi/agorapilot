@@ -14,6 +14,7 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationOccu
 import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepository;
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publication.recurrence.OccurrenceSeriesRepository;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspension;
 import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
@@ -78,6 +79,8 @@ class PublicationOccurrenceServiceTest {
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private ChannelSuspensionService channelSuspensionService;
+    @Mock
+    private OccurrenceSeriesRepository occurrenceSeriesRepository;
 
     private PublicationOccurrenceService service;
 
@@ -94,7 +97,8 @@ class PublicationOccurrenceServiceTest {
                 mock(SecurityEventService.class),
                 CLOCK,
                 eventPublisher,
-                occurrenceHold
+                occurrenceHold,
+                occurrenceSeriesRepository
         );
     }
 

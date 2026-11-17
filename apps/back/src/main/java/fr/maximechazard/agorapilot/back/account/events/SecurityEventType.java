@@ -22,5 +22,9 @@ public enum SecurityEventType {
     CHANNEL_SUSPENDED,
     CHANNEL_RESUMED,
     /** Page Facebook (re)connectée depuis l'interface, par le compte qui l'a demandé. */
-    FACEBOOK_CONNECTED
+    FACEBOOK_CONNECTED,
+    /** Programmation par fréquence d'une publication. */
+    SERIES_CREATED,
+    /** Arrêt d'une série : à la main, ou avec la suppression de sa publication ou la fin de sa campagne. */
+    SERIES_STOPPED
 }
