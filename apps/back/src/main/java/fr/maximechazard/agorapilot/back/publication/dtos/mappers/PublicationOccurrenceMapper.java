@@ -1,6 +1,7 @@
 package fr.maximechazard.agorapilot.back.publication.dtos.mappers;
 
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
+import fr.maximechazard.agorapilot.back.publication.OccurrenceHold;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrence;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationDeliveryDTO;
 import fr.maximechazard.agorapilot.back.publication.dtos.PublicationOccurrenceDTO;
@@ -14,6 +15,7 @@ import java.util.List;
 public class PublicationOccurrenceMapper {
     private final PublicationMapper publicationMapper;
     private final PublicationDeliveryMapper publicationDeliveryMapper;
+    private final OccurrenceHold occurrenceHold;
 
     public PublicationOccurrenceDTO toDTO(PublicationOccurrence occurrence) {
         List<PublicationDeliveryDTO> deliveries = occurrence.getDeliveries().stream()
@@ -27,7 +29,8 @@ public class PublicationOccurrenceMapper {
                 occurrence.getStatus(),
                 publicationMapper.toDTO(occurrence.getPublication()),
                 deliveries,
-                occurrence.getCreatedBy()
+                occurrence.getCreatedBy(),
+                occurrenceHold.isHeld(occurrence)
         );
     }
 }

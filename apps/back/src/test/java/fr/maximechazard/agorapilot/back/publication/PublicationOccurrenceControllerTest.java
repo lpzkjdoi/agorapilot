@@ -61,7 +61,8 @@ class PublicationOccurrenceControllerTest {
                 List.of(new PublicationDeliveryDTO(
                         1L, 1L, DeliveryChannel.FACEBOOK, deliveryStatus,
                         LocalDateTime.of(2026, 8, 22, 18, 20, 5), "1144547398751185_122106824271408514", null)),
-                "camille");
+                "camille",
+                false);
     }
 
     @Nested

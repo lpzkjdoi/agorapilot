@@ -12,6 +12,8 @@ import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOc
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrencesRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.OccurrenceSlotRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspension;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,11 +102,14 @@ class OccurrenceSlotsPersistenceTest {
     private MutableClock clock;
     @Autowired
     private CampaignRepository campaignRepository;
+    @Autowired
+    private ChannelSuspensionRepository channelSuspensionRepository;
 
     private Long publicationId;
 
     @BeforeEach
     void setUp() {
+        channelSuspensionRepository.deleteAll();
         publicationDeliveryRepository.deleteAll();
         publicationOccurrenceRepository.deleteAll();
         publicationRepository.deleteAll();
@@ -555,5 +560,71 @@ class OccurrenceSlotsPersistenceTest {
                 .hasMessageContaining(DAY.toString());
 
         assertThat(publicationOccurrenceRepository.findAll()).isEmpty();
+    }
+
+    // ------------------------------------------- diffusions retenues par une suspension
+
+    /** Une diffusion de 18:00, il est 18:20, et Facebook est suspendu depuis 17:00. */
+    private Long heldOccurrence() {
+        LocalDate today = LocalDate.of(2026, 9, 25);
+        Long id = scheduleAt(today.atTime(18, 0));
+        channelSuspensionRepository.save(new ChannelSuspension(DeliveryChannel.FACEBOOK,
+                "Confirmez votre identité (Facebook, code 368)", today.atTime(17, 0)));
+        clock.set(today.atTime(18, 20));
+        return id;
+    }
+
+    private PublicationOccurrenceDTO listed(Long occurrenceId) {
+        return service.findBetween(LocalDate.of(2026, 9, 25), LocalDate.of(2026, 9, 26)).stream()
+                .filter(occurrence -> occurrence.id().equals(occurrenceId))
+                .findFirst().orElseThrow();
+    }
+
+    @Test
+    void flags_a_past_occurrence_held_by_a_suspension() {
+        Long id = heldOccurrence();
+
+        PublicationOccurrenceDTO occurrence = listed(id);
+
+        assertThat(occurrence.held()).isTrue();
+        assertThat(occurrence.status()).isEqualTo(PublicationOccurrenceStatus.SCHEDULED);
+    }
+
+    @Test
+    void cancels_an_occurrence_held_by_a_suspension() {
+        Long id = heldOccurrence();
+
+        service.cancel(id);
+
+        assertThat(publicationOccurrenceRepository.findById(id)).isEmpty();
+    }
+
+    @Test
+    void moves_an_occurrence_held_by_a_suspension_to_another_day() {
+        Long id = heldOccurrence();
+
+        service.reschedule(id, reschedule(DAY, null));
+
+        assertThat(at(id).toLocalDate()).isEqualTo(DAY);
+        assertThat(deliveryOf(id).getStatus()).isEqualTo(DeliveryStatus.PENDING);
+    }
+
+    @Test
+    void a_past_occurrence_without_suspension_is_neither_held_nor_modifiable() {
+        LocalDate today = LocalDate.of(2026, 9, 25);
+        Long id = scheduleAt(today.atTime(18, 0));
+        clock.set(today.atTime(18, 0, 30));
+
+        assertThat(listed(id).held()).isFalse();
+        assertThatThrownBy(() -> service.cancel(id)).isInstanceOf(OccurrenceNotModifiableException.class);
+    }
+
+    @Test
+    void an_upcoming_occurrence_on_a_suspended_channel_is_not_held_yet() {
+        LocalDate today = LocalDate.of(2026, 9, 25);
+        Long id = scheduleAt(today.atTime(18, 0));
+        channelSuspensionRepository.save(new ChannelSuspension(DeliveryChannel.FACEBOOK, "Bloqué", today.atTime(9, 0)));
+
+        assertThat(listed(id).held()).isFalse();
     }
 }

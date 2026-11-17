@@ -26,6 +26,12 @@ export interface Occurrence {
   deliveries: OccurrenceDelivery[]
   /** Pseudo de qui l'a programmée ; absent pour une diffusion antérieure à la traçabilité. */
   createdBy?: string | null
+  /**
+   * Passée son heure mais retenue par la suspension d'un canal : toujours
+   * `SCHEDULED`, elle partira à la levée ou passera en échec au-delà du retard
+   * maximal. En attendant, elle se déplace et s'annule.
+   */
+  held?: boolean
 }
 
 export type WeeklyOccurrences = Map<string, Occurrence[]>

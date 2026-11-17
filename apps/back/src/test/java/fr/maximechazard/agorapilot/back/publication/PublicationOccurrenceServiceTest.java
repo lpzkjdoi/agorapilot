@@ -15,6 +15,8 @@ import fr.maximechazard.agorapilot.back.publication.repositories.PublicationRepo
 import fr.maximechazard.agorapilot.back.publication.requests.CreatePublicationOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publication.requests.RescheduleOccurrenceRequest;
 import fr.maximechazard.agorapilot.back.publisher.Publisher;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspension;
+import fr.maximechazard.agorapilot.back.publisher.suspension.ChannelSuspensionService;
 import fr.maximechazard.agorapilot.back.publisher.PublisherRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -74,21 +76,25 @@ class PublicationOccurrenceServiceTest {
     private Publisher publisher;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private ChannelSuspensionService channelSuspensionService;
 
     private PublicationOccurrenceService service;
 
     @BeforeEach
     void setUp() {
+        OccurrenceHold occurrenceHold = new OccurrenceHold(channelSuspensionService, CLOCK);
         service = new PublicationOccurrenceService(
                 publicationRepository,
                 publicationOccurrenceRepository,
                 publicationDeliveryRepository,
                 publisherRegistry,
-                new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper()),
+                new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper(), occurrenceHold),
                 new SchedulingProperties(Duration.ofMinutes(1), Duration.ofHours(1), LocalTime.of(15, 0), LocalTime.of(22, 0)),
                 mock(SecurityEventService.class),
                 CLOCK,
-                eventPublisher
+                eventPublisher,
+                occurrenceHold
         );
     }
 

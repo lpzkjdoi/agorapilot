@@ -62,6 +62,7 @@ public class PublicationOccurrenceService {
     private final SecurityEventService events;
     private final Clock clock;
     private final ApplicationEventPublisher eventPublisher;
+    private final OccurrenceHold occurrenceHold;
 
     /**
      * Programme une diffusion : une occurrence porteuse d'une livraison
@@ -527,12 +528,16 @@ public class PublicationOccurrenceService {
         return occurrence;
     }
 
-    /** Programmée, aucun canal encore servi, et au-delà de l'horizon figé. */
+    /**
+     * Programmée, aucun canal encore servi, et au-delà de l'horizon figé — ou
+     * retenue par une suspension : passée son heure, elle ne partira pas tant
+     * que le canal reste suspendu, la toucher n'est pas une course.
+     */
     private boolean isModifiable(PublicationOccurrence occurrence) {
         boolean untouched = occurrence.getStatus() == PublicationOccurrenceStatus.SCHEDULED
                 && occurrence.getDeliveries().stream().allMatch(delivery -> delivery.getStatus() == DeliveryStatus.PENDING);
 
-        return untouched && occurrence.getScheduledAt().isAfter(frozenUntil());
+        return untouched && (occurrence.getScheduledAt().isAfter(frozenUntil()) || occurrenceHold.isHeld(occurrence));
     }
 
     private static boolean hasPublishedDelivery(PublicationOccurrence occurrence) {
