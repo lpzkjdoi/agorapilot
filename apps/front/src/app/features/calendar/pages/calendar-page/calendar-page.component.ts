@@ -206,6 +206,30 @@ export class CalendarPageComponent {
     });
   }
 
+  /** Arrête la répétition de la diffusion : ses diffusions à venir sont annulées. */
+  protected stopSeries(occurrence: Occurrence): void {
+    if (this.busyId() !== null || !occurrence.seriesId) {
+      return;
+    }
+
+    this.busyId.set(occurrence.id);
+
+    this.occurrencesService.stopSeries(occurrence.seriesId).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.notifications.success('Répétition arrêtée : ses diffusions à venir sont annulées.');
+        this.selectedDay.set(null);
+        this.load(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Arrêt de la répétition impossible', err);
+        this.busyId.set(null);
+        this.notifications.error(apiErrorMessage(err, 'La répétition n’a pas pu être arrêtée.'));
+        this.load(false);
+      },
+    });
+  }
+
   protected cancel(occurrence: Occurrence): void {
     if (this.busyId() !== null) {
       return;

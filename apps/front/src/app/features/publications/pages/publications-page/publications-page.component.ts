@@ -19,7 +19,7 @@ import { MediasService } from "../../../medias/medias.service";
 import {
   ScheduleOccurrenceModalComponent,
 } from "../../../occurrences/components/schedule-occurrence-modal/schedule-occurrence-modal.component";
-import { ScheduleFormValue } from "../../../occurrences/occurrence.model";
+import { RepeatFormValue, ScheduleFormValue } from "../../../occurrences/occurrence.model";
 import {
   apiErrorMessage,
   scheduledMessage,
@@ -117,6 +117,14 @@ export class PublicationsPageComponent {
   /** Publication qu'on programme, `null` quand la modale est fermée. */
   protected readonly schedulingFor = signal<Publication | null>(null);
   protected readonly scheduling = signal(false);
+
+  /** Fin de la campagne de la publication à programmer : fin proposée d'une répétition. */
+  protected readonly schedulingCampaignEnd = computed(() => {
+    const campaignId = this.schedulingFor()?.campaign?.id;
+    const campaign = this.campaigns().find((candidate) => candidate.id === campaignId);
+
+    return campaign?.endDate?.slice(0, 10) ?? null;
+  });
 
   protected readonly search = signal('');
   protected readonly statusFilter = signal<PublicationStatusFilter>('ALL');
@@ -420,6 +428,38 @@ export class PublicationsPageComponent {
         this.notifications.error(apiErrorMessage(err, value.slots.length > 1
           ? 'Aucune diffusion n’a été programmée.'
           : 'La diffusion n’a pas pu être programmée.'));
+      },
+    });
+  }
+
+  protected onRepeatSubmitted(value: RepeatFormValue): void {
+    const publication = this.schedulingFor();
+
+    if (!publication) {
+      return;
+    }
+
+    this.scheduling.set(true);
+
+    this.occurrencesService.createSeries({
+      publicationId: publication.id,
+      channels: value.channels,
+      rule: value.rule,
+      startDate: value.startDate,
+      time: value.time || null,
+    }).subscribe({
+      next: (series) => {
+        this.scheduling.set(false);
+        this.schedulingFor.set(null);
+        const created = series.upcoming > 1
+          ? `${ series.upcoming } diffusions déjà programmées`
+          : series.upcoming === 1 ? 'une diffusion déjà programmée' : 'les diffusions suivront';
+        this.notifications.success(`${ value.summary } ${ created[0].toUpperCase() }${ created.slice(1) } ; les suivantes sont créées au fil des semaines.`, 'Répétition programmée');
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Répétition impossible', err);
+        this.scheduling.set(false);
+        this.notifications.error(apiErrorMessage(err, 'La répétition n’a pas pu être programmée.'));
       },
     });
   }

@@ -138,4 +138,30 @@ describe('OccurrencesService', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
     expect(done).toBe(true);
   });
+
+  it('should POST a series to /api/occurrence-series', () => {
+    const body = { publicationId: 7, channels: ['FACEBOOK' as const], rule: 'FREQ=WEEKLY', startDate: '2026-11-23', time: null };
+    service.createSeries(body).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrence-series');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    request.flush({});
+  });
+
+  it('should GET the series of a publication', () => {
+    service.getSeries(7).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrence-series?publicationId=7');
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
+  it('should DELETE /api/occurrence-series/{id} to stop a series', () => {
+    service.stopSeries(3).subscribe();
+
+    const request = httpTesting.expectOne('/api/occurrence-series/3');
+    expect(request.request.method).toBe('DELETE');
+    request.flush({});
+  });
 });

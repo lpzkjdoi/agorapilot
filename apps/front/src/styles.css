@@ -351,6 +351,12 @@ button {
   color: #B91C1C;
 }
 
+/* Diffusion créée par une répétition (programmation par fréquence). */
+.occurrence-badge-series {
+  background-color: #F3F4F6;
+  color: #374151;
+}
+
 /* Retenue par une suspension de canal : ni partie, ni en échec. */
 .occurrence-badge-held {
   background-color: #FEF3C7;

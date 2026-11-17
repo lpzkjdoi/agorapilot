@@ -27,6 +27,21 @@
   </header>
 
   <form class="schedule-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="schedule-modes" role="tablist" aria-label="Façon de programmer">
+      <button type="button" role="tab" class="schedule-mode schedule-mode-dates"
+              [attr.aria-selected]="mode() === 'dates'" (click)="mode.set('dates')">Dates précises</button>
+      <button type="button" role="tab" class="schedule-mode schedule-mode-repeat"
+              [attr.aria-selected]="mode() === 'repeat'" (click)="mode.set('repeat')">Répéter</button>
+    </div>
+
+    @if (mode() === 'repeat') {
+      <app-repeat-fields [form]="repeat" [minDate]="minDate" />
+      <p class="schedule-hint">
+        Les diffusions sont créées à l’avance, sur les semaines qui viennent, puis
+        chaque nuit. Chacune se déplace ou s’annule comme une autre ; la
+        répétition s’arrête depuis le calendrier.
+      </p>
+    } @else {
     <div class="schedule-slots" formArrayName="slots">
       @for (slot of slots.controls; track slot; let i = $index) {
         <div class="schedule-when" [formGroupName]="i">
@@ -78,6 +93,7 @@
       saisie est fixée et ne bougera plus. Si une date ne peut pas être
       retenue, aucune n'est programmée.
     </p>
+    }
 
     <fieldset class="schedule-field">
       <legend>Canaux</legend>
@@ -103,7 +119,7 @@
           <!-- Fond bleu nuit : c'est la variante `dark` du loader. -->
           <app-loader size="sm" variant="dark" label="Programmation en cours…" />
         }
-        Programmer
+        {{ mode() === 'repeat' ? 'Programmer la répétition' : 'Programmer' }}
       </button>
     </div>
   </form>

@@ -5,7 +5,9 @@ import { environment } from "../../../environments/environment";
 import {
   CreateOccurrenceRequest,
   CreateOccurrencesRequest,
+  CreateSeriesRequest,
   Occurrence,
+  OccurrenceSeries,
   RescheduleOccurrenceRequest,
   WeeklyOccurrences,
 } from "./occurrence.model";
@@ -16,6 +18,7 @@ import {
 export class OccurrencesService {
   private readonly http = inject(HttpClient);
   private readonly url = environment.apiUrl + "/occurrences"
+  private readonly seriesUrl = environment.apiUrl + "/occurrence-series"
 
   getWeeklyOccurrences() {
     return this.http.get<WeeklyOccurrences>(this.url + "/weekly")
@@ -55,6 +58,24 @@ export class OccurrencesService {
    */
   retry(occurrenceId: number, request: RescheduleOccurrenceRequest): Observable<Occurrence> {
     return this.http.post<Occurrence>(`${ this.url }/${ occurrenceId }/retry`, request);
+  }
+
+  /**
+   * Programme une publication par fréquence : le back crée la série et ses
+   * premières diffusions, puis les suivantes chaque nuit.
+   */
+  createSeries(request: CreateSeriesRequest): Observable<OccurrenceSeries> {
+    return this.http.post<OccurrenceSeries>(this.seriesUrl, request);
+  }
+
+  /** Les séries d'une publication, la plus récente d'abord. */
+  getSeries(publicationId: number): Observable<OccurrenceSeries[]> {
+    return this.http.get<OccurrenceSeries[]>(this.seriesUrl, { params: new HttpParams().set('publicationId', publicationId) });
+  }
+
+  /** Arrête une série : ses diffusions encore programmées sont annulées. */
+  stopSeries(seriesId: number): Observable<OccurrenceSeries> {
+    return this.http.delete<OccurrenceSeries>(`${ this.seriesUrl }/${ seriesId }`);
   }
 
   /** Annule une diffusion programmée ; le jour est réparti à nouveau. */

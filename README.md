@@ -104,7 +104,7 @@ ne rien perdre.
 
 ### Après la v1.0
 
-- [ ] **Programmation par fréquence** (chaque lundi, tous les mois, tous les 3 mois…), calquée sur la répétition des Rappels iOS/macOS. La programmation à plusieurs dates est faite (cf. [changelog](docs/changelog/2026-11-09-programmation-multi-dates.md)). **Back fait le 2026-11-17** (cf. [changelog](docs/changelog/2026-11-17-frequence-back.md)) ; reste la modale « Programmer » et l'affichage des séries côté front. Déjà tranché :
+- [x] **Programmation par fréquence** (chaque lundi, tous les mois, tous les 3 mois…), calquée sur la répétition des Rappels iOS/macOS, faite le 2026-11-17 (cf. changelogs [back](docs/changelog/2026-11-17-frequence-back.md) et [front](docs/changelog/2026-11-17-frequence-front.md)). Reste : une alerte quand une publication répétée repasse en brouillon. Choix retenus :
   - préréglages (chaque jour, jours ouvrés, week-ends, chaque semaine, toutes les 2 semaines, chaque mois, tous les 3 mois, tous les 6 mois, chaque année) et « Personnaliser » : fréquence, « tous les N », jours de la semaine, jours du mois (grille 1–31 ou « le premier / … / dernier lundi »), mois de l'année ; pas de répétition horaire
   - règle stockée au format RFC 5545 (RRULE, celui d'`EKRecurrenceRule`) ; **un jour 29–31 absent du mois tombe le dernier jour du mois** (et non sauté comme le prévoit la norme)
   - fin de la répétition : jamais, à une date (par défaut la fin de la campagne) **ou** après N diffusions

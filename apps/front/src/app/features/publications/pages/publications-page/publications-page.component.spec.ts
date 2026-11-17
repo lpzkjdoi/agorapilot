@@ -10,6 +10,7 @@ import { Campaign } from '../../../campaigns/campaign.model';
 import { Publication } from '../../publication.model';
 import { PublicationCardComponent } from '../../components/publication-card/publication-card.component';
 import { PublicationsPageComponent } from './publications-page.component';
+import { ScheduleOccurrenceModalComponent } from '../../../occurrences/components/schedule-occurrence-modal/schedule-occurrence-modal.component';
 import { provideSignedInAs, signInAs } from '../../../../core/auth/auth.testing';
 
 registerLocaleData(localeFr, 'fr-FR');
@@ -605,6 +606,67 @@ describe('PublicationsPageComponent', () => {
           message: 'La diffusion n’a pas pu être programmée. Plus aucune publication possible le 2026-09-25 : la fenêtre 15:00–22:00 est passée.',
         }),
       ]);
+    });
+
+    describe('répétition', () => {
+      /** Publication 1, de la campagne 7 qui finit le 31/03/2027 ; modale ouverte sur « Répéter ». */
+      function openRepeat() {
+        const fixture = TestBed.createComponent(PublicationsPageComponent);
+        httpTesting.expectOne('/api/publications').flush(publications);
+        httpTesting.expectOne('/api/campaigns').flush([{ ...campaigns[0], endDate: '2027-03-31T00:00:00' }]);
+        fixture.detectChanges();
+        emitFrom(fixture, 0, 'schedule');
+        const compiled = fixture.nativeElement as HTMLElement;
+        compiled.querySelector<HTMLButtonElement>('.schedule-mode-repeat')!.click();
+        fixture.detectChanges();
+        const modal = fixture.debugElement.query(By.directive(ScheduleOccurrenceModalComponent))
+          .componentInstance as ScheduleOccurrenceModalComponent;
+        return { fixture, compiled, modal };
+      }
+
+      it('should end the repetition with the campaign by default, and POST the series', () => {
+        const { fixture, compiled, modal } = openRepeat();
+
+        expect(modal.repeat.controls.until.value).toBe('2027-03-31');
+        modal.repeat.controls.startDate.setValue('2026-11-23');
+        compiled.querySelector<HTMLButtonElement>('app-schedule-occurrence-modal .primary')!.click();
+        fixture.detectChanges();
+
+        const request = httpTesting.expectOne('/api/occurrence-series');
+        expect(request.request.method).toBe('POST');
+        expect(request.request.body).toEqual({
+          publicationId: 1, channels: ['FACEBOOK'], rule: 'FREQ=WEEKLY;UNTIL=20270331', startDate: '2026-11-23', time: null,
+        });
+        request.flush({ id: 3, upcoming: 4 });
+        fixture.detectChanges();
+
+        expect(compiled.querySelector('app-schedule-occurrence-modal')).toBeNull();
+        expect(notifications.notifications()).toEqual([
+          expect.objectContaining({
+            level: 'success',
+            title: 'Répétition programmée',
+            message: expect.stringContaining('Chaque semaine, à partir du 23/11/2026, heure automatique, jusqu’au 31/03/2027. 4 diffusions déjà programmées'),
+          }),
+        ]);
+      });
+
+      it('should keep the modal open with the reason when the back refuses', () => {
+        const { fixture, compiled, modal } = openRepeat();
+
+        modal.repeat.controls.startDate.setValue('2026-11-23');
+        compiled.querySelector<HTMLButtonElement>('app-schedule-occurrence-modal .primary')!.click();
+        httpTesting.expectOne('/api/occurrence-series').flush(
+          { message: 'Règle de répétition invalide : FREQ manquant.' }, { status: 400, statusText: 'Bad Request' });
+        fixture.detectChanges();
+
+        expect(compiled.querySelector('app-schedule-occurrence-modal')).not.toBeNull();
+        expect(notifications.notifications()).toEqual([
+          expect.objectContaining({
+            level: 'error',
+            message: 'La répétition n’a pas pu être programmée. Règle de répétition invalide : FREQ manquant.',
+          }),
+        ]);
+      });
     });
   });
 

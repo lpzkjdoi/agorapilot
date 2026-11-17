@@ -107,3 +107,8 @@
 .day-panel-edit:hover {
   background-color: #EFF6FF;
 }
+
+.day-panel-stop-confirm {
+  margin-right: 0.375rem;
+  color: #B91C1C;
+}

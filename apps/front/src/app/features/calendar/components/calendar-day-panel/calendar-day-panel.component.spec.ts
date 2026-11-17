@@ -173,4 +173,48 @@ describe('CalendarDayPanelComponent', () => {
     expect(times[0].textContent).toContain('programmée par camille');
     expect(times[1].textContent).not.toContain('programmée par');
   });
+
+  describe('répétition', () => {
+    const repeated = () => occurrence({ seriesId: 3 });
+
+    it('should badge an occurrence created by a repetition', () => {
+      render([repeated()]);
+
+      expect(element.querySelector('.occurrence-badge-series')?.textContent).toContain('Répétée');
+    });
+
+    it('should stop the repetition only after confirming it on the spot', () => {
+      render([repeated()]);
+      const stop = vi.fn();
+      fixture.componentInstance.stopSeries.subscribe(stop);
+
+      element.querySelector<HTMLButtonElement>('.day-panel-stop')!.click();
+      fixture.detectChanges();
+      expect(stop).not.toHaveBeenCalled();
+      expect(element.textContent).toContain('annule toutes ses diffusions à venir');
+
+      element.querySelector<HTMLButtonElement>('.day-panel-stop-keep')!.click();
+      fixture.detectChanges();
+      expect(element.querySelector('.day-panel-stop-confirm')).toBeNull();
+
+      element.querySelector<HTMLButtonElement>('.day-panel-stop')!.click();
+      fixture.detectChanges();
+      element.querySelector<HTMLButtonElement>('.day-panel-stop-confirm')!.click();
+
+      expect(stop).toHaveBeenCalledWith(expect.objectContaining({ id: 12, seriesId: 3 }));
+    });
+
+    it('should not offer to stop without the right to schedule, nor for a single occurrence', () => {
+      fixture = TestBed.createComponent(CalendarDayPanelComponent);
+      fixture.componentRef.setInput('date', '2026-10-03');
+      fixture.componentRef.setInput('occurrences', [repeated()]);
+      fixture.componentRef.setInput('now', NOW);
+      fixture.componentRef.setInput('canSchedule', false);
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.day-panel-stop')).toBeNull();
+
+      render([occurrence()]);
+      expect(element.querySelector('.day-panel-stop')).toBeNull();
+    });
+  });
 });

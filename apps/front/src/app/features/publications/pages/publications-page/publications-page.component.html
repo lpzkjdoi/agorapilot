@@ -106,8 +106,10 @@
   <app-schedule-occurrence-modal
     [publication]="publication"
     [saving]="scheduling()"
+    [campaignEnd]="schedulingCampaignEnd()"
     (closed)="schedulingFor.set(null)"
     (submitted)="onScheduleSubmitted($event)"
+    (repeatSubmitted)="onRepeatSubmitted($event)"
   />
 }
 

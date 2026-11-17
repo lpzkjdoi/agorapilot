@@ -103,4 +103,12 @@ describe('CalendarOccurrenceChipComponent', () => {
     expect(host.getAttribute('draggable')).toBeNull();
     expect(dragStart(host).data.size).toBe(0);
   });
+
+  it('should mark an occurrence created by a repetition', () => {
+    const chip = render(occurrence({ seriesId: 3 }));
+
+    expect(chip.querySelector('.chip-series')).not.toBeNull();
+    expect(chip.querySelector('.chip')?.getAttribute('title')).toContain('Fait partie d’une répétition');
+    expect(render(occurrence()).querySelector('.chip-series')).toBeNull();
+  });
 });

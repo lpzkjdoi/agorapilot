@@ -5,6 +5,7 @@ import {
   HostListener,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { DeliveryChannel } from "../../../publications/publication.model";
 import { Occurrence, OccurrenceStatus } from "../../../occurrences/occurrence.model";
@@ -48,6 +49,11 @@ export class CalendarDayPanelComponent {
   readonly closed = output<void>();
   readonly edit = output<Occurrence>();
   readonly retry = output<Occurrence>();
+  /** Arrêter la répétition dont fait partie la diffusion, après confirmation. */
+  readonly stopSeries = output<Occurrence>();
+
+  /** Diffusion dont on confirme l'arrêt de la répétition, sur place plutôt qu'avec `confirm()`. */
+  protected readonly confirmingStop = signal<number | null>(null);
 
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly channelLabels = CHANNEL_LABELS;
@@ -56,6 +62,11 @@ export class CalendarDayPanelComponent {
 
   protected modifiable(occurrence: Occurrence): boolean {
     return isModifiable(occurrence, this.now());
+  }
+
+  protected confirmStop(occurrence: Occurrence): void {
+    this.confirmingStop.set(null);
+    this.stopSeries.emit(occurrence);
   }
 
   @HostListener('document:keydown.escape')

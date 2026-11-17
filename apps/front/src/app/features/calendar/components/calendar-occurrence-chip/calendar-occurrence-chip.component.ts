@@ -53,6 +53,7 @@ export class CalendarOccurrenceChipComponent {
       occurrence.held
         ? `Diffusion en attente : canal suspendu (${ how })`
         : `Diffusion ${ STATUS_LABELS[occurrence.status] } (${ how })`,
+      occurrence.seriesId ? 'Fait partie d’une répétition' : null,
       reason ? `Motif : ${ reason }` : null,
     ].filter(Boolean).join('\n');
   });
