@@ -55,6 +55,13 @@ describe('occurrence utils', () => {
       expect(isModifiable(occurrence({ status: 'FAILED' }), now)).toBe(false);
     });
 
+    it('should allow a past occurrence held by a channel suspension, which cannot leave meanwhile', () => {
+      const past = { scheduledAt: '2026-10-03T11:30:00' };
+
+      expect(isModifiable(occurrence(past), now)).toBe(false);
+      expect(isModifiable(occurrence({ ...past, held: true }), now)).toBe(true);
+    });
+
     it('should refuse an occurrence whose delivery is already in progress', () => {
       expect(isModifiable(
         occurrence({ deliveries: [{ id: 100, channel: 'FACEBOOK', status: 'IN_PROGRESS' }] }),

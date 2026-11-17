@@ -74,6 +74,14 @@ describe('CalendarOccurrenceChipComponent', () => {
     expect(chip.getAttribute('title')).toContain('Motif : Token expired');
   });
 
+  it('should flag an occurrence held by a suspension and say so in the tooltip', () => {
+    const chip = render(occurrence({ held: true })).querySelector('.chip')!;
+
+    expect(chip.classList).toContain('chip-held');
+    expect(chip.querySelector('.chip-icon')?.textContent).toBe('⏸');
+    expect(chip.getAttribute('title')).toContain('Diffusion en attente : canal suspendu');
+  });
+
   it('should fade a published occurrence', () => {
     const host = render(occurrence({ status: 'PUBLISHED' }));
 

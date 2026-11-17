@@ -13,6 +13,10 @@ import java.util.List;
  * occurrence, et Jackson sérialiserait alors le cycle
  * {@code occurrence → deliveries → occurrence → …} jusqu'au débordement de pile,
  * après avoir déjà commencé à écrire une réponse 200 illisible.
+ *
+ * <p>{@code held} : la diffusion est passée son heure mais retenue par la
+ * suspension d'un canal (cf. {@code OccurrenceHold}). Elle reste
+ * {@code SCHEDULED}, et peut encore être déplacée ou annulée.
  */
 public record PublicationOccurrenceDTO(
         Long id,
@@ -21,6 +25,7 @@ public record PublicationOccurrenceDTO(
         PublicationOccurrenceStatus status,
         PublicationDTO publication,
         List<PublicationDeliveryDTO> deliveries,
-        String createdBy
+        String createdBy,
+        boolean held
 ) {
 }

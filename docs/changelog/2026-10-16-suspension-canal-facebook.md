@@ -139,7 +139,9 @@ diffusions ».
 - **Diffusions retenues** : passée leur heure, elles restent « programmées »
   dans le calendrier, et ne peuvent être ni déplacées ni annulées tant qu'elles
   n'ont pas été tranchées (levée, ou échec au-delà du retard maximal). Le
-  bandeau explique la situation.
+  bandeau explique la situation. _Levée le 2026-11-17 : elles sont signalées
+  « En attente » et se déplacent ou s'annulent (cf.
+  [changelog](./2026-11-17-diffusions-retenues.md))._
 - **Pas d'alerte en dehors de l'application** (mail, push) : la suspension ne se
   voit qu'en ouvrant AgoraPilot.
 

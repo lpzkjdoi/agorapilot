@@ -83,6 +83,11 @@
   color: var(--color-ui-text-secondary);
 }
 
+.day-panel-held {
+  margin-top: 0.25rem;
+  color: #B45309;
+}
+
 .day-panel-reason {
   margin-top: 0.25rem;
   font-size: 12px;

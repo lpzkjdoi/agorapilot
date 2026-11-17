@@ -37,8 +37,9 @@ export function toIsoDate(date: Date): string {
 
 /**
  * Une diffusion se déplace ou s'annule tant qu'aucun canal n'a été servi et
- * qu'elle n'est pas imminente — la règle que le back applique, reprise ici
- * pour ne proposer que des gestes qui aboutiront.
+ * qu'elle n'est pas imminente, ou qu'elle est retenue par une suspension — la
+ * règle que le back applique, reprise ici pour ne proposer que des gestes qui
+ * aboutiront.
  */
 export function isModifiable(occurrence: Occurrence, now: Date): boolean {
   if (occurrence.status !== 'SCHEDULED') {
@@ -47,6 +48,11 @@ export function isModifiable(occurrence: Occurrence, now: Date): boolean {
 
   if (!occurrence.deliveries.every((delivery) => delivery.status === 'PENDING')) {
     return false;
+  }
+
+  // Rien ne part tant que le canal reste suspendu : pas de course avec l'ordonnanceur.
+  if (occurrence.held) {
+    return true;
   }
 
   // Sans suffixe de fuseau, la chaîne est lue en heure locale — celle du

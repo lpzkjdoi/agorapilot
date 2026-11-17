@@ -94,7 +94,7 @@ ne rien perdre.
 #### Fortement recommandé
 
 - [ ] **Alerte hors de l'application** : une suspension ou une diffusion en échec ne se voit qu'en ouvrant AgoraPilot — prévenir par mail les comptes `channels:manage` (adresse e-mail sur les comptes, serveur d'envoi) ; a minima une sonde de disponibilité externe
-- [ ] **Diffusions retenues par une suspension** : passée leur heure, elles restent « programmées » et ne peuvent être ni déplacées ni annulées tant qu'elles ne sont pas tranchées — les signaler « en attente » et permettre de les annuler (cf. [changelog](docs/changelog/2026-10-16-suspension-canal-facebook.md#limites-connues))
+- [x] **Diffusions retenues par une suspension** (2026-11-17) : passée leur heure, elles sont signalées « En attente » dans le calendrier et peuvent être déplacées ou annulées (cf. [changelog](docs/changelog/2026-11-17-diffusions-retenues.md))
 - [ ] **Durcissement pour une exposition publique** : limitation de débit par IP sur la connexion (le verrouillage par compte existe), en-têtes de sécurité nginx (CSP, HSTS), scan Trivy bloquant
 - [ ] **Logs** : rotation configurée a minima, centralisation idéalement
 - [ ] **Mot de passe oublié** : aujourd'hui seul un administrateur débloque un compte (mot de passe provisoire) — à trancher selon la taille de l'équipe

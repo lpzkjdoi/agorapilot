@@ -105,6 +105,35 @@ describe('CalendarDayPanelComponent', () => {
     expect(element.textContent).toContain('elle ne peut plus être modifiée');
   });
 
+  it('should badge a held occurrence « En attente », explain why, and still offer to edit it', () => {
+    render([occurrence({ scheduledAt: '2026-10-01T11:30:00', held: true })]);
+    const edit = vi.fn();
+    fixture.componentInstance.edit.subscribe(edit);
+
+    expect(element.querySelector('.occurrence-badge-held')?.textContent).toBe('En attente');
+    expect(element.querySelector('.occurrence-badge-scheduled')).toBeNull();
+    expect(element.querySelector('.day-panel-held')?.textContent).toContain('Retenue par la suspension du canal');
+    expect(element.querySelector('.day-panel-held')?.textContent).toContain('déplacer ou l’annuler');
+    expect(element.textContent).not.toContain('elle ne peut plus être modifiée');
+
+    element.querySelector<HTMLButtonElement>('.day-panel-edit')!.click();
+
+    expect(edit).toHaveBeenCalledWith(expect.objectContaining({ id: 12 }));
+  });
+
+  it('should not offer to move a held occurrence without the right to schedule', () => {
+    fixture = TestBed.createComponent(CalendarDayPanelComponent);
+    fixture.componentRef.setInput('date', '2026-10-01');
+    fixture.componentRef.setInput('occurrences', [occurrence({ scheduledAt: '2026-10-01T11:30:00', held: true })]);
+    fixture.componentRef.setInput('now', NOW);
+    fixture.componentRef.setInput('canSchedule', false);
+    fixture.detectChanges();
+    element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.day-panel-held')?.textContent).not.toContain('déplacer');
+    expect(element.querySelector('.day-panel-edit')).toBeNull();
+  });
+
   it('should ask to edit a modifiable occurrence', () => {
     render([occurrence()]);
     const edit = vi.fn();

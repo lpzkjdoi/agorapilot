@@ -28,11 +28,15 @@
                   [class.occurrence-badge-intramuros]="delivery.channel === 'INTRAMUROS'"
             >{{ channelLabels[delivery.channel] }}</span>
           }
-          <span class="occurrence-badge"
-                [class.occurrence-badge-scheduled]="occurrence.status === 'SCHEDULED'"
-                [class.occurrence-badge-published]="occurrence.status === 'PUBLISHED'"
-                [class.occurrence-badge-failed]="occurrence.status === 'FAILED'"
-          >{{ statusLabels[occurrence.status] }}</span>
+          @if (occurrence.held) {
+            <span class="occurrence-badge occurrence-badge-held">En attente</span>
+          } @else {
+            <span class="occurrence-badge"
+                  [class.occurrence-badge-scheduled]="occurrence.status === 'SCHEDULED'"
+                  [class.occurrence-badge-published]="occurrence.status === 'PUBLISHED'"
+                  [class.occurrence-badge-failed]="occurrence.status === 'FAILED'"
+            >{{ statusLabels[occurrence.status] }}</span>
+          }
           <span class="day-panel-time">
             {{ time(occurrence) }} · {{ occurrence.pinned ? 'heure fixe' : 'heure auto' }}
             @if (occurrence.createdBy) {
@@ -43,6 +47,13 @@
 
         @if (reason(occurrence); as why) {
           <p class="day-panel-reason">Motif : {{ why }}</p>
+        }
+
+        @if (occurrence.held) {
+          <p class="day-panel-note day-panel-held">
+            Retenue par la suspension du canal : elle partira à la reprise des diffusions, ou passera en échec
+            au-delà d’une heure de retard.@if (canSchedule()) { Vous pouvez encore la déplacer ou l’annuler.}
+          </p>
         }
 
         @if (modifiable(occurrence)) {

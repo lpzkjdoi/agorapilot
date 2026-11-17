@@ -351,6 +351,12 @@ button {
   color: #B91C1C;
 }
 
+/* Retenue par une suspension de canal : ni partie, ni en échec. */
+.occurrence-badge-held {
+  background-color: #FEF3C7;
+  color: #B45309;
+}
+
 /* Pages hors application (connexion, mot de passe) : une carte centrée, sans
    bandeau. Styles partagés par les deux pages. */
 .auth-page {

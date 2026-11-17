@@ -7,6 +7,7 @@ import fr.maximechazard.agorapilot.back.publication.Publication;
 import fr.maximechazard.agorapilot.back.publication.PublicationDelivery;
 import fr.maximechazard.agorapilot.back.media.MediaMapper;
 import fr.maximechazard.agorapilot.back.publication.PublicationMapper;
+import fr.maximechazard.agorapilot.back.publication.OccurrenceHold;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrence;
 import fr.maximechazard.agorapilot.back.publication.PublicationOccurrenceStatus;
 import fr.maximechazard.agorapilot.back.publication.PublicationStatus;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Une occurrence et ses livraisons se référencent mutuellement côté entités.
@@ -27,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PublicationOccurrenceMapperTest {
 
     private final PublicationOccurrenceMapper mapper =
-            new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper());
+            new PublicationOccurrenceMapper(new PublicationMapper(new MediaMapper()), new PublicationDeliveryMapper(),
+                    mock(OccurrenceHold.class));
 
     private static PublicationOccurrence occurrenceWithOneDelivery() {
         Publication publication = new Publication();

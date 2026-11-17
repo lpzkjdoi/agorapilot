@@ -50,7 +50,9 @@ export class CalendarOccurrenceChipComponent {
 
     return [
       `${ this.time() } — ${ occurrence.publication.content }`,
-      `Diffusion ${ STATUS_LABELS[occurrence.status] } (${ how })`,
+      occurrence.held
+        ? `Diffusion en attente : canal suspendu (${ how })`
+        : `Diffusion ${ STATUS_LABELS[occurrence.status] } (${ how })`,
       reason ? `Motif : ${ reason }` : null,
     ].filter(Boolean).join('\n');
   });

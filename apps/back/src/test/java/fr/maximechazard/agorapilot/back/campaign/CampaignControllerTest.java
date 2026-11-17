@@ -211,7 +211,8 @@ class CampaignControllerTest {
                     PublicationOccurrenceStatus.SCHEDULED,
                     campaign().publications().getFirst(),
                     List.of(),
-                    "maxime"
+                    "maxime",
+                    false
             )));
 
             mockMvc.perform(get("/api/campaigns/3/occurrences"))
