@@ -263,7 +263,6 @@ describe('PublicationsPageComponent', () => {
 
   it('should relay the reason returned with the 502 when Facebook refuses the post', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
     emitFrom(fixture, 0, 'publishOnFacebook');
 
@@ -287,7 +286,6 @@ describe('PublicationsPageComponent', () => {
 
   it('should relay a suspended channel and refresh the suspension banner', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
     const suspensions = TestBed.inject(ChannelSuspensionsService);
 
     emitFrom(fixture, 0, 'publishOnFacebook');
@@ -314,7 +312,6 @@ describe('PublicationsPageComponent', () => {
 
   it('should not fire a second request while a publication is already in flight', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
     emitFrom(fixture, 0, 'publishOnFacebook');
     emitFrom(fixture, 0, 'publishOnFacebook');
@@ -331,7 +328,6 @@ describe('PublicationsPageComponent', () => {
 
   it('should warn that generating the XLSX has no endpoint yet', () => {
     const fixture = render();
-    const compiled = fixture.nativeElement as HTMLElement;
 
     emitFrom(fixture, 0, 'generateXlsx');
 
@@ -709,7 +705,6 @@ describe('PublicationsPageComponent', () => {
     /** Rend la page puis ouvre le sélecteur sur la première publication. */
     function open(): ComponentFixture<PublicationsPageComponent> {
       const fixture = render();
-      const compiled = fixture.nativeElement as HTMLElement;
 
       emitFrom(fixture, 0, 'manageMedias');
       fixture.detectChanges();
