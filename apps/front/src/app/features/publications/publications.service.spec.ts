@@ -106,14 +106,28 @@ describe('PublicationsService', () => {
     expect((error as HttpErrorResponse).error.message).toBe('No token available');
   });
 
-  // `generateXlsx` n'a pas encore d'endpoint côté back : elle doit échouer
-  // explicitement, et surtout n'émettre aucune requête HTTP.
-  it('should fail `generateXlsx` without issuing a request while the endpoint is missing', () => {
-    let error: unknown;
-    service.generateXlsx(1).subscribe({ error: (err) => (error = err) });
+  it('should GET the EventProxy export as a blob, named after `Content-Disposition`', () => {
+    let received: { content: Blob, filename: string } | undefined;
+    service.exportXlsx(7).subscribe((file) => (received = file));
 
-    expect(error).toBeInstanceOf(Error);
-    httpTesting.expectNone(() => true);
+    const request = httpTesting.expectOne('/api/publications/7/xlsx');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    const content = new Blob(['xlsx']);
+    request.flush(content, {
+      headers: { 'Content-Disposition': 'attachment; filename="EventProxy-2026-11-17-publication-7.xlsx"' },
+    });
+
+    expect(received).toEqual({ content, filename: 'EventProxy-2026-11-17-publication-7.xlsx' });
+  });
+
+  it('should fall back to a generic file name without `Content-Disposition`', () => {
+    let filename: string | undefined;
+    service.exportXlsx(7).subscribe((file) => (filename = file.filename));
+
+    httpTesting.expectOne('/api/publications/7/xlsx').flush(new Blob(['xlsx']));
+
+    expect(filename).toBe('EventProxy-publication-7.xlsx');
   });
 
   it('should PUT the campaign of a publication', () => {

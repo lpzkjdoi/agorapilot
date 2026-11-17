@@ -92,6 +92,10 @@ agorapilot:
     lock-duration: PT15M
     session-max-age: PT12H
 
+  export:
+    # Ville portée par l'export XLSX au format EventProxy (colonne « Ville »).
+    city: ${EXPORT_CITY:La Buisse}
+
   scheduling:
     # Période de balayage des occurrences dues (durée ISO-8601). La granularité
     # de la planification ne dépasse pas cette valeur : une occurrence prévue à

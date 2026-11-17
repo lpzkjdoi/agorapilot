@@ -6,10 +6,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Observable } from "rxjs";
 import { ChannelSuspensionsService } from "../../../../core/channel-suspensions/channel-suspensions.service";
 import { AuthService } from "../../../../core/auth/auth.service";
 import { LoaderComponent } from "../../../../core/loader/loader.component";
+import { saveFile } from "../../../../core/files/save-file";
 import { NotificationService } from "../../../../core/notifications/notification.service";
 import {
   MediaPickerModalComponent,
@@ -324,7 +324,15 @@ export class PublicationsPageComponent {
   );
 
   protected onGenerateXlsx(publication: Publication): void {
-    this.runUnavailableAction(this.publicationsService.generateXlsx(publication.id));
+    this.publicationsService.exportXlsx(publication.id).subscribe({
+      next: ({ content, filename }) => saveFile(content, filename),
+      error: (err: HttpErrorResponse) => {
+        console.error('Export XLSX impossible', err);
+        this.notifications.error(err.status === 409
+          ? 'Seule une publication vérifiée peut être exportée.'
+          : 'L’export XLSX a échoué. Réessayez dans un instant.');
+      },
+    });
   }
 
   protected onPublishOnFacebook(publication: Publication): void {
@@ -481,15 +489,5 @@ export class PublicationsPageComponent {
     return reason
       ? `La publication n’a pas pu être diffusée sur Facebook : ${ reason }`
       : 'La publication n’a pas pu être diffusée sur Facebook.';
-  }
-
-  /** Relaie à l'utilisateur l'erreur des actions dont l'endpoint n'existe pas encore. */
-  private runUnavailableAction(action: Observable<never>): void {
-    action.subscribe({
-      error: (err: Error) => {
-        console.warn(err.message);
-        this.notifications.warning('Cette action n’est pas encore disponible.');
-      },
-    });
   }
 }

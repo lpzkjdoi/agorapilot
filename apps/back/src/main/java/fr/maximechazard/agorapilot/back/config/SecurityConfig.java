@@ -107,7 +107,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
 
             // ---- Publications et diffusions
-            .requestMatchers(HttpMethod.GET, "/api/publications").hasAuthority(PUBLICATIONS_READ.code())
+            .requestMatchers(HttpMethod.GET, "/api/publications", "/api/publications/*/xlsx").hasAuthority(PUBLICATIONS_READ.code())
             .requestMatchers(HttpMethod.POST, "/api/publications").hasAuthority(PUBLICATIONS_WRITE.code())
             .requestMatchers(HttpMethod.PUT, "/api/publications/*", "/api/publications/*/medias",
                     "/api/publications/*/campaign").hasAuthority(PUBLICATIONS_WRITE.code())

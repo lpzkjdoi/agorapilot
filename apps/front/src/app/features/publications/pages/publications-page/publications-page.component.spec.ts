@@ -326,19 +326,33 @@ describe('PublicationsPageComponent', () => {
     });
   });
 
-  it('should warn that generating the XLSX has no endpoint yet', () => {
+  it('should download the EventProxy export of a publication', () => {
+    URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const fixture = render();
 
     emitFrom(fixture, 0, 'generateXlsx');
+    httpTesting.expectOne('/api/publications/1/xlsx').flush(new Blob(['xlsx']), {
+      headers: { 'Content-Disposition': 'attachment; filename="EventProxy-2026-11-17-publication-1.xlsx"' },
+    });
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect((click.mock.instances[0] as unknown as HTMLAnchorElement).download).toBe('EventProxy-2026-11-17-publication-1.xlsx');
+    expect(notifications.notifications()).toEqual([]);
+    click.mockRestore();
+  });
+
+  it('should explain that only a verified publication can be exported', () => {
+    const fixture = render();
+
+    emitFrom(fixture, 0, 'generateXlsx');
+    httpTesting.expectOne('/api/publications/1/xlsx')
+      .flush(new Blob(['{}']), { status: 409, statusText: 'Conflict' });
 
     expect(notifications.notifications()).toEqual([
-      expect.objectContaining({
-        level: 'warning',
-        message: 'Cette action n’est pas encore disponible.',
-      }),
+      expect.objectContaining({ level: 'error', message: 'Seule une publication vérifiée peut être exportée.' }),
     ]);
-    // Aucune requête n'est émise : l'endpoint n'existe pas encore.
-    httpTesting.expectNone('/api/publications');
   });
 
   describe('rattachement à une campagne', () => {
