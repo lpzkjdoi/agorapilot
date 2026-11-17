@@ -121,7 +121,7 @@ ne rien perdre.
 - [ ] Appliquer Prettier au code front et le vérifier en CI (installé, scripts `format` / `format:check` présents, mais 136 fichiers non conformes)
 - [ ] Fournir un `.env.example` pour le développement local (seul `.env.preprod.example` existe), avec `AGORAPILOT_ADMIN_USERNAME` / `AGORAPILOT_ADMIN_PASSWORD` : sans eux, une base locale vide n'a aucun compte
 - [ ] Fonctionnalités IA (génération de posts, campagnes, résumés, traitement des mails) — voir [la proposition](docs/proposals/2026-09-24-ai-features-and-email-intake.md) ; **périmètre à réfléchir ensemble** avant toute mise en œuvre
-- [ ] **Export XLSX d'une publication** : endpoint back `POST /api/publications/{id}/xlsx` (le front appelle déjà `generateXlsx`, qui échoue faute d'endpoint) et action déplacée du menu « … » vers le menu « Diffuser » de la carte
+- [x] **Export XLSX d'une publication** au format d'import EventProxy (2026-11-17, cf. [changelog](docs/changelog/2026-11-17-export-xlsx-eventproxy.md)) : titre, description et ville ; dates, catégorie, image, liens et adresse restent à compléter dans l'outil
 - [x] **Carte publication** : remplacer le bouton « … » par un bouton « Supprimer » (2026-11-17, cf. [changelog](docs/changelog/2026-11-17-carte-bouton-supprimer.md))
 - [ ] **Application responsive** : toutes les pages utilisables sur tablette et mobile
 - [x] **Grille des publications plus dense** : jusqu'à 5 cartes par ligne en plein écran (2026-11-17, cf. [changelog](docs/changelog/2026-11-17-grille-5-colonnes.md))

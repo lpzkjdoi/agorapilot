@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { map, Observable } from 'rxjs';
+import { filenameFromDisposition } from "../../core/files/save-file";
 import { environment } from "../../../environments/environment";
 import {
   CreatePublicationDeliveryRequest,
@@ -64,25 +65,18 @@ export class PublicationsService {
     return this.http.put<Publication>(`${ this.url }/${ publicationId }/medias`, body);
   }
 
-  // ---------------------------------------------------------------------------
-  // Actions de la carte publication encore sans endpoint.
-  //
-  // Elles sont déclarées ici pour que la page soit complète et que le
-  // branchement se résume, le jour venu, à remplacer le corps de la méthode par
-  // l'appel HTTP décrit en commentaire. En attendant, elles échouent
-  // explicitement plutôt que de faire croire à un succès.
-  // ---------------------------------------------------------------------------
-
   /**
-   * Génère le fichier XLSX récapitulatif d'une publication.
-   *
-   * TODO(back) : `POST /api/publications/{id}/xlsx` — renvoyer le fichier
-   * (`responseType: 'blob'`) ou l'URL de téléchargement.
+   * Exporte la publication au format d'import EventProxy (`.xlsx`). Le nom du
+   * fichier vient du back (`Content-Disposition`) ; à défaut, un nom générique.
    */
-  generateXlsx(publicationId: number): Observable<never> {
-    return throwError(() => new Error(
-      `Génération XLSX indisponible : aucun endpoint back pour la publication ${publicationId}.`,
-    ));
+  exportXlsx(publicationId: number): Observable<{ content: Blob, filename: string }> {
+    return this.http.get(`${ this.url }/${ publicationId }/xlsx`, { responseType: 'blob', observe: 'response' }).pipe(
+      map((response) => ({
+        content: response.body ?? new Blob(),
+        filename: filenameFromDisposition(response.headers.get('Content-Disposition'))
+          ?? `EventProxy-publication-${ publicationId }.xlsx`,
+      })),
+    );
   }
 
   /**

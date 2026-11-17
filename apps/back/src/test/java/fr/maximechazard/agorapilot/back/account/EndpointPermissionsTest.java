@@ -99,6 +99,7 @@ class EndpointPermissionsTest {
     static Stream<Endpoint> endpoints() {
         return Stream.of(
                 new Endpoint(HttpMethod.GET, "/api/publications", PUBLICATIONS_READ),
+                new Endpoint(HttpMethod.GET, "/api/publications/999/xlsx", PUBLICATIONS_READ),
                 new Endpoint(HttpMethod.POST, "/api/publications", PUBLICATIONS_WRITE),
                 new Endpoint(HttpMethod.PUT, "/api/publications/999", PUBLICATIONS_WRITE),
                 new Endpoint(HttpMethod.PUT, "/api/publications/999/medias", PUBLICATIONS_WRITE),
