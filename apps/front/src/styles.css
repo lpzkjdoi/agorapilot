@@ -522,7 +522,7 @@ button {
   background-color: #991B1B;
 }
 
-/* Bouton carré à icône seule (modifier, « ⋯ ») ; toujours doté d'un aria-label. */
+/* Bouton carré à icône seule (modifier, supprimer) ; toujours doté d'un aria-label. */
 .icon-button {
   display: flex;
   flex: none;
@@ -543,6 +543,18 @@ button {
   border-color: #BFDBFE;
   background-color: #EFF6FF;
   color: #1D4ED8;
+}
+
+/* Variante destructive (supprimer) : rouge au survol, grisée si verrouillée. */
+.icon-button-danger:hover:not(:disabled) {
+  border-color: #FECACA;
+  background-color: #FEF2F2;
+  color: #B91C1C;
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .solid-button:focus-visible,

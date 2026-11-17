@@ -67,13 +67,10 @@ export class PublicationCardComponent {
     this.remove.emit(this.publication());
   }
 
-  /**
-   * Menu déroulant ouvert : « diffuse » (publier ou programmer) ou « more »
-   * (actions secondaires). Un seul à la fois.
-   */
-  protected readonly openMenu = signal<'diffuse' | 'more' | null>(null);
+  /** Menu déroulant « Diffuser » (publier, programmer, exporter) ouvert ou non. */
+  protected readonly openMenu = signal<'diffuse' | null>(null);
 
-  protected toggleMenu(menu: 'diffuse' | 'more'): void {
+  protected toggleMenu(menu: 'diffuse'): void {
     this.openMenu.update((current) => (current === menu ? null : menu));
   }
 

@@ -78,3 +78,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-10 | [Annuler ou clôturer une campagne déprogramme ses diffusions](./changelog/2026-11-10-campagnes-annulation-diffusions.md) | _voir PR_ |
 | 2026-11-14 | [Notifications Discord : programme du jour et échecs de diffusion](./changelog/2026-11-14-notifications-discord.md) | _voir PR_ |
 | 2026-11-17 | [Carte publication : refonte de la hiérarchie des actions](./changelog/2026-11-17-carte-publication.md) | _voir PR_ |
+| 2026-11-17 | [Carte publication : un bouton « Supprimer » à la place du menu « … »](./changelog/2026-11-17-carte-bouton-supprimer.md) | _voir PR_ |
