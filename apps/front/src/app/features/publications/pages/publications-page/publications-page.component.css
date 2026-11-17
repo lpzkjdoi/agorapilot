@@ -55,12 +55,18 @@
   background-color: var(--color-ui-border);
 }
 
-/* Trois colonnes sur un écran large comme dans la maquette, puis deux et une
-   au fur et à mesure que la place manque. */
+/* Jusqu'à cinq colonnes sur un écran large, puis moins au fur et à mesure que
+   la place manque. La largeur minimale d'une colonne est la plus grande de
+   17rem (de quoi loger « Diffuser » et deux boutons-icônes) et d'un
+   cinquième de la grille : c'est ce second terme qui plafonne à cinq. */
 .publications-grid {
+  --grid-gap: 1.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, max(17rem, (100% - 4 * var(--grid-gap)) / 5)), 1fr)
+  );
+  gap: var(--grid-gap);
 }
 
 .publications-placeholder {
