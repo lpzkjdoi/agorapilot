@@ -86,3 +86,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-17 | [Programmation par fréquence : le back (séries, RRULE, job quotidien)](./changelog/2026-11-17-frequence-back.md) | _voir PR_ |
 | 2026-11-17 | [Programmation par fréquence : la modale « Répéter » et les séries au calendrier](./changelog/2026-11-17-frequence-front.md) | _voir PR_ |
 | 2026-11-18 | [Workflow de déploiement de la production](./changelog/2026-11-18-workflow-deploiement-prod.md) | _voir PR_ |
+| 2026-11-18 | [Préproduction publique : fin du filtre VPN, durcissement et limites mémoire](./changelog/2026-11-18-preprod-publique.md) | _voir PR_ |

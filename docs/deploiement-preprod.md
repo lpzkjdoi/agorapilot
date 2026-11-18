@@ -11,7 +11,7 @@ Trois conteneurs, décrits par [`docker-compose.preprod.yaml`](../docker-compose
 
 | Service | Rôle | Exposition |
 |---|---|---|
-| `front` | nginx : sert la SPA Angular **et** proxifie `/api` vers le back | Réseau `web` → Traefik → `https://$PREPROD_HOST`, **restreint au VPN** |
+| `front` | nginx : sert la SPA Angular **et** proxifie `/api` vers le back | Réseau `web` → Traefik → `https://$PREPROD_HOST`, **public** |
 | `back` | Spring Boot, profil `preprod`, volume `media-data` | Réseau interne + `127.0.0.1:8080` sur le VPS |
 | `db` | PostgreSQL 16, volume `db-data` | Réseau interne uniquement |
 
@@ -30,63 +30,66 @@ Trois conséquences de ce montage :
   du dépôt : une sauvegarde qui n'emporterait que la base laisserait des
   publications référençant des visuels disparus.
 
-## Accès restreint au VPN
+## Accès public
 
-La préproduction n'est joignable que depuis le réseau WireGuard du VPS
-(`wg0`, `10.8.0.0/24`). Toute autre IP source reçoit **403**.
+La préproduction est **ouverte sur Internet depuis le 2026-11-18**. Jusque-là, un
+middleware Traefik `ipwhitelist` la réservait au réseau WireGuard du VPS
+(`10.8.0.0/24`, variable `PREPROD_ALLOWED_CIDRS`) : il datait d'une préprod sans
+authentification (cf. [changelog](./changelog/2026-07-25-preprod-acces-vpn.md)).
+Le certificat a d'ailleurs été renouvelé sous ce filtre le 2026-09-24, ce qui a
+levé le doute sur le challenge TLS-ALPN.
 
-C'est un middleware Traefik `ipwhitelist` porté par le conteneur `front`, dont la
-plage vient de `PREPROD_ALLOWED_CIDRS`. Trois points à retenir :
+Ce qui protège l'accès désormais :
 
-- **Le nom du middleware est `ipwhitelist`, pas `ipallowlist`.** Le second
-  n'existe qu'à partir de Traefik v2.11 ; le VPS tourne en v2.10, et
-  `ipwhitelist` y a été vérifié fonctionnel. À reprendre si Traefik est mis à
-  niveau, le renommage étant l'inverse (`ipwhitelist` disparaît en v3).
-- **Le port 443 reste joignable publiquement**, et c'est délibéré : le challenge
-  TLS-ALPN de Let's Encrypt est traité pendant la poignée de main TLS, avant tout
-  routage HTTP, donc le filtre ne devrait pas le bloquer. Un observateur externe
-  peut en déduire que le domaine existe, mais n'obtient aucun contenu.
-  ⚠️ **Point non encore vérifié en pratique** : le certificat courant a été émis
-  *avant* la mise en place du filtre et n'expire que le 23 octobre 2026, donc le
-  premier renouvellement sous filtre aura lieu vers fin septembre. Ce qui est
-  vérifié, c'est que la poignée de main TLS aboutit toujours pour un client
-  externe (le certificat est bien servi avant le 403), ce qui est la couche sur
-  laquelle opère le challenge. Si le renouvellement échouait malgré tout, la
-  solution est de basculer le resolver sur un challenge **DNS-01**, qui ne
-  requiert aucune joignabilité publique.
-- **Les clients doivent être en tunnel complet** (`AllowedIPs = 0.0.0.0/0`).
-  En tunnel partagé, le trafic vers l'IP publique du VPS sortirait hors du tunnel
-  et serait rejeté. Attention : ajouter simplement l'IP publique du VPS aux
-  `AllowedIPs` d'un tunnel partagé crée une boucle de routage, le handshake
-  WireGuard partant lui-même dans le tunnel.
+- **les comptes** : toute l'API exige une session, sauf la connexion, le
+  healthcheck et le retour de Facebook ;
+- **le verrouillage par compte** (5 échecs → 15 minutes) **et la limite par IP**
+  (20 échecs en 15 minutes, tous pseudos confondus → 429). L'IP du client est lue
+  dans `X-Forwarded-For` (`server.forward-headers-strategy: native` dans les
+  profils `preprod` et `prod`), en ne faisant confiance qu'aux proxies des
+  réseaux privés, donc à Traefik et nginx ;
+- **les en-têtes de nginx** (`apps/front/docker/headers/`) : CSP, HSTS,
+  `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, et
+  `X-Robots-Tag: noindex` pour que la préprod ne soit pas indexée ;
+- `/admin/**` n'est toujours pas proxifié par nginx : seulement par la boucle
+  locale du VPS (tunnel SSH).
 
-Le domaine n'a **pas d'enregistrement AAAA**, ce qui est important : un tunnel
-déclaré en `0.0.0.0/0` ne capte pas l'IPv6. Si un AAAA est ajouté un jour, il
-faudra soit passer les clients en `0.0.0.0/0, ::/0`, soit ajouter la plage IPv6
-correspondante à `PREPROD_ALLOWED_CIDRS`, sans quoi les clients sur réseau IPv6
-seraient rejetés.
-
-### Vérifier le filtrage
-
-Hors VPN, depuis n'importe quelle machine :
+### Vérifier l'accès
 
 ```bash
-curl -sS -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+curl -sS -D - -o /dev/null https://preprod.chariotte-manager.fr | grep -iE '^HTTP|content-security|x-robots'
 ```
 
-Attendu : **403**. Connecté au VPN, la même commande doit renvoyer **200**.
-
-Le filtrage peut aussi être testé depuis le VPS lui-même, sans client VPN, en
-choisissant l'interface source — `10.8.0.1` étant dans la plage autorisée :
-
-```bash
-curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
-```
+Attendu : **200**, avec `content-security-policy` et `x-robots-tag`. Le
+déploiement automatique fait le même contrôle depuis le runner GitHub.
 
 **Un 404 juste après un déploiement est normal et transitoire** : pendant la
 recréation du conteneur `front`, Traefik n'a momentanément plus de routeur pour
 cet hôte et répond 404. Attendre quelques secondes et refaire le test — un 404
 persistant, lui, signale un problème de découverte (labels, réseau `web`).
+
+## Bascule vers `preprod.agorapilot.fr`
+
+À faire une fois `agorapilot.fr` acheté. Rien dans le code ne dépend du nom :
+tout passe par `PREPROD_HOST`. Dans l'ordre :
+
+1. **DNS** : enregistrement A `preprod.agorapilot.fr` → `46.202.175.115`, et
+   attendre qu'il réponde (`dig +short preprod.agorapilot.fr`).
+2. **App Meta de préprod** (cf. [`configuration-meta.md`](./configuration-meta.md)) :
+   ajouter le domaine `preprod.agorapilot.fr`, la plateforme Site web
+   `https://preprod.agorapilot.fr/` et l'URI de redirection
+   `https://preprod.agorapilot.fr/api/channels/facebook/callback`. Sans cela, la
+   connexion Facebook échoue en `1349048`.
+3. **GitHub** : variable `PREPROD_HOST` de l'environnement `preprod` →
+   `preprod.agorapilot.fr`, puis Actions → Deploy preprod → **Run workflow**.
+   Traefik obtient le certificat au premier accès ; le contrôle de fin de
+   déploiement le confirme.
+4. **Dépôt** : remplacer `preprod.chariotte-manager.fr` dans
+   `apps/front/proxy.conf.preprod.json`, `apps/front/README.md`, ce runbook et
+   `configuration-meta.md`.
+
+L'ancien nom cesse alors de répondre (aucun routeur ne le porte plus) : la
+préprod n'a pas d'utilisateurs extérieurs à prévenir.
 
 ## Prérequis
 
@@ -245,9 +248,8 @@ qui remplace la cible `http://localhost:8080` de
 
 Trois points à connaître :
 
-- **Le VPN est obligatoire.** Le middleware `agorapilot-preprod-vpn` filtre sur
-  l'IP source ; hors tunnel WireGuard, tous les appels du proxy reçoivent 403
-  (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)).
+- **Plus besoin du VPN** depuis le 2026-11-18 (cf. [Accès public](#accès-public)).
+  Il faut en revanche un compte de préproduction pour se connecter.
 - **Aucun CORS n'entre en jeu.** Le proxy de `ng serve` est côté Node : le
   navigateur ne voit que `localhost:4200`. Le `FRONTEND_URL` du back et sa
   `CorsConfigurationSource` ne sont pas sollicités. `changeOrigin: true` est en
@@ -368,8 +370,8 @@ Dans l'app Meta (`FACEBOOK_CLIENT_ID`) → Facebook Login → Paramètres, ajout
 https://<PREPROD_HOST>/api/channels/facebook/callback
 ```
 
-Sans cela, Facebook refuse la connexion (« URL bloquée »). Le VPN ne gêne pas :
-la redirection passe par le navigateur, jamais par les serveurs de Facebook.
+Sans cela, Facebook refuse la connexion (« URL bloquée »). La redirection passe
+par le navigateur, jamais par les serveurs de Facebook.
 
 La personne qui connecte doit administrer la Page et, tant que l'app n'a pas
 d'accès avancé, avoir un rôle dans l'app Meta.
@@ -549,11 +551,10 @@ Déroulé :
    `--no-build` est délibéré : si une image manquait, on veut un échec net
    plutôt qu'un build Maven + Angular improvisé sur un VPS à 1 vCPU.
 4. **Vérification** : `/actuator/health` sur la boucle locale (jusqu'à 3 min, le
-   temps du `start_period`), puis `https://$PREPROD_HOST` **depuis le VPS**, en
-   sortant par `--interface 10.8.0.1`. Ce détour est nécessaire : le runner
-   GitHub est hors du réseau WireGuard et recevrait 403
-   (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)). Les 404 transitoires
-   qui suivent un `up -d` sont absorbés par les tentatives successives.
+   temps du `start_period`), puis `https://$PREPROD_HOST` **depuis le runner
+   GitHub**, comme un visiteur, avec la présence des en-têtes
+   `Content-Security-Policy` et `X-Robots-Tag`. Les 404 transitoires qui suivent
+   un `up -d` sont absorbés par les tentatives successives.
 
 ### Configuration attendue
 
@@ -563,13 +564,13 @@ désormais la source de vérité, via un Environment `preprod`
 
 | Type GitHub | Clés |
 |---|---|
-| **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `PREPROD_ALLOWED_CIDRS`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_API_VERSION`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_PAGE_ID`, `TZ` |
+| **Variables** (non sensibles, lisibles) | `PREPROD_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `FACEBOOK_API_VERSION`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_PAGE_ID`, `TZ` |
 | **Variables** (accès au VPS) | `PREPROD_SSH_HOST`, `PREPROD_SSH_USER`, `PREPROD_SSH_KNOWN_HOSTS`, `PREPROD_PATH` |
 | **Secrets** | `POSTGRES_PASSWORD`, `FACEBOOK_CLIENT_SECRET`, `SSH_PRIVATE_KEY` |
 | **Secrets** (facultatifs) | `NOTIFICATIONS_DISCORD_PROGRAMME_URL`, `NOTIFICATIONS_DISCORD_ALERTES_URL`, `NOTIFICATIONS_DISCORD_ESSAIS_URL` : webhooks des salons Discord, cf. [Notifications Discord](#notifications-discord). Absents, le salon correspondant ne reçoit rien. |
 
 `PREPROD_SSH_USER` (défaut `agorapilot`), `PREPROD_PATH` (défaut
-`/opt/agorapilot/preprod/repo`), `PREPROD_ALLOWED_CIDRS`, `FACEBOOK_API_VERSION`
+`/opt/agorapilot/preprod/repo`), `FACEBOOK_API_VERSION`
 et `TZ` ont une valeur de repli dans le workflow ; les autres sont obligatoires
 et leur absence fait échouer le déploiement avec un message nommant la clé.
 

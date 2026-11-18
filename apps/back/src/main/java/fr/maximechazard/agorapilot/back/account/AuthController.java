@@ -31,13 +31,25 @@ public class AuthController {
     private final AuthService authService;
     private final UserAccountRepository repository;
     private final SessionAuthenticator sessionAuthenticator;
+    private final LoginRateLimiter rateLimiter;
 
     // -------------------------------- POST --------------------------------
 
     @PostMapping("/auth/login")
     public ResponseEntity<CurrentUserDTO> login(@Valid @RequestBody LoginRequest request,
                                                 HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        UserAccount account = authService.authenticate(request.getUsername(), request.getPassword());
+        // Adresse du client, et non celle du proxy : les profils preprod et prod
+        // lisent X-Forwarded-For (`server.forward-headers-strategy: native`).
+        String ip = httpRequest.getRemoteAddr();
+        rateLimiter.check(ip);
+
+        UserAccount account;
+        try {
+            account = authService.authenticate(request.getUsername(), request.getPassword());
+        } catch (AuthenticationFailedException exception) {
+            rateLimiter.recordFailure(ip);
+            throw exception;
+        }
         sessionAuthenticator.open(account, authService.now(), httpRequest, httpResponse);
         return ResponseEntity.ok(toDTO(account));
     }

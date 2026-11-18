@@ -118,6 +118,18 @@ describe('LoginPageComponent', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it('should show the reason of a 429 when this address made too many attempts', () => {
+    login.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 429, error: { message: 'Trop de tentatives de connexion. Réessayez dans quelques minutes.' },
+    })));
+    const { fixture, compiled } = render();
+
+    submit(fixture, compiled, 'camille', 'correct horse battery');
+
+    expect(compiled.querySelector('[role="alert"]')?.textContent).toContain('Trop de tentatives de connexion');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('should show a generic message when the back is unreachable', () => {
     login.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
     const { fixture, compiled } = render();

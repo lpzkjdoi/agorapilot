@@ -400,9 +400,19 @@ jobs:
           # La production n'est pas filtrée : on la vérifie de l'extérieur, comme
           # un utilisateur, depuis le runner GitHub.
           for i in $(seq 1 12); do
-            code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$PROD_HOST" || echo 000)
+            code=$(curl -sS -D headers.txt -o /dev/null -w '%{http_code}' "https://$PROD_HOST" || echo 000)
             if [ "$code" = "200" ]; then
               echo "https://$PROD_HOST répond 200."
+              # Les en-têtes de sécurité viennent de la conf nginx de prod : leur
+              # absence signale une image construite avec une autre conf.
+              grep -qi '^content-security-policy:' headers.txt || {
+                echo "::error::En-tête Content-Security-Policy absent de la réponse."
+                exit 1
+              }
+              if grep -qi '^x-robots-tag:' headers.txt; then
+                echo "::error::X-Robots-Tag présent : la production ne doit pas être désindexée."
+                exit 1
+              fi
               exit 0
             fi
             echo "Tentative $i : HTTP $code"

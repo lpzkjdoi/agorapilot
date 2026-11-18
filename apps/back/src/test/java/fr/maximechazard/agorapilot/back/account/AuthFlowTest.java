@@ -106,11 +106,14 @@ class AuthFlowTest {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private MutableClock clock;
+    @Autowired
+    private LoginRateLimiter rateLimiter;
 
     @BeforeEach
     void setUp() {
         repository.deleteAll();
         clock.set(START);
+        rateLimiter.clear();
     }
 
     // ------------------------------------------------------------ helpers
@@ -121,7 +124,15 @@ class AuthFlowTest {
     }
 
     private ResultActions login(String username, String password) throws Exception {
+        return login(username, password, "127.0.0.1");
+    }
+
+    private ResultActions login(String username, String password, String ip) throws Exception {
         return mockMvc.perform(post("/api/auth/login").with(csrf())
+                .with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                })
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"));
     }
@@ -373,6 +384,57 @@ class AuthFlowTest {
 
             clock.advance(Duration.ofMinutes(2));
             mockMvc.perform(get("/api/me").session(session)).andExpect(status().isUnauthorized());
+        }
+    }
+    @Nested
+    class RateLimitByIp {
+
+        private static final String IP = "203.0.113.7";
+        private static final String TOO_MANY = "Trop de tentatives de connexion. Réessayez dans quelques minutes.";
+
+        private void failTimes(int times, String ip) throws Exception {
+            for (int i = 0; i < times; i++) {
+                // Un pseudo différent à chaque fois : aucun compte n'est verrouillé,
+                // seule la limite par IP peut arrêter cet essai.
+                login("pseudo-" + i, "mauvais mot de passe", ip).andExpect(status().isUnauthorized());
+            }
+        }
+
+        @Test
+        void refuses_an_ip_after_twenty_failures_even_with_the_right_password() throws Exception {
+            account("camille", AccountStatus.ACTIVE, Set.of());
+            failTimes(20, IP);
+
+            login("camille", PASSWORD, IP).andExpect(status().isTooManyRequests())
+                                          .andExpect(jsonPath("$.message").value(TOO_MANY));
+        }
+
+        @Test
+        void leaves_other_ips_alone() throws Exception {
+            account("camille", AccountStatus.ACTIVE, Set.of());
+            failTimes(20, IP);
+
+            login("camille", PASSWORD, "198.51.100.4").andExpect(status().isOk());
+        }
+
+        @Test
+        void lets_the_ip_in_again_once_the_window_is_over() throws Exception {
+            account("camille", AccountStatus.ACTIVE, Set.of());
+            failTimes(20, IP);
+
+            clock.advance(Duration.ofMinutes(15));
+            login("camille", PASSWORD, IP).andExpect(status().isOk());
+        }
+
+        @Test
+        void does_not_count_successful_logins() throws Exception {
+            account("camille", AccountStatus.ACTIVE, Set.of());
+
+            for (int i = 0; i < 25; i++) {
+                login("camille", PASSWORD, IP).andExpect(status().isOk());
+            }
+            failTimes(19, IP);
+            login("camille", PASSWORD, IP).andExpect(status().isOk());
         }
     }
 }

@@ -21,8 +21,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  * <p>
  * Le point à ne pas régresser : le binaire est <strong>envoyé</strong> en
  * multipart. Désigner l'image par une URL demanderait aux serveurs de Facebook de
- * venir la chercher, ce qu'ils ne peuvent pas faire — nos environnements sont
- * fermés au réseau WireGuard par Traefik.
+ * venir la chercher, ce qu'ils ne peuvent pas faire — nos médias ne sont servis
+ * qu'à une session connectée.
  */
 class FacebookClientTest {
 
@@ -118,8 +118,8 @@ class FacebookClientTest {
 
     @Test
     void never_sends_a_url_instead_of_the_binary() {
-        // Garde-fou explicite : les serveurs de Facebook ne peuvent pas atteindre
-        // nos environnements, fermés au réseau WireGuard.
+        // Garde-fou explicite : les serveurs de Facebook ne peuvent pas lire nos
+        // médias, servis seulement à une session connectée.
         server.expect(requestTo(PHOTOS))
               .andExpect(content().string(org.hamcrest.Matchers.not(
                       org.hamcrest.Matchers.containsString("name=\"url\""))))

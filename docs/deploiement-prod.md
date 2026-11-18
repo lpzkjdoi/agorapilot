@@ -32,7 +32,7 @@ develop ──(PR)──► main ──(tag vX.Y.Z)──► deploy-prod.yml
 | Dossier VPS | `/opt/agorapilot/preprod/repo` | `/opt/agorapilot/prod` |
 | Profil Spring | `preprod` | `prod` |
 | Back sur la boucle locale | `127.0.0.1:8080` | `127.0.0.1:8081` |
-| Accès | filtré sur WireGuard | public |
+| Accès | public (`X-Robots-Tag: noindex`) | public |
 | Swagger proxifié par nginx | oui | non (`nginx.prod.conf`) |
 | App Meta | app de préprod, mode développement | app de production, mode Live |
 
@@ -155,8 +155,8 @@ docker compose -f docker-compose.prod.yaml exec -T db sh -c 'psql -U "$POSTGRES_
 Hors du périmètre de ce workflow, et suivis dans la roadmap du README :
 
 - sauvegardes de `db-data` et `media-data`, hors du VPS, avec une restauration testée ;
-- durcissement pour une exposition publique (limitation de débit sur la
-  connexion, en-têtes de sécurité, Trivy bloquant) ;
+- fin du durcissement : scan Trivy bloquant (la limite d'échecs de connexion
+  par IP et les en-têtes de sécurité sont en place depuis le 2026-11-18) ;
 - images de base épinglées par digest ;
 - sonde de disponibilité externe ;
 - côté VPS (root) : redémarrage en attente, `PermitRootLogin`, swap.

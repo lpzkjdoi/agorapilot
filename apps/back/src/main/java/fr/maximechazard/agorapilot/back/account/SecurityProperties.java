@@ -9,14 +9,23 @@ import java.time.Duration;
  * @param maxFailedAttempts échecs de connexion consécutifs avant verrouillage
  * @param lockDuration     durée du verrouillage
  * @param sessionMaxAge    durée de vie maximale d'une session, activité ou non
+ * @param loginRateLimit   échecs de connexion tolérés par adresse IP
  */
 @ConfigurationProperties(prefix = "agorapilot.security")
 public record SecurityProperties(
         InitialAdmin initialAdmin,
         int maxFailedAttempts,
         Duration lockDuration,
-        Duration sessionMaxAge
+        Duration sessionMaxAge,
+        LoginRateLimit loginRateLimit
 ) {
+    /**
+     * @param maxFailures échecs tolérés depuis une même IP dans la fenêtre
+     * @param window      durée de la fenêtre, comptée à partir du premier échec
+     */
+    public record LoginRateLimit(int maxFailures, Duration window) {
+    }
+
     /** Sans pseudo ni mot de passe, aucun compte n'est créé. */
     public record InitialAdmin(String username, String password) {
         public boolean isConfigured() {

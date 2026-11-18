@@ -37,7 +37,8 @@ class InitialAdminInitializerTest {
 
     private InitialAdminInitializer initializer(String username, String password) {
         SecurityProperties properties = new SecurityProperties(
-                new SecurityProperties.InitialAdmin(username, password), 5, Duration.ofMinutes(15), Duration.ofHours(12));
+                new SecurityProperties.InitialAdmin(username, password), 5, Duration.ofMinutes(15), Duration.ofHours(12),
+                new SecurityProperties.LoginRateLimit(20, Duration.ofMinutes(15)));
         return new InitialAdminInitializer(repository, encoder, properties, authService, events);
     }
 
