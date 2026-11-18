@@ -1,0 +1,417 @@
+# Publication des images de production puis déploiement sur le VPS.
+#
+# Déclenché par un tag SemVer `vX.Y.Z` posé sur `main` (cf. docs/gitflow.md).
+# Le déploiement attend l'approbation manuelle exigée par l'environnement
+# GitHub `production` : les images sont construites et scannées avant, pour que
+# l'approbation porte sur un artefact prêt.
+#
+# Lancement manuel (`workflow_dispatch`) avec une version déjà taguée : sert au
+# retour arrière comme au redéploiement. Si les images `prod-<version>` existent
+# déjà sur GHCR, elles sont réutilisées telles quelles, sans rebuild.
+#
+# Configuration attendue côté GitHub — Settings → Environments → `production`,
+# avec « Required reviewers » et des règles de déploiement limitées aux tags
+# `v*` et à la branche `main` (depuis laquelle on lance les relances manuelles) :
+#
+#   Variables : PROD_HOST, POSTGRES_DB, POSTGRES_USER, FACEBOOK_API_VERSION,
+#               FACEBOOK_CLIENT_ID, FACEBOOK_PAGE_ID, TZ, PROD_SSH_HOST,
+#               PROD_SSH_USER, PROD_SSH_KNOWN_HOSTS, PROD_PATH,
+#               AGORAPILOT_ADMIN_USERNAME (facultative)
+#   Secrets   : POSTGRES_PASSWORD, FACEBOOK_CLIENT_SECRET, SSH_PRIVATE_KEY,
+#               AGORAPILOT_ADMIN_PASSWORD (facultatif),
+#               NOTIFICATIONS_DISCORD_{PROGRAMME,ALERTES,ESSAIS}_URL (facultatifs)
+#
+# Voir docs/deploiement-prod.md.
+
+name: Deploy prod
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version déjà taguée à (re)déployer, sans le v (ex. 1.0.0)"
+        required: true
+        type: string
+
+# Un seul déploiement de production à la fois, jamais interrompu.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  check:
+    name: Vérifier la version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      build: ${{ steps.images.outputs.build }}
+    steps:
+      - name: Version demandée
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            version="${INPUT_VERSION#v}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          # SemVer strict : pas de pré-version (`-rc.1`) en production.
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::« $version » n'est pas une version X.Y.Z."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Seul ce qui a été fusionné sur `main` part en production : un tag posé
+      # par erreur sur `develop` ou une branche de travail est refusé ici.
+      - name: Le tag est-il sur main ?
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null || {
+            echo "::error::Le tag $TAG n'existe pas."
+            exit 1
+          }
+          if ! git merge-base --is-ancestor "refs/tags/$TAG" origin/main; then
+            echo "::error::Le tag $TAG ne pointe pas sur un commit de main."
+            exit 1
+          fi
+          echo "$TAG → $(git rev-parse --short "refs/tags/$TAG^{commit}"), contenu dans main."
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Sur un tag fraîchement posé, on construit toujours. En relance manuelle,
+      # on réutilise les images de la version si elles existent : un retour
+      # arrière redéploie exactement ce qui a tourné, pas un rebuild.
+      - name: Images déjà publiées ?
+        id: images
+        env:
+          OWNER: ${{ github.repository_owner }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          build=true
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] \
+            && docker buildx imagetools inspect "ghcr.io/$OWNER/agorapilot-back:prod-$VERSION" > /dev/null 2>&1 \
+            && docker buildx imagetools inspect "ghcr.io/$OWNER/agorapilot-front:prod-$VERSION" > /dev/null 2>&1; then
+            build=false
+            echo "Images prod-$VERSION déjà publiées : réutilisées sans rebuild."
+          fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build & push ${{ matrix.service }}
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ back, front ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.check.outputs.tag }}
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Le badge du bandeau affiche la version en production.
+      - name: Renseigne l'identité du build
+        if: matrix.service == 'front'
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          set -euo pipefail
+          cat > apps/front/src/environments/build-info.ts <<EOF
+          // Généré par .github/workflows/deploy-prod.yml — ne pas modifier.
+          export type AppEnvironmentName = 'dev' | 'preprod' | 'prod';
+
+          export interface BuildInfo {
+            environment: AppEnvironmentName;
+            version: string;
+          }
+
+          export const buildInfo: BuildInfo = {
+            environment: 'prod',
+            version: '${VERSION}',
+          };
+          EOF
+
+      # Un seul tag, porteur de l'environnement et de la version : jamais de
+      # `latest` en production, pour qu'aucune image ne s'y glisse par défaut.
+      # Cache séparé de la préprod : les deux images front diffèrent (badge,
+      # conf nginx), le partager ferait s'écraser les couches à chaque build.
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/${{ matrix.service }}
+          push: true
+          build-args: |
+            ${{ matrix.service == 'front' && 'NGINX_CONF=docker/nginx.prod.conf' || '' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:prod-${{ needs.check.outputs.version }}
+          cache-from: type=gha,scope=prod-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=prod-${{ matrix.service }}
+
+  # Même scan que la préprod, non bloquant pour l'instant : le rendre bloquant
+  # fait partie du durcissement pour une exposition publique (README).
+  scan:
+    name: Scan ${{ matrix.service }}
+    needs: [ check, build ]
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ back, front ]
+
+    steps:
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:prod-${{ needs.check.outputs.version }}
+          format: table
+          output: trivy-${{ matrix.service }}.txt
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Publier le rapport dans le résumé du run
+        if: always()
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          report="trivy-$SERVICE.txt"
+          {
+            echo "## Trivy — $SERVICE"
+            echo ''
+            if [ -s "$report" ]; then
+              echo '```'
+              cat "$report"
+              echo '```'
+            else
+              echo "Aucune vulnérabilité HIGH/CRITICAL corrigeable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Déploiement en production
+    needs: [ check, build ]
+    # `build` est sauté quand les images existent déjà (relance manuelle).
+    if: >-
+      always()
+      && needs.check.result == 'success'
+      && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.PROD_HOST }}
+
+    env:
+      SSH_HOST: ${{ vars.PROD_SSH_HOST }}
+      SSH_USER: ${{ vars.PROD_SSH_USER || 'agorapilot' }}
+      REMOTE_DIR: ${{ vars.PROD_PATH || '/opt/agorapilot/prod' }}
+      SSH_OPTS: "-o BatchMode=yes -o IdentitiesOnly=yes"
+      COMPOSE_FILE_NAME: docker-compose.prod.yaml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.check.outputs.tag }}
+
+      - name: Préparer la clé SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ vars.PROD_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_HOST" || { echo "::error::La variable PROD_SSH_HOST est vide."; exit 1; }
+          test -n "$KNOWN_HOSTS" || {
+            echo "::error::La variable PROD_SSH_KNOWN_HOSTS est vide. La récupérer avec : ssh-keyscan -H <hôte>"
+            exit 1
+          }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Vérifier l'accès SSH
+        run: |
+          set -euo pipefail
+          if ! ssh-keygen -lf ~/.ssh/id_deploy; then
+            echo "::error::Le secret SSH_PRIVATE_KEY n'est pas une clé privée exploitable."
+            exit 1
+          fi
+          if ! ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" true; then
+            echo "::error::Connexion SSH refusée par $SSH_USER@$SSH_HOST."
+            exit 1
+          fi
+          echo "Connexion SSH établie."
+
+      - name: Générer le .env de production
+        env:
+          PROD_HOST: ${{ vars.PROD_HOST }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          FACEBOOK_API_VERSION: ${{ vars.FACEBOOK_API_VERSION || 'v25.0' }}
+          FACEBOOK_CLIENT_ID: ${{ vars.FACEBOOK_CLIENT_ID }}
+          FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
+          FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
+          TZ: ${{ vars.TZ || 'Europe/Paris' }}
+          AGORAPILOT_ADMIN_USERNAME: ${{ vars.AGORAPILOT_ADMIN_USERNAME }}
+          AGORAPILOT_ADMIN_PASSWORD: ${{ secrets.AGORAPILOT_ADMIN_PASSWORD }}
+          NOTIFICATIONS_DISCORD_PROGRAMME_URL: ${{ secrets.NOTIFICATIONS_DISCORD_PROGRAMME_URL }}
+          NOTIFICATIONS_DISCORD_ALERTES_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ALERTES_URL }}
+          NOTIFICATIONS_DISCORD_ESSAIS_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ESSAIS_URL }}
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: prod-${{ needs.check.outputs.version }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          for v in PROD_HOST POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD \
+                   FACEBOOK_CLIENT_ID FACEBOOK_CLIENT_SECRET FACEBOOK_PAGE_ID; do
+            test -n "${!v}" || { echo "::error::$v n'est pas défini dans l'environnement 'production'."; exit 1; }
+          done
+
+          {
+            printf 'PROD_HOST=%s\n'             "$PROD_HOST"
+            printf 'IMAGE_TAG=%s\n'             "$IMAGE_TAG"
+            printf 'BACK_IMAGE=ghcr.io/%s/agorapilot-back\n'   "$OWNER"
+            printf 'FRONT_IMAGE=ghcr.io/%s/agorapilot-front\n' "$OWNER"
+            printf 'POSTGRES_DB=%s\n'           "$POSTGRES_DB"
+            printf 'POSTGRES_USER=%s\n'         "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n'     "$POSTGRES_PASSWORD"
+            printf 'FACEBOOK_API_VERSION=%s\n'  "$FACEBOOK_API_VERSION"
+            printf 'FACEBOOK_CLIENT_ID=%s\n'    "$FACEBOOK_CLIENT_ID"
+            printf 'FACEBOOK_CLIENT_SECRET=%s\n' "$FACEBOOK_CLIENT_SECRET"
+            printf 'FACEBOOK_PAGE_ID=%s\n'      "$FACEBOOK_PAGE_ID"
+            printf 'TZ=%s\n'                    "$TZ"
+            printf 'AGORAPILOT_ADMIN_USERNAME=%s\n' "$AGORAPILOT_ADMIN_USERNAME"
+            printf 'AGORAPILOT_ADMIN_PASSWORD=%s\n' "$AGORAPILOT_ADMIN_PASSWORD"
+            printf 'NOTIFICATIONS_DISCORD_PROGRAMME_URL=%s\n' "$NOTIFICATIONS_DISCORD_PROGRAMME_URL"
+            printf 'NOTIFICATIONS_DISCORD_ALERTES_URL=%s\n'   "$NOTIFICATIONS_DISCORD_ALERTES_URL"
+            printf 'NOTIFICATIONS_DISCORD_ESSAIS_URL=%s\n'    "$NOTIFICATIONS_DISCORD_ESSAIS_URL"
+          } > env.prod
+
+      # Le `.env` précédent est gardé : il contient l'`IMAGE_TAG` de la version
+      # qui tournait, c'est-à-dire de quoi revenir en arrière à la main.
+      - name: Sauvegarder le .env existant
+        run: |
+          set -euo pipefail
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$REMOTE_DIR' && { [ -f '$REMOTE_DIR/.env' ] && cp '$REMOTE_DIR/.env' '$REMOTE_DIR/.env.bak' || true; }"
+
+      - name: Téléverser le compose et le .env
+        run: |
+          set -euo pipefail
+          scp $SSH_OPTS -i ~/.ssh/id_deploy "$COMPOSE_FILE_NAME" "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
+          scp $SSH_OPTS -i ~/.ssh/id_deploy env.prod "$SSH_USER@$SSH_HOST:$REMOTE_DIR/.env"
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "chmod 600 '$REMOTE_DIR/.env'"
+
+      - name: Connexion du VPS à GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
+
+      - name: Tirer les images et recréer le stack
+        run: |
+          set -euo pipefail
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "REMOTE_DIR='$REMOTE_DIR' COMPOSE_FILE_NAME='$COMPOSE_FILE_NAME' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+          compose() { docker compose -f "$COMPOSE_FILE_NAME" "$@"; }
+          compose pull
+          compose up -d --no-build --remove-orphans
+          compose ps
+          docker image prune -f
+          REMOTE
+
+      - name: Vérifier le déploiement
+        env:
+          PROD_HOST: ${{ vars.PROD_HOST }}
+        run: |
+          set -euo pipefail
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
+            "REMOTE_DIR='$REMOTE_DIR' COMPOSE_FILE_NAME='$COMPOSE_FILE_NAME' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+          # Port 8081 : celui de la production sur la boucle locale (8080 = préprod).
+          for i in $(seq 1 36); do
+            if curl -fsS http://127.0.0.1:8081/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "Back UP après ${i} tentative(s)."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Le back n'est pas UP après 3 minutes."
+          docker compose -f "$COMPOSE_FILE_NAME" logs --tail=80 back
+          exit 1
+          REMOTE
+
+          # La production n'est pas filtrée : on la vérifie de l'extérieur, comme
+          # un utilisateur, depuis le runner GitHub.
+          for i in $(seq 1 12); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$PROD_HOST" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "https://$PROD_HOST répond 200."
+              exit 0
+            fi
+            echo "Tentative $i : HTTP $code"
+            sleep 5
+          done
+          echo "::error::https://$PROD_HOST ne répond pas 200 (dernier code : $code)."
+          exit 1
+
+      - name: Déconnecter le VPS de GHCR
+        if: always()
+        run: |
+          ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" "docker logout ghcr.io" || true

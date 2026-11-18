@@ -102,17 +102,19 @@ jobs:
           };
           EOF
 
-      # Deux tags : le SHA du commit, seule référence réellement déployée
-      # (traçable et immuable), et `latest` pour dépanner à la main depuis le
-      # VPS sans avoir à retrouver un SHA.
+      # Deux tags, préfixés par l'environnement (l'image front porte le sien,
+      # badge et conf nginx) : `preprod-<sha>`, seule référence réellement
+      # déployée (traçable et immuable), et `preprod-latest` pour dépanner à la
+      # main depuis le VPS sans avoir à retrouver un SHA. La production a ses
+      # propres tags `prod-<version>` (deploy-prod.yml).
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
           context: apps/${{ matrix.service }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:preprod-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:preprod-latest
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -144,7 +146,7 @@ jobs:
         # des autres — une version sans le `v` échoue au démarrage du job.
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/${{ github.repository_owner }}/agorapilot-${{ matrix.service }}:preprod-${{ github.sha }}
           format: table
           output: trivy-${{ matrix.service }}.txt
           severity: HIGH,CRITICAL
@@ -256,7 +258,7 @@ jobs:
           NOTIFICATIONS_DISCORD_ALERTES_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ALERTES_URL }}
           NOTIFICATIONS_DISCORD_ESSAIS_URL: ${{ secrets.NOTIFICATIONS_DISCORD_ESSAIS_URL }}
           OWNER: ${{ github.repository_owner }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: preprod-${{ github.sha }}
         run: |
           set -euo pipefail
           umask 077

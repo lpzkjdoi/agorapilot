@@ -1,0 +1,147 @@
+# Production AgoraPilot — VPS.
+#
+# Calqué sur docker-compose.preprod.yaml, avec lequel il partage le VPS et le
+# Traefik. Tout ce qui pourrait entrer en collision est donc distinct : nom de
+# projet, noms de conteneurs, réseau interne, volumes, routeurs Traefik et port
+# local du back (8081, la préprod ayant 8080).
+#
+# Différences voulues avec la préprod :
+#   - aucun filtre IP : la production est ouverte sur Internet ;
+#   - aucun bloc `build:` : seules les images publiées par deploy-prod.yml
+#     (`prod-<version>`) sont déployées, jamais un build sur le VPS ;
+#   - `IMAGE_TAG` obligatoire, sans repli sur `latest` ;
+#   - limites mémoire sur chaque conteneur : le VPS (3,9 Go, sans swap) porte
+#     aussi la préprod et d'autres stacks. La JVM (`MaxRAMPercentage=75`) se cale
+#     sur la limite du conteneur, soit environ 575 Mo de tas pour 768 Mo ;
+#   - `www.<PROD_HOST>` redirigé vers `<PROD_HOST>`, sur un routeur et un
+#     certificat à part : un enregistrement DNS `www` absent ne fait échouer
+#     que ce certificat-là, pas celui du domaine principal.
+#
+# Variables : `.env` à côté de ce fichier, régénéré par deploy-prod.yml depuis
+# l'environnement GitHub `production` (cf. .env.prod.example).
+
+name: agorapilot-prod
+
+services:
+  db:
+    image: postgres:16
+    container_name: agorapilot-prod-db
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB est requis}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER est requis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    image: ${BACK_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-back}:${IMAGE_TAG:?IMAGE_TAG est requis (prod-<version>)}
+    container_name: agorapilot-prod-back
+    restart: unless-stopped
+    mem_limit: 768m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # Origine publique : CORS et retour de la connexion Facebook
+      # (`<FRONTEND_URL>/api/channels/facebook/callback`, à déclarer dans l'app
+      # Meta de production).
+      FRONTEND_URL: https://${PROD_HOST:?PROD_HOST est requis}
+      FACEBOOK_API_VERSION: ${FACEBOOK_API_VERSION:-v25.0}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:?FACEBOOK_CLIENT_ID est requis}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:?FACEBOOK_CLIENT_SECRET est requis}
+      FACEBOOK_PAGE_ID: ${FACEBOOK_PAGE_ID:?FACEBOOK_PAGE_ID est requis}
+      MEDIA_ROOT: /var/lib/agorapilot/media
+      # Premier compte administrateur, créé seulement si la base n'en a aucun.
+      AGORAPILOT_ADMIN_USERNAME: ${AGORAPILOT_ADMIN_USERNAME:-}
+      AGORAPILOT_ADMIN_PASSWORD: ${AGORAPILOT_ADMIN_PASSWORD:-}
+      PUBLICATION_WINDOW_START: ${PUBLICATION_WINDOW_START:-15:00}
+      PUBLICATION_WINDOW_END: ${PUBLICATION_WINDOW_END:-22:00}
+      NOTIFICATIONS_DISCORD_PROGRAMME_URL: ${NOTIFICATIONS_DISCORD_PROGRAMME_URL:-}
+      NOTIFICATIONS_DISCORD_ALERTES_URL: ${NOTIFICATIONS_DISCORD_ALERTES_URL:-}
+      NOTIFICATIONS_DISCORD_ESSAIS_URL: ${NOTIFICATIONS_DISCORD_ESSAIS_URL:-}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      # Non reconstructible, comme `db-data` : à sauvegarder.
+      - media-data:/var/lib/agorapilot/media
+    # Boucle locale uniquement, port 8081 (8080 est pris par la préprod) :
+    # healthcheck du déploiement et routes /admin/** via tunnel SSH.
+    ports:
+      - "127.0.0.1:8081:8080"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  front:
+    image: ${FRONT_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-front}:${IMAGE_TAG:?IMAGE_TAG est requis (prod-<version>)}
+    container_name: agorapilot-prod-front
+    restart: unless-stopped
+    mem_limit: 64m
+    depends_on:
+      back:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.services.agorapilot-prod.loadbalancer.server.port=80"
+      # HTTPS, domaine principal
+      - "traefik.http.routers.agorapilot-prod.rule=Host(`${PROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-prod.entrypoints=websecure"
+      - "traefik.http.routers.agorapilot-prod.tls.certresolver=myresolver"
+      - "traefik.http.routers.agorapilot-prod.service=agorapilot-prod"
+      # HTTP → HTTPS, domaine principal
+      - "traefik.http.routers.agorapilot-prod-http.rule=Host(`${PROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-prod-http.entrypoints=web"
+      - "traefik.http.routers.agorapilot-prod-http.middlewares=agorapilot-prod-https"
+      - "traefik.http.routers.agorapilot-prod-http.service=agorapilot-prod"
+      - "traefik.http.middlewares.agorapilot-prod-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.agorapilot-prod-https.redirectscheme.permanent=true"
+      # www → domaine principal, en HTTPS (certificat distinct) et en HTTP : un
+      # routeur TLS ne voit pas les requêtes en clair, d'où deux routeurs.
+      - "traefik.http.routers.agorapilot-prod-www.rule=Host(`www.${PROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-prod-www.entrypoints=websecure"
+      - "traefik.http.routers.agorapilot-prod-www.tls.certresolver=myresolver"
+      - "traefik.http.routers.agorapilot-prod-www.middlewares=agorapilot-prod-www"
+      - "traefik.http.routers.agorapilot-prod-www.service=agorapilot-prod"
+      - "traefik.http.routers.agorapilot-prod-www-http.rule=Host(`www.${PROD_HOST}`)"
+      - "traefik.http.routers.agorapilot-prod-www-http.entrypoints=web"
+      - "traefik.http.routers.agorapilot-prod-www-http.middlewares=agorapilot-prod-www"
+      - "traefik.http.routers.agorapilot-prod-www-http.service=agorapilot-prod"
+      - "traefik.http.middlewares.agorapilot-prod-www.redirectregex.regex=^https?://www\\.(.+)"
+      - "traefik.http.middlewares.agorapilot-prod-www.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.agorapilot-prod-www.redirectregex.permanent=true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+  media-data:
+
+networks:
+  internal:
+  web:
+    external: true

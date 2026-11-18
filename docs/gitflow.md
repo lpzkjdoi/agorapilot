@@ -73,7 +73,8 @@ gh pr ready <numéro>          # marque prête pour la revue
 | PR checks | `.github/workflows/pr-checks.yml` | PR vers `develop`, `main` | Détecte ce que la PR touche, appelle les CI concernées, publie le statut **`All checks green`** |
 | Back CI | `.github/workflows/ci.yml` | push sur `main`, `develop` (chemins `apps/back/**`) + appel par PR checks | `mvn verify` (build + tests + jar), upload du jar |
 | Front CI | `.github/workflows/front-ci.yml` | push sur `main`, `develop` (chemins `apps/front/**`) + appel par PR checks | `npm ci`, lint, tests Vitest, build prod |
-| Deploy preprod | `.github/workflows/deploy-preprod.yml` | push sur `develop` (chemins `apps/**`, compose preprod) + manuel | Publie les images sur GHCR, scan Trivy (non bloquant), régénère le `.env` du VPS, `pull` + `up -d`, vérifie la santé |
+| Deploy preprod | `.github/workflows/deploy-preprod.yml` | push sur `develop` (chemins `apps/**`, compose preprod) + manuel | Publie les images `preprod-<sha>` sur GHCR, scan Trivy (non bloquant), régénère le `.env` du VPS, `pull` + `up -d`, vérifie la santé |
+| Deploy prod | `.github/workflows/deploy-prod.yml` | tag `vX.Y.Z` contenu dans `main` + manuel (retour arrière) | Publie les images `prod-X.Y.Z`, scan Trivy (non bloquant), **attend l'approbation** de l'environnement `production`, puis même déploiement SSH dans `/opt/agorapilot/prod` (cf. [`deploiement-prod.md`](./deploiement-prod.md)) |
 
 Les montées de dépendances sont proposées en PR par Dependabot
 ([`.github/dependabot.yml`](../.github/dependabot.yml)), chaque lundi, pour npm,
@@ -131,8 +132,11 @@ documente aussi le déploiement automatique.
 `preprod`, puis `docker compose pull && up -d --no-build`. Plus aucun build sur le
 VPS, dont le vCPU unique s'en accommodait mal.
 
-Reste à faire :
-- Workflow de déploiement prod (tag `vX.Y.Z`, Environment `production` avec approbation manuelle).
+**Prod : workflow en place** (2026-11-18), jamais encore exécuté. `deploy-prod.yml`
+refuse un tag absent de `main` ou hors SemVer, construit les images `prod-X.Y.Z`,
+puis attend l'approbation de l'environnement `production`. Une relance manuelle
+avec une version existante redéploie ses images sans rebuild (retour arrière).
+Runbook : [`deploiement-prod.md`](./deploiement-prod.md).
 
 Prérequis avant le premier déploiement prod :
 - ~~Migrations de base versionnées (Flyway) en remplacement de `ddl-auto: update`.~~ Fait le 2026-10-24.
@@ -141,10 +145,10 @@ Prérequis avant le premier déploiement prod :
   depuis le badge d'environnement : `build-info.ts` fige l'environnement servi
   dans le bundle front. Ce qu'il reste à en tirer relève de la **surface
   exposée**, pas du poids — l'image prod ne sera pas plus légère, l'image
-  preprod a le droit d'être plus grasse. Concrètement : un `nginx.prod.conf`
+  preprod a le droit d'être plus grasse. **Fait le 2026-11-18** : un `nginx.prod.conf`
   sans le proxy Swagger (`/swagger-ui/`, `/v3/api-docs`), conservé en preprod
   parce que c'est un environnement de test.
-- **Des tags d'image porteurs de l'environnement** : `agorapilot-front:preprod-<sha>`
+- **Des tags d'image porteurs de l'environnement** (**fait le 2026-11-18**) : `agorapilot-front:preprod-<sha>`
   et `agorapilot-front:prod-<version>`, au lieu de l'`IMAGE_TAG` commun actuel.
   Une image dont l'environnement est figé dedans mais pas dans son nom se déploie
   un jour au mauvais endroit, et le badge affichera « preprod » en production.
@@ -156,7 +160,7 @@ Prérequis avant le premier déploiement prod :
 
 ## Recommandations d'outillage GitHub
 
-- **Protection de branches** sur `main` et `develop` : CI verte requise avant merge (à activer côté GitHub).
+- **Protection de branches** sur `main` et `develop` : CI verte requise avant merge (ruleset actif, constaté le 2026-11-18).
 - Pull Requests **obligatoires**, ouvertes prêtes à relire, pour toute contribution destinée
   à `develop` / `main`, afin de conserver la trace et la revue.
 
