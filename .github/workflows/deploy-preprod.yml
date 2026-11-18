@@ -365,11 +365,21 @@ jobs:
           # la préproduction est filtrée sur le réseau WireGuard, une requête
           # venue de GitHub recevrait 403. `10.8.0.1` est l'adresse du VPS sur
           # `wg0`, donc dans la plage autorisée.
+          # On vérifie aussi la présence de deux en-têtes posés par nginx, pour
+          # qu'une conf amputée ne passe pas inaperçue.
           host=$(grep '^PREPROD_HOST=' .env | cut -d= -f2-)
+          headers=$(mktemp)
+          trap 'rm -f "$headers"' EXIT
           for i in $(seq 1 12); do
-            code=$(curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}' "https://$host" || echo 000)
+            code=$(curl -sS --interface 10.8.0.1 -D "$headers" -o /dev/null -w '%{http_code}' "https://$host" || echo 000)
             if [ "$code" = "200" ]; then
               echo "https://$host répond 200."
+              for header in content-security-policy x-robots-tag; do
+                grep -qi "^$header:" "$headers" || {
+                  echo "::error::En-tête $header absent de la réponse."
+                  exit 1
+                }
+              done
               exit 0
             fi
             # Un 404 juste après un `up -d` est transitoire : Traefik n'a
@@ -381,6 +391,20 @@ jobs:
           echo "::error::https://$host ne répond pas 200 (dernier code : $code)."
           exit 1
           REMOTE
+
+      - name: Vérifier que la préprod reste fermée hors VPN
+        env:
+          PREPROD_HOST: ${{ vars.PREPROD_HOST }}
+        run: |
+          set -euo pipefail
+          # Le runner GitHub est hors du réseau WireGuard : il doit recevoir 403.
+          # Garde-fou contre une ouverture accidentelle du filtre Traefik.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$PREPROD_HOST" || echo 000)
+          if [ "$code" != "403" ]; then
+            echo "::error::https://$PREPROD_HOST répond $code hors VPN au lieu de 403."
+            exit 1
+          fi
+          echo "Hors VPN : 403, le filtre est en place."
 
       - name: Déconnecter le VPS de GHCR
         if: always()

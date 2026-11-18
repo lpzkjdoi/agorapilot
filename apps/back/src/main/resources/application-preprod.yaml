@@ -40,6 +40,11 @@ springdoc:
     enabled: false
 
 server:
+  # Derrière Traefik puis nginx : l'adresse du client est lue dans
+  # X-Forwarded-For, en ne faisant confiance qu'aux proxies des réseaux privés
+  # (valeur par défaut de Tomcat, qui couvre les réseaux Docker). Sans elle, la
+  # limite de connexions par IP verrait tout le monde derrière l'IP de nginx.
+  forward-headers-strategy: native
   servlet:
     session:
       cookie:

@@ -5,6 +5,7 @@ import fr.maximechazard.agorapilot.back.account.exceptions.AuthenticationFailedE
 import fr.maximechazard.agorapilot.back.account.exceptions.ForbiddenAccountOperationException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidAccountRequestException;
 import fr.maximechazard.agorapilot.back.account.exceptions.InvalidPasswordException;
+import fr.maximechazard.agorapilot.back.account.exceptions.TooManyLoginAttemptsException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotCancelableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotClosableException;
 import fr.maximechazard.agorapilot.back.campaign.exceptions.CampaignNotFoundException;
@@ -143,6 +144,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<ApiError> handleAuthenticationFailedException(AuthenticationFailedException exception) {
         return build(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ResponseEntity<ApiError> handleTooManyLoginAttemptsException(TooManyLoginAttemptsException exception) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
     }
 
     @ExceptionHandler(AccountNotFoundException.class)

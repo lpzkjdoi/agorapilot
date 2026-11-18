@@ -49,7 +49,9 @@ export class LoginPageComponent {
         this.submitting.set(false);
         // Le mot de passe saisi ne reste pas dans le champ après un échec.
         this.form.controls.password.reset();
-        this.error.set(err.status === 401 && typeof err.error?.message === 'string'
+        // 401 : identifiants refusés ; 429 : trop d'échecs depuis cette adresse IP.
+        // Le back formule lui-même ces deux messages.
+        this.error.set((err.status === 401 || err.status === 429) && typeof err.error?.message === 'string'
           ? err.error.message
           : 'Connexion impossible pour le moment. Réessayez dans un instant.');
       },

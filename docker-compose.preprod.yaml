@@ -23,6 +23,9 @@ services:
     image: postgres:16
     container_name: agorapilot-preprod-db
     restart: unless-stopped
+    # Limites mémoire : le VPS (3,9 Go, sans swap) porte aussi la production et
+    # d'autres stacks. Mêmes valeurs qu'en production (docker-compose.prod.yaml).
+    mem_limit: 256m
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB est requis}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER est requis}
@@ -46,6 +49,8 @@ services:
       context: ./apps/back
     container_name: agorapilot-preprod-back
     restart: unless-stopped
+    # La JVM (`MaxRAMPercentage=75`) se cale sur cette limite : ~575 Mo de tas.
+    mem_limit: 768m
     depends_on:
       db:
         condition: service_healthy
@@ -111,6 +116,7 @@ services:
       context: ./apps/front
     container_name: agorapilot-preprod-front
     restart: unless-stopped
+    mem_limit: 64m
     # nginx résout le nom `back` au chargement de sa configuration : sans back
     # démarré, le conteneur front refuserait de se lancer.
     depends_on:

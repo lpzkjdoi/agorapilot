@@ -24,8 +24,8 @@ import java.util.List;
  *       fil qui les rattache par leur {@code media_fbid}.</li>
  * </ul>
  * Les binaires sont <strong>envoyés</strong> en multipart, jamais désignés par une
- * URL : les serveurs de Facebook ne peuvent pas atteindre nos environnements, dont
- * l'accès est restreint au réseau WireGuard par Traefik.
+ * URL : les serveurs de Facebook ne peuvent pas lire nos médias, dont l'accès
+ * demande une session (et la préprod est en plus fermée au réseau WireGuard).
  */
 @Service
 @RequiredArgsConstructor

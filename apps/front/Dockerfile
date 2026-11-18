@@ -20,6 +20,7 @@ FROM nginx:1.27-alpine
 # le proxy Swagger) par défaut, `docker/nginx.prod.conf` pour la production.
 ARG NGINX_CONF=docker/nginx.conf
 COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
+COPY docker/headers /etc/nginx/headers
 
 # Le builder `application` d'Angular écrit le bundle navigateur dans
 # <outputPath>/browser, soit dist/front/browser (outputPath = dist/front).

@@ -46,19 +46,27 @@ plage vient de `PREPROD_ALLOWED_CIDRS`. Trois points à retenir :
   TLS-ALPN de Let's Encrypt est traité pendant la poignée de main TLS, avant tout
   routage HTTP, donc le filtre ne devrait pas le bloquer. Un observateur externe
   peut en déduire que le domaine existe, mais n'obtient aucun contenu.
-  ⚠️ **Point non encore vérifié en pratique** : le certificat courant a été émis
-  *avant* la mise en place du filtre et n'expire que le 23 octobre 2026, donc le
-  premier renouvellement sous filtre aura lieu vers fin septembre. Ce qui est
-  vérifié, c'est que la poignée de main TLS aboutit toujours pour un client
-  externe (le certificat est bien servi avant le 403), ce qui est la couche sur
-  laquelle opère le challenge. Si le renouvellement échouait malgré tout, la
-  solution est de basculer le resolver sur un challenge **DNS-01**, qui ne
-  requiert aucune joignabilité publique.
+  **Vérifié en pratique** : le certificat a été renouvelé sous filtre le
+  2026-09-24. Si un renouvellement échouait un jour, la solution est de basculer
+  le resolver sur un challenge **DNS-01**, qui ne requiert aucune joignabilité
+  publique.
 - **Les clients doivent être en tunnel complet** (`AllowedIPs = 0.0.0.0/0`).
   En tunnel partagé, le trafic vers l'IP publique du VPS sortirait hors du tunnel
   et serait rejeté. Attention : ajouter simplement l'IP publique du VPS aux
   `AllowedIPs` d'un tunnel partagé crée une boucle de routage, le handshake
   WireGuard partant lui-même dans le tunnel.
+
+Le filtre VPN est **maintenu** (décision du 2026-11-18 : la préprod reste
+privée, seule la production est ouverte sur Internet). La préprod porte quand
+même les protections de la production, pour les éprouver avant elle :
+
+- **la limite d'échecs de connexion par IP** (20 en 15 minutes, tous pseudos
+  confondus → 429), en plus du verrouillage par compte. L'IP du client est lue
+  dans `X-Forwarded-For` (`server.forward-headers-strategy: native`), en ne
+  faisant confiance qu'aux proxies des réseaux privés (Traefik, nginx) ;
+- **les en-têtes de nginx** (`apps/front/docker/headers/`) : CSP, HSTS,
+  `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, et
+  `X-Robots-Tag: noindex` propre à la préprod.
 
 Le domaine n'a **pas d'enregistrement AAAA**, ce qui est important : un tunnel
 déclaré en `0.0.0.0/0` ne capte pas l'IPv6. Si un AAAA est ajouté un jour, il
@@ -87,6 +95,29 @@ curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.c
 recréation du conteneur `front`, Traefik n'a momentanément plus de routeur pour
 cet hôte et répond 404. Attendre quelques secondes et refaire le test — un 404
 persistant, lui, signale un problème de découverte (labels, réseau `web`).
+
+## Bascule vers `preprod.agorapilot.fr`
+
+À faire une fois `agorapilot.fr` acheté. Rien dans le code ne dépend du nom :
+tout passe par `PREPROD_HOST`. Dans l'ordre :
+
+1. **DNS** : enregistrement A `preprod.agorapilot.fr` → `46.202.175.115` (pas
+   d'AAAA, cf. ci-dessus), et attendre qu'il réponde
+   (`dig +short preprod.agorapilot.fr`).
+2. **App Meta de préprod** (cf. [`configuration-meta.md`](./configuration-meta.md)) :
+   ajouter le domaine `preprod.agorapilot.fr`, la plateforme Site web
+   `https://preprod.agorapilot.fr/` et l'URI de redirection
+   `https://preprod.agorapilot.fr/api/channels/facebook/callback`. Sans cela, la
+   connexion Facebook échoue en `1349048`.
+3. **GitHub** : variable `PREPROD_HOST` de l'environnement `preprod` →
+   `preprod.agorapilot.fr`, puis Actions → Deploy preprod → **Run workflow**.
+   Traefik obtient le certificat au premier accès (le challenge échappe au
+   filtre) ; le contrôle de fin de déploiement le confirme.
+4. **Dépôt** : remplacer `preprod.chariotte-manager.fr` dans
+   `apps/front/proxy.conf.preprod.json`, `apps/front/README.md`, ce runbook et
+   `configuration-meta.md`.
+
+L'ancien nom cesse alors de répondre (aucun routeur ne le porte plus).
 
 ## Prérequis
 
@@ -552,8 +583,11 @@ Déroulé :
    temps du `start_period`), puis `https://$PREPROD_HOST` **depuis le VPS**, en
    sortant par `--interface 10.8.0.1`. Ce détour est nécessaire : le runner
    GitHub est hors du réseau WireGuard et recevrait 403
-   (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)). Les 404 transitoires
-   qui suivent un `up -d` sont absorbés par les tentatives successives.
+   (cf. [Accès restreint au VPN](#accès-restreint-au-vpn)). La réponse doit
+   aussi porter `Content-Security-Policy` et `X-Robots-Tag`. Les 404 transitoires
+   qui suivent un `up -d` sont absorbés par les tentatives successives. Enfin,
+   le runner vérifie qu'il reçoit bien **403**, pour qu'une ouverture
+   accidentelle du filtre fasse échouer le déploiement.
 
 ### Configuration attendue
 

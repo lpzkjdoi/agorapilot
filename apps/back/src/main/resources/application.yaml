@@ -90,6 +90,12 @@ agorapilot:
       password: ${AGORAPILOT_ADMIN_PASSWORD:}
     max-failed-attempts: 5
     lock-duration: PT15M
+    # Échecs de connexion tolérés depuis une même IP, tous pseudos confondus,
+    # avant un refus (429) jusqu'à la fin de la fenêtre. Complète le verrouillage
+    # par compte contre l'essai d'un mot de passe sur beaucoup de pseudos.
+    login-rate-limit:
+      max-failures: ${LOGIN_RATE_LIMIT_MAX_FAILURES:20}
+      window: ${LOGIN_RATE_LIMIT_WINDOW:PT15M}
     session-max-age: PT12H
 
   export:
