@@ -77,9 +77,9 @@ ne rien perdre.
 
 #### Bloquant
 
-- [ ] **Workflow de déploiement prod** : tag `vX.Y.Z` sur `main`, GitHub Environment `production` avec approbation manuelle (cf. [`gitflow.md`](docs/gitflow.md))
+- [x] **Workflow de déploiement prod** (2026-11-18, cf. [runbook](docs/deploiement-prod.md) et [changelog](docs/changelog/2026-11-18-workflow-deploiement-prod.md)) : `deploy-prod.yml` sur tag `vX.Y.Z` contenu dans `main`, approbation par l'environnement GitHub `production`, retour arrière par relance manuelle sans rebuild, `docker-compose.prod.yaml` séparé de la préprod avec limites mémoire. Reste, côté Maxime : créer l'environnement `production` (relecteur, règles `v*` et `main`, variables et secrets) — jamais encore exécuté
 - [ ] **Environnement de production** : compose et `.env` dédiés, domaine, DNS, certificat. Contrairement à la préprod, la prod est **ouverte sur Internet** (pas de filtre VPN) — choisir aussi la machine : le VPS actuel (1 vCPU, 3,9 Go, partagé) ou un autre
-- [ ] **Prérequis prod de `gitflow.md`** : `nginx.prod.conf` sans le proxy Swagger, tags d'image porteurs de l'environnement (`preprod-<sha>` / `prod-<version>`), images de base épinglées par digest
+- [ ] **Prérequis prod de `gitflow.md`** : ~~`nginx.prod.conf` sans le proxy Swagger~~ et ~~tags d'image porteurs de l'environnement (`preprod-<sha>` / `prod-<version>`)~~ faits le 2026-11-18 ; reste : images de base épinglées par digest
 - [ ] **Sauvegardes** automatiques et hors du VPS des deux volumes non reconstructibles (`db-data` **et** `media-data`), avec rétention, et une restauration testée au moins une fois — **mis de côté le 2026-11-17** à la demande de Maxime, à reprendre avant la mise en production
 - [x] **Connexion du canal Facebook depuis l’interface** : remplace le bootstrap à la main (Graph Explorer + `curl` sur la boucle locale du VPS) et le renouvellement actuel, qui ne se déclenche jamais (jeton de Page permanent) et dont le chemin de secours repose sur un jeton utilisateur expiré au bout d'environ 60 jours :
   - [x] page « Canal Facebook » (`channels:manage`) : état du jeton (valide, permissions, connecté par qui et quand, dernier contrôle) et bouton « Connecter / Reconnecter avec Facebook » via le flux OAuth de Facebook Login — attention, le cookie de session est en `SameSite=strict` et ne revient pas au callback depuis facebook.com : `state` à usage unique stocké côté serveur
@@ -96,10 +96,10 @@ ne rien perdre.
 - [ ] **Alerte hors de l'application** : une suspension ou une diffusion en échec ne se voit qu'en ouvrant AgoraPilot — prévenir par mail les comptes `channels:manage` (adresse e-mail sur les comptes, serveur d'envoi) ; a minima une sonde de disponibilité externe
 - [x] **Diffusions retenues par une suspension** (2026-11-17) : passée leur heure, elles sont signalées « En attente » dans le calendrier et peuvent être déplacées ou annulées (cf. [changelog](docs/changelog/2026-11-17-diffusions-retenues.md))
 - [ ] **Durcissement pour une exposition publique** : limitation de débit par IP sur la connexion (le verrouillage par compte existe), en-têtes de sécurité nginx (CSP, HSTS), scan Trivy bloquant
-- [ ] **Logs** : rotation configurée a minima, centralisation idéalement
+- [ ] **Logs** : rotation en place (constaté le 2026-11-18 : `json-file` 10 Mo × 3 pour tout le démon Docker du VPS) ; reste la centralisation, idéalement
 - [ ] **Mot de passe oublié** : aujourd'hui seul un administrateur débloque un compte (mot de passe provisoire) — à trancher selon la taille de l'équipe
-- [ ] **Protection des branches** `main` et `develop` côté GitHub (« All checks green » exigé)
-- [ ] **Runbook de production** : premier démarrage, déploiement, retour au tag précédent, restauration d'une sauvegarde
+- [x] **Protection des branches** `main` et `develop` côté GitHub (constaté le 2026-11-18 : ruleset actif, PR obligatoire, « All checks green » exigé, ni suppression ni force-push)
+- [ ] **Runbook de production** : premier démarrage, déploiement et retour au tag précédent écrits le 2026-11-18 ([`deploiement-prod.md`](docs/deploiement-prod.md)) ; reste la restauration d'une sauvegarde
 - [ ] **Mentions légales / RGPD**, selon les utilisateurs de l'outil
 
 ### Après la v1.0

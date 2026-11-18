@@ -16,7 +16,10 @@ RUN npm run build -- --configuration production
 # --- Étape 2 : service statique -------------------------------------------
 FROM nginx:1.27-alpine
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Conf nginx propre à l'environnement : `docker/nginx.conf` (préproduction, avec
+# le proxy Swagger) par défaut, `docker/nginx.prod.conf` pour la production.
+ARG NGINX_CONF=docker/nginx.conf
+COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
 
 # Le builder `application` d'Angular écrit le bundle navigateur dans
 # <outputPath>/browser, soit dist/front/browser (outputPath = dist/front).

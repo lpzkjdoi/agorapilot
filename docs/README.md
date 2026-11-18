@@ -6,6 +6,7 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 
 - [`gitflow.md`](./gitflow.md) — modèle de branches, cycle de contribution, versionnage et conventions CI/CD. Référence mise à jour quand le processus évolue.
 - [`deploiement-preprod.md`](./deploiement-preprod.md) — runbook de la préproduction sur VPS : prérequis, variables d'environnement, commandes de déploiement et vérifications.
+- [`deploiement-prod.md`](./deploiement-prod.md) — runbook de la production : mise en place (DNS, app Meta, environnement GitHub `production`), publication d'une version par tag, retour arrière, exploitation.
 - [`notifications.md`](./notifications.md) — notifications Discord et webhook : ce qui est notifié, architecture (factory de senders), configuration des salons, vérification et ajout d'un canal.
 - [`configuration-meta.md`](./configuration-meta.md) — configurer l'app Meta du canal Facebook (identifiants, URI de redirection, permissions, rôles, mode Live) et dépanner la connexion de la Page.
 - [`changelog/`](./changelog) — un compte-rendu par tâche/évolution significative : contexte, changements, vérification effectuée, lien vers le commit correspondant. Une nouvelle entrée est ajoutée à chaque tâche de développement.
@@ -84,3 +85,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-17 | [Export XLSX d'une publication au format EventProxy](./changelog/2026-11-17-export-xlsx-eventproxy.md) | _voir PR_ |
 | 2026-11-17 | [Programmation par fréquence : le back (séries, RRULE, job quotidien)](./changelog/2026-11-17-frequence-back.md) | _voir PR_ |
 | 2026-11-17 | [Programmation par fréquence : la modale « Répéter » et les séries au calendrier](./changelog/2026-11-17-frequence-front.md) | _voir PR_ |
+| 2026-11-18 | [Workflow de déploiement de la production](./changelog/2026-11-18-workflow-deploiement-prod.md) | _voir PR_ |

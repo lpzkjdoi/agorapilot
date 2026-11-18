@@ -1,0 +1,46 @@
+# Profil prod : mêmes réglages que le profil preprod (application-preprod.yaml),
+# dont il est volontairement une copie. Les deux profils sont distincts pour que
+# les notifications et les journaux portent le nom de l'environnement réel.
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  # devtools est `optional`/`runtime` donc absent du jar packagé, mais on coupe
+  # explicitement le redémarrage à chaud : aucun rechargement en preprod.
+  devtools:
+    restart:
+      enabled: false
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.security: INFO
+
+# Seul /actuator/health est exposé : il sert de healthcheck au conteneur back,
+# dont dépend le démarrage du conteneur front.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Swagger n'est servi qu'en développement : la chaîne de sécurité le refuse
+# ailleurs, et il n'est même pas généré ici.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true

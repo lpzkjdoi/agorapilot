@@ -41,7 +41,7 @@ services:
       retries: 5
 
   back:
-    image: ${BACK_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-back}:${IMAGE_TAG:-latest}
+    image: ${BACK_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-back}:${IMAGE_TAG:-preprod-latest}
     build:
       context: ./apps/back
     container_name: agorapilot-preprod-back
@@ -106,7 +106,7 @@ services:
       start_period: 60s
 
   front:
-    image: ${FRONT_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-front}:${IMAGE_TAG:-latest}
+    image: ${FRONT_IMAGE:-ghcr.io/lpzkjdoi/agorapilot-front}:${IMAGE_TAG:-preprod-latest}
     build:
       context: ./apps/front
     container_name: agorapilot-preprod-front

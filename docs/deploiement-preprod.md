@@ -538,11 +538,13 @@ la préproduction. Le workflow est aussi lançable à la main
 
 Déroulé :
 
-1. **Build & push** des deux images sur GHCR, en parallèle, taguées au SHA du
-   commit **et** en `latest`. Le cache de build est celui d'Actions : une
+1. **Build & push** des deux images sur GHCR, en parallèle, taguées
+   `preprod-<sha>` **et** `preprod-latest` (depuis le 2026-11-18 ; les images
+   antérieures portent le SHA seul et `latest`). La production a ses propres
+   tags `prod-X.Y.Z`. Le cache de build est celui d'Actions : une
    modification du seul front ne reconstruit pas les couches Maven.
 2. **Régénération du `.env`** sur le VPS depuis l'environnement GitHub, avec
-   `IMAGE_TAG` = SHA du commit. L'ancien fichier est sauvegardé en `.env.bak`.
+   `IMAGE_TAG` = `preprod-<sha>`. L'ancien fichier est sauvegardé en `.env.bak`.
 3. **`docker compose pull` puis `up -d --no-build --remove-orphans`.**
    `--no-build` est délibéré : si une image manquait, on veut un échec net
    plutôt qu'un build Maven + Angular improvisé sur un VPS à 1 vCPU.
