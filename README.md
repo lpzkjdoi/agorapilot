@@ -90,7 +90,7 @@ ne rien perdre.
   - [x] valider la connexion en préproduction (2026-11-10 : Page connectée et jeton valide, après ajout du domaine, de la plateforme Site web et de l'URI de redirection dans l'app Meta, cf. [`configuration-meta.md`](docs/configuration-meta.md))
   - [x] suppression du jeton utilisateur stocké, de `renewIfNeeded()` et de `POST /admin/facebook/bootstrap` ; expiration nullable (permanent) au lieu de la fausse valeur à dix ans (2026-11-10, cf. [changelog](docs/changelog/2026-11-10-suppression-bootstrap-facebook.md))
   - [ ] option : champ pour saisir un jeton de **System User** du Business Manager Meta, qui ne dépend d'aucun compte personnel
-- [ ] **App Meta en mode Live sur la vraie Page** : en mode développement, les posts ne sont visibles que des comptes ayant un rôle dans l'app (à confirmer dans la console Meta, comme le besoin ou non d'App Review pour `pages_manage_posts`)
+- [ ] **App Meta dédiée à la production, en mode Live sur la vraie Page** (app séparée choisie le 2026-11-18) : la préprod garde son app en mode développement et sa Page de test, et ne peut donc pas publier sur la vraie Page. L'app prod déclare `agorapilot.fr` (domaine, plateforme Site web, URI `https://agorapilot.fr/api/channels/facebook/callback`) ; ses `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` / `FACEBOOK_PAGE_ID` vont dans l'environnement GitHub `production`, saisis par Maxime. En mode développement, les posts ne sont visibles que des comptes ayant un rôle dans l'app (à confirmer dans la console Meta, comme le besoin ou non d'App Review pour `pages_manage_posts`)
 - [ ] **Valider la diffusion avec images** sur la page de préproduction (une, puis trois photos)
 
 #### Fortement recommandé
