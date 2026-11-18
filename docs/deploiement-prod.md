@@ -32,7 +32,7 @@ develop ──(PR)──► main ──(tag vX.Y.Z)──► deploy-prod.yml
 | Dossier VPS | `/opt/agorapilot/preprod/repo` | `/opt/agorapilot/prod` |
 | Profil Spring | `preprod` | `prod` |
 | Back sur la boucle locale | `127.0.0.1:8080` | `127.0.0.1:8081` |
-| Accès | public (`X-Robots-Tag: noindex`) | public |
+| Accès | filtré sur WireGuard (`X-Robots-Tag: noindex` en plus) | public |
 | Swagger proxifié par nginx | oui | non (`nginx.prod.conf`) |
 | App Meta | app de préprod, mode développement | app de production, mode Live |
 

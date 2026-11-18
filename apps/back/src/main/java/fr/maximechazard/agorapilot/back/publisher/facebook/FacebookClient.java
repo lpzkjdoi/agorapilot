@@ -25,7 +25,7 @@ import java.util.List;
  * </ul>
  * Les binaires sont <strong>envoyés</strong> en multipart, jamais désignés par une
  * URL : les serveurs de Facebook ne peuvent pas lire nos médias, dont l'accès
- * demande une session (et la préprod a longtemps été fermée au réseau WireGuard).
+ * demande une session (et la préprod est en plus fermée au réseau WireGuard).
  */
 @Service
 @RequiredArgsConstructor

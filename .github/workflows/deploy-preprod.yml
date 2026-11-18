@@ -10,7 +10,7 @@
 #
 # Configuration attendue côté GitHub — Settings → Environments → `preprod` :
 #
-#   Variables : PREPROD_HOST, POSTGRES_DB, POSTGRES_USER,
+#   Variables : PREPROD_HOST, PREPROD_ALLOWED_CIDRS, POSTGRES_DB, POSTGRES_USER,
 #               FACEBOOK_API_VERSION, FACEBOOK_CLIENT_ID, FACEBOOK_PAGE_ID, TZ,
 #               PREPROD_SSH_HOST, PREPROD_SSH_USER, PREPROD_SSH_KNOWN_HOSTS,
 #               PREPROD_PATH, AGORAPILOT_ADMIN_USERNAME (facultative)
@@ -242,6 +242,7 @@ jobs:
       - name: Générer le .env de préproduction
         env:
           PREPROD_HOST: ${{ vars.PREPROD_HOST }}
+          PREPROD_ALLOWED_CIDRS: ${{ vars.PREPROD_ALLOWED_CIDRS || '10.8.0.0/24' }}
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -271,6 +272,7 @@ jobs:
           # substitution surprise si une valeur contient $, ` ou \.
           {
             printf 'PREPROD_HOST=%s\n'          "$PREPROD_HOST"
+            printf 'PREPROD_ALLOWED_CIDRS=%s\n' "$PREPROD_ALLOWED_CIDRS"
             printf 'IMAGE_TAG=%s\n'             "$IMAGE_TAG"
             printf 'BACK_IMAGE=ghcr.io/%s/agorapilot-back\n'   "$OWNER"
             printf 'FRONT_IMAGE=ghcr.io/%s/agorapilot-front\n' "$OWNER"
@@ -338,8 +340,6 @@ jobs:
           REMOTE
 
       - name: Vérifier le déploiement
-        env:
-          PREPROD_HOST: ${{ vars.PREPROD_HOST }}
         run: |
           set -euo pipefail
           ssh $SSH_OPTS -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" \
@@ -351,7 +351,7 @@ jobs:
           for i in $(seq 1 36); do
             if curl -fsS http://127.0.0.1:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
               echo "Back UP après ${i} tentative(s)."
-              exit 0
+              break
             fi
             if [ "$i" -eq 36 ]; then
               echo "::error::Le back n'est pas UP après 3 minutes."
@@ -361,18 +361,21 @@ jobs:
             sleep 5
           done
 
-          REMOTE
-
-          # Vérification de bout en bout depuis le runner GitHub, donc depuis
-          # Internet, comme un visiteur : la préprod n'est plus filtrée sur le
-          # réseau WireGuard. On vérifie aussi la présence de deux en-têtes posés
-          # par nginx, pour qu'une conf amputée ne passe pas inaperçue.
+          # Vérification de bout en bout, depuis le VPS et non depuis le runner :
+          # la préproduction est filtrée sur le réseau WireGuard, une requête
+          # venue de GitHub recevrait 403. `10.8.0.1` est l'adresse du VPS sur
+          # `wg0`, donc dans la plage autorisée.
+          # On vérifie aussi la présence de deux en-têtes posés par nginx, pour
+          # qu'une conf amputée ne passe pas inaperçue.
+          host=$(grep '^PREPROD_HOST=' .env | cut -d= -f2-)
+          headers=$(mktemp)
+          trap 'rm -f "$headers"' EXIT
           for i in $(seq 1 12); do
-            code=$(curl -sS -D headers.txt -o /dev/null -w '%{http_code}' "https://$PREPROD_HOST" || echo 000)
+            code=$(curl -sS --interface 10.8.0.1 -D "$headers" -o /dev/null -w '%{http_code}' "https://$host" || echo 000)
             if [ "$code" = "200" ]; then
-              echo "https://$PREPROD_HOST répond 200."
+              echo "https://$host répond 200."
               for header in content-security-policy x-robots-tag; do
-                grep -qi "^$header:" headers.txt || {
+                grep -qi "^$header:" "$headers" || {
                   echo "::error::En-tête $header absent de la réponse."
                   exit 1
                 }
@@ -385,8 +388,23 @@ jobs:
             sleep 5
           done
 
-          echo "::error::https://$PREPROD_HOST ne répond pas 200 (dernier code : $code)."
+          echo "::error::https://$host ne répond pas 200 (dernier code : $code)."
           exit 1
+          REMOTE
+
+      - name: Vérifier que la préprod reste fermée hors VPN
+        env:
+          PREPROD_HOST: ${{ vars.PREPROD_HOST }}
+        run: |
+          set -euo pipefail
+          # Le runner GitHub est hors du réseau WireGuard : il doit recevoir 403.
+          # Garde-fou contre une ouverture accidentelle du filtre Traefik.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$PREPROD_HOST" || echo 000)
+          if [ "$code" != "403" ]; then
+            echo "::error::https://$PREPROD_HOST répond $code hors VPN au lieu de 403."
+            exit 1
+          fi
+          echo "Hors VPN : 403, le filtre est en place."
 
       - name: Déconnecter le VPS de GHCR
         if: always()

@@ -106,8 +106,8 @@ Sur cette page :
   refuser la connexion par Facebook (« URL bloquée », ou de nouveau le code
   `1349048`).
 
-La redirection passe par le navigateur de la personne qui connecte, jamais par
-les serveurs de Facebook.
+Le VPN de la préproduction ne gêne pas : la redirection passe par le navigateur
+de la personne qui connecte, jamais par les serveurs de Facebook.
 
 **Résultat attendu** : l'URI figure dans la liste, une ligne par environnement.
 

@@ -1,18 +1,17 @@
-# Préproduction publique : fin du filtre VPN, durcissement et limites mémoire
+# Durcissement pour l'exposition publique de la prod, limites mémoire de la préprod
 
 **Date** : 2026-11-18
 **Branche** : `claude/preprod-publique`
 
 ## Contexte
 
-Chantier 1 de la mise en production. Le filtre WireGuard de la préprod datait de
-juillet, quand elle n'avait aucune authentification. Les comptes existent depuis
-octobre : la préprod peut s'ouvrir, et sert ainsi de répétition générale d'une
-production publique. Il fallait d'abord ce qui protège une application exposée :
-une limite d'échecs de connexion par IP et des en-têtes de sécurité.
+Chantier 1 de la mise en production. Le premier plan était d'ouvrir aussi la
+préprod sur Internet, en retirant son filtre WireGuard. Maxime a finalement
+tranché : **la préprod reste derrière le VPN, seule la production est publique**.
 
-Le passage sur `preprod.agorapilot.fr` attend l'achat du domaine : la procédure
-est écrite, aucun code n'en dépend (tout passe par `PREPROD_HOST`).
+Le chantier garde donc ce qui protège une application exposée, dont la prod a
+besoin : une limite d'échecs de connexion par IP et des en-têtes de sécurité.
+La préprod les porte aussi, pour les éprouver avant la prod.
 
 ## Changements
 
@@ -48,20 +47,21 @@ est écrite, aucun code n'en dépend (tout passe par `PREPROD_HOST`).
 
 ### Préprod
 
-- Middleware Traefik `ipwhitelist` et variable `PREPROD_ALLOWED_CIDRS` retirés
-  (compose, workflow, `.env.preprod.example`).
+- Filtre VPN **inchangé** (`ipwhitelist` sur `PREPROD_ALLOWED_CIDRS`).
 - Limites mémoire, identiques à la prod : back 768 Mo, base 256 Mo, front 64 Mo.
-- Le déploiement vérifie la préprod depuis le runner GitHub (et non plus par
-  `--interface 10.8.0.1` depuis le VPS), y compris la présence des en-têtes
-  `Content-Security-Policy` et `X-Robots-Tag`. Le workflow de prod vérifie la CSP
-  et l'**absence** de `X-Robots-Tag`.
+- Le déploiement vérifie, depuis le VPS (`--interface 10.8.0.1`), la présence
+  des en-têtes `Content-Security-Policy` et `X-Robots-Tag` ; puis, depuis le
+  runner GitHub, qu'il reçoit bien **403** : une ouverture accidentelle du
+  filtre fait échouer le déploiement. Le workflow de prod vérifie la CSP et
+  l'**absence** de `X-Robots-Tag`.
 
 ### Docs
 
-Runbook préprod (section « Accès public », procédure de bascule de domaine),
-runbook prod, `configuration-meta.md`, README du front, roadmap, commentaires de
-`FacebookClient` (la raison d'envoyer les binaires reste valable : les médias
-exigent une session).
+Runbook préprod (protections applicatives, renouvellement du certificat sous
+filtre prouvé le 2026-09-24, procédure de bascule vers `preprod.agorapilot.fr`,
+contrôles du déploiement), runbook prod, roadmap, commentaires de
+`FacebookClient` (la raison d'envoyer les binaires : les médias exigent une
+session, et la préprod est en plus fermée au VPN).
 
 ## Vérification effectuée
 
@@ -73,7 +73,7 @@ exigent une session).
 - `nginx -t` sur les deux confs (`nginx:1.27-alpine`, sur le VPS, dans un
   dossier temporaire supprimé ensuite) : syntaxe valide.
 - `docker compose config` du compose préprod sur le VPS : limites mémoire
-  présentes, plus aucun middleware de filtrage.
+  présentes, middleware de filtrage conservé.
 - **CSP dans le navigateur** : build de production servi en local avec les
   en-têtes exacts de `security.conf` et `noindex.conf`, API bouchonnée. Les
   pages s'affichent avec leurs styles, aucune violation CSP en console. C'est ce
@@ -84,8 +84,6 @@ exigent une session).
 
 ## Reste à faire
 
-- Supprimer `PREPROD_ALLOWED_CIDRS` de l'environnement GitHub `preprod`.
-- WireGuard sur le VPS (root), s'il ne sert plus à rien d'autre.
 - Bascule sur `preprod.agorapilot.fr` une fois le domaine acheté.
 - Scan Trivy bloquant.
 
