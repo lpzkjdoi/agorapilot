@@ -166,14 +166,14 @@ jobs:
       - name: Front — SPA et proxy de l'API
         run: |
           set -euo pipefail
-          $COMPOSE exec -T front wget -q -O - http://localhost/ | grep -q '<app-root'
+          $COMPOSE exec -T front wget -q -O - http://127.0.0.1/ | grep -q '<app-root'
           # L'API passe par nginx : un anonyme reçoit 401 du back, pas une page nginx.
-          status=$($COMPOSE exec -T front sh -c 'wget -S -O /dev/null http://localhost/api/me 2>&1 | grep -m1 "HTTP/" || true')
+          status=$($COMPOSE exec -T front sh -c 'wget -S -O /dev/null http://127.0.0.1/api/me 2>&1 | grep -m1 "HTTP/" || true')
           echo "Proxy /api/me : $status"
           grep -q ' 401' <<< "$status"
           # Pas de Swagger en production : la SPA répond à sa place (repli
           # sur index.html), jamais la description OpenAPI.
-          if $COMPOSE exec -T front wget -q -O - http://localhost/v3/api-docs | grep -q '"openapi"'; then
+          if $COMPOSE exec -T front wget -q -O - http://127.0.0.1/v3/api-docs | grep -q '"openapi"'; then
             echo "::error::La description OpenAPI est exposée par le front de prod."
             exit 1
           fi

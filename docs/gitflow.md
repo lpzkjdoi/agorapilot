@@ -152,11 +152,14 @@ Prérequis avant le premier déploiement prod :
   et `agorapilot-front:prod-<version>`, au lieu de l'`IMAGE_TAG` commun actuel.
   Une image dont l'environnement est figé dedans mais pas dans son nom se déploie
   un jour au mauvais endroit, et le badge affichera « preprod » en production.
-- **Des images de base épinglées par digest.** C'est le prix de l'image par
+- **Des images de base épinglées par digest** (**fait le 2026-11-21**, cf.
+  [changelog](./changelog/2026-11-21-images-prod-legeres.md)). C'est le prix de l'image par
   environnement : l'artefact validé en preprod n'est plus celui qui tourne en
   prod, donc tout ce qui bouge entre deux builds du même arbre git devient une
   source de « ça marchait en preprod ». Le lockfile couvre npm ; le digest couvre
-  `nginx:1.27-alpine` et `maven`/`node`, dont les tags glissent.
+  les images de base (`alpine`, `eclipse-temurin`, `maven`, `node`, `nginx`,
+  `postgres`), dont les tags glissent. Docker CI (`docker-ci.yml`) construit et
+  éprouve les images de prod à chaque PR qui touche à leur recette.
 
 ## Recommandations d'outillage GitHub
 

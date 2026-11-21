@@ -150,7 +150,10 @@ services:
       - "traefik.http.routers.agorapilot-preprod-http.middlewares=agorapilot-preprod-vpn,agorapilot-preprod-https"
       - "traefik.http.middlewares.agorapilot-preprod-https.redirectscheme.scheme=https"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      # 127.0.0.1 et non `localhost` : celui-ci peut se résoudre d'abord en
+      # ::1 (Docker avec IPv6, comme sur les runners GitHub), où nginx
+      # n'écoute pas — la sonde échouerait sans qu'aucune requête n'arrive.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
