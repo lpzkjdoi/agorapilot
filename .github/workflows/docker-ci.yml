@@ -121,7 +121,7 @@ jobs:
         run: |
           set -euo pipefail
           psql() { $COMPOSE exec -T db psql -U agorapilot -d agorapilot -tA -c "$1"; }
-          provider=$(psql "select datlocprovider || '|' || coalesce(daticulocale, '') from pg_database where datname = current_database()")
+          provider=$(psql "select datlocprovider::text || '|' || coalesce(daticulocale, '') from pg_database where datname = current_database()")
           echo "Collation : $provider"
           test "$provider" = "i|fr-FR"
           order=$(psql "select string_agg(x, ',' order by x) from (values ('zèbre'), ('Éléphant'), ('abricot'), ('eau')) v(x)")
