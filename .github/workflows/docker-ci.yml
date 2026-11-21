@@ -145,6 +145,18 @@ jobs:
           curl -fsS -b jar -c jar -H "X-XSRF-TOKEN: $(xsrf)" -H 'Content-Type: application/json' \
             -d "{\"username\":\"smoke-admin\",\"password\":\"$password\"}" "$base/api/auth/login" >/dev/null
 
+          # Le jeton CSRF change à chaque ouverture de session : on le recharge,
+          # comme le front, par un GET avant la requête suivante.
+          refresh() { curl -fsS -b jar -c jar -o /dev/null "$base/api/me"; test -n "$(xsrf)"; }
+
+          # Premier compte = mot de passe provisoire, sans aucun droit tant
+          # qu'il n'est pas changé : c'est le parcours réel du premier admin.
+          refresh
+          curl -fsS -b jar -c jar -X PUT -H "X-XSRF-TOKEN: $(xsrf)" -H 'Content-Type: application/json' \
+            -d "{\"currentPassword\":\"$password\",\"newPassword\":\"$(openssl rand -hex 16)\"}" \
+            "$base/api/me/password"
+          refresh
+
           # Petite image PNG générée sur place, lue par ImageIO à l'arrivée.
           python3 - <<'PY'
           import struct, zlib

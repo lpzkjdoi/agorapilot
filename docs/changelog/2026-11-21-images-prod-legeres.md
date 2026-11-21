@@ -68,8 +68,9 @@ arguments que `deploy-prod.yml` et les lance avec le vrai
   lancé avec le `java` de l'image) : aplatissement et ré-encodage JPEG en
   headless, mois en français, fuseau `Europe/Paris`, encodage UTF-8, TLS 1.3
   vers graph.facebook.com ;
-- **back** : santé, jeton CSRF puis connexion, dépôt d'une image et relecture
-  à l'identique ;
+- **back** : santé, jeton CSRF puis connexion du premier administrateur,
+  changement de son mot de passe provisoire (sans quoi il n'a aucun droit),
+  dépôt d'une image et relecture à l'identique ;
 - **front** : SPA servie, `/api` proxifié (401 pour un anonyme), aucune
   description OpenAPI exposée ;
 - **base** : collation `i|fr-FR`, et `abricot, eau, Éléphant, zèbre` dans cet
