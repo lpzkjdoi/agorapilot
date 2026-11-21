@@ -91,8 +91,11 @@ voudrait dire retirer des dépendances, pas changer d'image.
 
 - `RuntimeSmoke` passe sur un JDK complet en local (référence) et dans l'image.
   Le JRE embarque 24 modules (liste affichée par Docker CI).
-- Premier passage de Docker CI : tout vert jusqu'au front `unhealthy` (cf.
-  healthcheck ci-dessus) ; second passage après correction : voir la PR.
+- Docker CI a révélé deux défauts du test lui-même (requête SQL sur un type
+  `"char"`, mot de passe provisoire non changé) et un défaut réel, le
+  healthcheck du front. Après correction, tout est vert : collation `i|fr-FR`,
+  tri `abricot, eau, Éléphant, zèbre`, image déposée (32 × 24, lue par ImageIO)
+  et relue à l'identique, `/api/me` proxifié en 401.
 - Back CI et Front CI verts. Aucun code applicatif modifié.
 
 Commit : voir la PR de la branche `claude/images-docker-legeres`.
