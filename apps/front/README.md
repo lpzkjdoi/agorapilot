@@ -13,7 +13,7 @@ développement qui décide quel back est joint.
 | Commande | Back visé | Prérequis |
 |---|---|---|
 | `npm start` | `http://localhost:8080` (`docker-compose.yaml` à la racine) | stack Docker de dev démarré |
-| `npm run start:preprod` | `https://preprod.chariotte-manager.fr` | **connexion au VPN WireGuard** |
+| `npm run start:preprod` | `https://preprod.agorapilot.fr` | **connexion au VPN WireGuard** |
 
 Le mode préproduction lit et écrit les **vraies données** de la préproduction, y
 compris la page Facebook associée. Voir

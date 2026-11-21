@@ -79,7 +79,7 @@ seraient rejetés.
 Hors VPN, depuis n'importe quelle machine :
 
 ```bash
-curl -sS -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+curl -sS -o /dev/null -w '%{http_code}\n' https://preprod.agorapilot.fr
 ```
 
 Attendu : **403**. Connecté au VPN, la même commande doit renvoyer **200**.
@@ -88,7 +88,7 @@ Le filtrage peut aussi être testé depuis le VPS lui-même, sans client VPN, en
 choisissant l'interface source — `10.8.0.1` étant dans la plage autorisée :
 
 ```bash
-curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.chariotte-manager.fr
+curl -sS --interface 10.8.0.1 -o /dev/null -w '%{http_code}\n' https://preprod.agorapilot.fr
 ```
 
 **Un 404 juste après un déploiement est normal et transitoire** : pendant la
@@ -98,26 +98,30 @@ persistant, lui, signale un problème de découverte (labels, réseau `web`).
 
 ## Bascule vers `preprod.agorapilot.fr`
 
-À faire une fois `agorapilot.fr` acheté. Rien dans le code ne dépend du nom :
-tout passe par `PREPROD_HOST`. Dans l'ordre :
+**Faite le 2026-11-21.** La préprod s'appelait auparavant
+`preprod.chariotte-manager.fr`. Rien dans le code ne dépend du nom : tout passe
+par `PREPROD_HOST`. La procédure suivie, à reprendre telle quelle pour un
+prochain changement de nom :
 
-1. **DNS** : enregistrement A `preprod.agorapilot.fr` → `46.202.175.115` (pas
-   d'AAAA, cf. ci-dessus), et attendre qu'il réponde
+1. **DNS** : enregistrement A `preprod.agorapilot.fr` → `46.202.175.115`, TTL
+   300, pas d'AAAA (cf. ci-dessus). Attendre qu'il réponde
    (`dig +short preprod.agorapilot.fr`).
 2. **App Meta de préprod** (cf. [`configuration-meta.md`](./configuration-meta.md)) :
-   ajouter le domaine `preprod.agorapilot.fr`, la plateforme Site web
-   `https://preprod.agorapilot.fr/` et l'URI de redirection
-   `https://preprod.agorapilot.fr/api/channels/facebook/callback`. Sans cela, la
-   connexion Facebook échoue en `1349048`.
-3. **GitHub** : variable `PREPROD_HOST` de l'environnement `preprod` →
-   `preprod.agorapilot.fr`, puis Actions → Deploy preprod → **Run workflow**.
-   Traefik obtient le certificat au premier accès (le challenge échappe au
-   filtre) ; le contrôle de fin de déploiement le confirme.
-4. **Dépôt** : remplacer `preprod.chariotte-manager.fr` dans
-   `apps/front/proxy.conf.preprod.json`, `apps/front/README.md`, ce runbook et
-   `configuration-meta.md`.
+   ajouter le domaine, la plateforme Site web `https://<hôte>/` et l'URI de
+   redirection `https://<hôte>/api/channels/facebook/callback`. Sans cela, la
+   connexion Facebook échoue avec l'erreur `1349048`.
+3. **GitHub** : variable `PREPROD_HOST` de l'environnement `preprod`, puis
+   Actions → Deploy preprod → **Run workflow**. Traefik n'a rien à changer :
+   les routeurs sont portés par les labels du conteneur `front`, générés depuis
+   `PREPROD_HOST`. Il obtient le certificat au premier accès (le challenge
+   TLS-ALPN échappe au filtre) ; le contrôle de fin de déploiement le confirme.
+4. **Dépôt** : remplacer l'ancien nom dans `apps/front/proxy.conf.preprod.json`,
+   `apps/front/README.md`, ce runbook et `configuration-meta.md`.
 
-L'ancien nom cesse alors de répondre (aucun routeur ne le porte plus).
+L'ancien nom cesse alors de répondre : aucun routeur ne le porte plus, et
+Traefik renvoie 404. Il n'a pas été gardé en redirection, la préprod n'étant
+accessible que par le VPN. Son enregistrement DNS chez `chariotte-manager.fr`
+peut être supprimé.
 
 ## Prérequis
 
