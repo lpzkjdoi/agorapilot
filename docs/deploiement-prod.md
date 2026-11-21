@@ -21,6 +21,12 @@ develop ──(PR)──► main ──(tag vX.Y.Z)──► deploy-prod.yml
 - **Domaine** : `agorapilot.fr`, et `www.agorapilot.fr` redirigé vers lui.
 - **Images** : `ghcr.io/lpzkjdoi/agorapilot-{back,front}:prod-X.Y.Z`. Jamais de
   `latest` en production. La préprod a ses propres tags (`preprod-<sha>`).
+  Bases minimales épinglées par digest : JRE jlink sur Alpine pour le back,
+  nginx `slim` pour le front, `postgres:16` Alpine pour la base, éprouvées par
+  Docker CI à chaque PR qui touche à leur recette.
+- **Base** : initialisée en collation **ICU `fr-FR`** (`POSTGRES_INITDB_ARGS`),
+  musl ne sachant trier que par octet. Le réglage ne joue qu'à la création du
+  volume `db-data`.
 - **Mémoire** : limites posées par le compose (back 768 Mo, base 256 Mo, front
   64 Mo), le VPS n'ayant que 3,9 Go sans swap.
 
@@ -157,6 +163,5 @@ Hors du périmètre de ce workflow, et suivis dans la roadmap du README :
 - sauvegardes de `db-data` et `media-data`, hors du VPS, avec une restauration testée ;
 - fin du durcissement : scan Trivy bloquant (la limite d'échecs de connexion
   par IP et les en-têtes de sécurité sont en place depuis le 2026-11-18) ;
-- images de base épinglées par digest ;
 - sonde de disponibilité externe ;
 - côté VPS (root) : redémarrage en attente, `PermitRootLogin`, swap.
