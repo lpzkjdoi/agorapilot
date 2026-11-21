@@ -34,6 +34,7 @@ jobs:
     outputs:
       back: ${{ steps.filter.outputs.back }}
       front: ${{ steps.filter.outputs.front }}
+      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,6 +64,9 @@ jobs:
           {
             echo "back=$(match '^apps/back/|^\.github/workflows/(ci|pr-checks)\.yml$')"
             echo "front=$(match '^apps/front/|^\.github/workflows/(front-ci|pr-checks)\.yml$')"
+            # Images de prod : Dockerfiles, confs nginx, compose de prod, et les
+            # dépendances du back (le JRE minimal en dépend, cf. docker-ci.yml).
+            echo "docker=$(match '^apps/(back|front)/Dockerfile$|^apps/front/docker/|^apps/back/pom\.xml$|^docker-compose\.prod\.yaml$|^\.github/docker-smoke/|^\.github/workflows/(docker-ci|pr-checks)\.yml$')"
           } >> "$GITHUB_OUTPUT"
 
   back:
@@ -77,13 +81,19 @@ jobs:
     if: needs.changes.outputs.front == 'true'
     uses: ./.github/workflows/front-ci.yml
 
+  docker:
+    name: Docker
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    uses: ./.github/workflows/docker-ci.yml
+
   all-green:
     name: All checks green
     # `always()` est indispensable : sans lui, le job serait ignoré dès qu'un
     # job dont il dépend échoue ou est sauté — donc jamais rouge, jamais
     # bloquant.
     if: always()
-    needs: [ changes, back, front ]
+    needs: [ changes, back, front, docker ]
     runs-on: ubuntu-latest
     steps:
       - name: Vérifier le résultat des vérifications

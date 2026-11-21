@@ -24,7 +24,17 @@ name: agorapilot-prod
 
 services:
   db:
-    image: postgres:16
+    # Variante Alpine, épinglée par digest (cf. apps/back/Dockerfile pour la
+    # montée de version) : ~280 Mo décompressés au lieu de ~440 pour Debian.
+    #
+    # ⚠️ Alpine utilise musl, dont le tri des chaînes ne connaît aucune langue
+    # (ordre des octets : « É » après « z », majuscules avant minuscules). La
+    # base est donc initialisée avec ICU en français, indépendant de la libc :
+    # tri correct, et stable si l'image change un jour de famille. Ces
+    # arguments ne jouent qu'à la création du volume `db-data` : changer
+    # d'image sur un volume existant, initialisé sous une autre libc, impose
+    # un `REINDEX DATABASE`.
+    image: postgres:16.16-alpine3.24@sha256:1d5b02d3a9941fbd52437db4107f8c52d6297dac553ca1e5c299ebb3756b4857
     container_name: agorapilot-prod-db
     restart: unless-stopped
     mem_limit: 256m
@@ -32,6 +42,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB est requis}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER est requis}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}
+      POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=fr-FR --encoding=UTF8"
       TZ: ${TZ:-Europe/Paris}
     volumes:
       - db-data:/var/lib/postgresql/data

@@ -1,0 +1,187 @@
+# Construit les images de production et les fait tourner ensemble, avec le vrai
+# docker-compose.prod.yaml, avant qu'elles n'atteignent le VPS.
+#
+# Les images de base sont réduites au strict nécessaire (JRE assemblé par jlink
+# sur Alpine nu, nginx `slim`, Postgres Alpine) : ce qui manquerait ne se voit
+# pas toujours au démarrage. On vérifie donc aussi, de bout en bout :
+#   - le back : santé, connexion avec jeton CSRF, dépôt d'une image (ImageIO) ;
+#   - le JRE : traitement d'image headless, locale française, fuseau, encodage,
+#     TLS sortant (.github/docker-smoke/RuntimeSmoke.java) ;
+#   - le front : SPA servie et API proxifiée par nginx ;
+#   - la base : collation ICU française et tri correct des accents.
+#
+# Appelé par pr-checks.yml quand un Dockerfile, une conf nginx, le compose de
+# prod ou les dépendances du back changent.
+
+name: Docker CI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prod-images:
+    name: Docker CI / images de prod
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE: docker compose -f docker-compose.prod.yaml --env-file smoke.env
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Mêmes contextes et arguments que deploy-prod.yml.
+      - name: Build back
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/back
+          load: true
+          tags: agorapilot-back:smoke
+          cache-from: type=gha,scope=docker-ci-back
+          cache-to: type=gha,mode=max,scope=docker-ci-back
+
+      - name: Build front
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/front
+          load: true
+          tags: agorapilot-front:smoke
+          build-args: NGINX_CONF=docker/nginx.prod.conf
+          cache-from: type=gha,scope=docker-ci-front
+          cache-to: type=gha,mode=max,scope=docker-ci-front
+
+      - name: Taille des images
+        run: |
+          set -euo pipefail
+          {
+            echo '## Images de prod'
+            echo ''
+            echo '| Image | Taille |'
+            echo '|---|---|'
+            for image in agorapilot-back:smoke agorapilot-front:smoke \
+                         "$(grep -oE 'postgres:[^ ]+' docker-compose.prod.yaml | head -1)"; do
+              docker image inspect "$image" >/dev/null 2>&1 || docker pull -q "$image" >/dev/null
+              size=$(docker image inspect -f '{{.Size}}' "$image")
+              echo "| \`${image%%@*}\` | $(( size / 1000000 )) Mo |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Java (compilation du test du JRE)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Lancé avec le `java` de l'image, sous l'utilisateur applicatif.
+      - name: JRE de l'image
+        run: |
+          set -euo pipefail
+          mkdir -p smoke-classes
+          javac --release 21 -d smoke-classes .github/docker-smoke/RuntimeSmoke.java
+          chmod -R a+rX smoke-classes
+          docker run --rm --entrypoint java -e TZ=Europe/Paris \
+            -v "$PWD/smoke-classes:/smoke:ro" agorapilot-back:smoke \
+            -Djava.awt.headless=true -cp /smoke RuntimeSmoke
+          docker run --rm --entrypoint java agorapilot-back:smoke --list-modules
+
+      - name: Démarrer le stack de prod
+        run: |
+          set -euo pipefail
+          umask 077
+          # Valeurs factices : rien ne sort vers Facebook pendant ce test.
+          {
+            echo 'PROD_HOST=agorapilot.test'
+            echo 'BACK_IMAGE=agorapilot-back'
+            echo 'FRONT_IMAGE=agorapilot-front'
+            echo 'IMAGE_TAG=smoke'
+            echo 'POSTGRES_DB=agorapilot'
+            echo 'POSTGRES_USER=agorapilot'
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
+            echo 'FACEBOOK_CLIENT_ID=0'
+            echo 'FACEBOOK_CLIENT_SECRET=smoke'
+            echo 'FACEBOOK_PAGE_ID=0'
+            echo 'AGORAPILOT_ADMIN_USERNAME=smoke-admin'
+            echo "AGORAPILOT_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+          } > smoke.env
+          docker network create web
+          if ! $COMPOSE up -d --wait --wait-timeout 240; then
+            $COMPOSE ps
+            $COMPOSE logs --tail=120
+            exit 1
+          fi
+          $COMPOSE ps
+
+      - name: Base — collation ICU française
+        run: |
+          set -euo pipefail
+          psql() { $COMPOSE exec -T db psql -U agorapilot -d agorapilot -tA -c "$1"; }
+          provider=$(psql "select datlocprovider || '|' || coalesce(daticulocale, '') from pg_database where datname = current_database()")
+          echo "Collation : $provider"
+          test "$provider" = "i|fr-FR"
+          order=$(psql "select string_agg(x, ',' order by x) from (values ('zèbre'), ('Éléphant'), ('abricot'), ('eau')) v(x)")
+          echo "Tri : $order"
+          test "$order" = "abricot,eau,Éléphant,zèbre"
+
+      - name: Back — connexion et dépôt d'une image
+        run: |
+          set -euo pipefail
+          # `localhost` et non 127.0.0.1 : curl n'accepte de renvoyer en clair
+          # les cookies `Secure` du profil prod qu'à `localhost`.
+          base=http://localhost:8081
+          password=$(grep '^AGORAPILOT_ADMIN_PASSWORD=' smoke.env | cut -d= -f2-)
+
+          curl -fsS "$base/actuator/health" | grep -q '"status":"UP"'
+
+          # Jeton CSRF remis aux visiteurs anonymes, puis connexion.
+          curl -sS -c jar -o /dev/null "$base/api/me"
+          xsrf() { awk '$6 == "XSRF-TOKEN" { print $7 }' jar | tail -1; }
+          test -n "$(xsrf)"
+          curl -fsS -b jar -c jar -H "X-XSRF-TOKEN: $(xsrf)" -H 'Content-Type: application/json' \
+            -d "{\"username\":\"smoke-admin\",\"password\":\"$password\"}" "$base/api/auth/login" >/dev/null
+
+          # Petite image PNG générée sur place, lue par ImageIO à l'arrivée.
+          python3 - <<'PY'
+          import struct, zlib
+          w, h = 32, 24
+          raw = b''.join(b'\x00' + bytes([200, 80, 40]) * w for _ in range(h))
+          def chunk(t, d):
+              return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+          png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) \
+              + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+          open('smoke.png', 'wb').write(png)
+          PY
+          media=$(curl -fsS -b jar -c jar -H "X-XSRF-TOKEN: $(xsrf)" \
+            -F 'file=@smoke.png;type=image/png' -F 'title=Essai Docker CI' "$base/api/medias")
+          echo "Média créé : $media"
+          id=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' "$media")
+          curl -fsS -b jar -o downloaded.png "$base/api/medias/$id/file"
+          cmp smoke.png downloaded.png
+
+      - name: Front — SPA et proxy de l'API
+        run: |
+          set -euo pipefail
+          $COMPOSE exec -T front wget -q -O - http://localhost/ | grep -q '<app-root'
+          # L'API passe par nginx : un anonyme reçoit 401 du back, pas une page nginx.
+          status=$($COMPOSE exec -T front sh -c 'wget -S -O /dev/null http://localhost/api/me 2>&1 | grep -m1 "HTTP/" || true')
+          echo "Proxy /api/me : $status"
+          grep -q ' 401' <<< "$status"
+          # Pas de Swagger en production : la SPA répond à sa place (repli
+          # sur index.html), jamais la description OpenAPI.
+          if $COMPOSE exec -T front wget -q -O - http://localhost/v3/api-docs | grep -q '"openapi"'; then
+            echo "::error::La description OpenAPI est exposée par le front de prod."
+            exit 1
+          fi
+
+      - name: Journaux en cas d'échec
+        if: failure()
+        run: $COMPOSE logs --tail=200 || true
+
+      - name: Arrêt
+        if: always()
+        run: $COMPOSE down -v || true
