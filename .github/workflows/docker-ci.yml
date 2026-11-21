@@ -89,6 +89,8 @@ jobs:
             -v "$PWD/smoke-classes:/smoke:ro" agorapilot-back:smoke \
             -Djava.awt.headless=true -cp /smoke RuntimeSmoke
           docker run --rm --entrypoint java agorapilot-back:smoke --list-modules
+          # Archive CDS par défaut : `-Xshare:on` échoue si elle manque.
+          docker run --rm --entrypoint java agorapilot-back:smoke -Xshare:on -version
 
       - name: Démarrer le stack de prod
         run: |
@@ -116,6 +118,41 @@ jobs:
             exit 1
           fi
           $COMPOSE ps
+
+      # Informatif, non bloquant : durée de démarrage de Spring avec et sans
+      # l'archive CDS, sur le même runner et la même base. Deux démarrages de
+      # chaque, en alternance, pour lisser le bruit du runner. Les instances
+      # supplémentaires ne publient pas de port et sont supprimées aussitôt.
+      - name: Démarrage du back, avec et sans CDS
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          started() {
+            local name="ab-$1-$2"
+            $COMPOSE run -d --rm --no-deps --name "$name" -e "JAVA_TOOL_OPTIONS=$3" back >/dev/null
+            for _ in $(seq 1 90); do
+              line=$(docker logs "$name" 2>&1 | grep -m1 -oE 'Started AgorapilotBackApplication in [0-9.]+' || true)
+              if [ -n "$line" ]; then docker rm -f "$name" >/dev/null; echo "${line##* }"; return; fi
+              sleep 1
+            done
+            docker rm -f "$name" >/dev/null; echo "?"
+          }
+          with=() without=()
+          for i in 1 2; do
+            with+=("$(started cds "$i" '-Xshare:auto')")
+            without+=("$(started nocds "$i" '-Xshare:off')")
+          done
+          main=$($COMPOSE logs back 2>&1 | grep -m1 -oE 'Started AgorapilotBackApplication in [0-9.]+' | awk '{print $NF}')
+          {
+            echo '## Démarrage du back (Spring, secondes)'
+            echo ''
+            echo '| | Essai 1 | Essai 2 |'
+            echo '|---|---|---|'
+            echo "| Avec CDS | ${with[0]} | ${with[1]} |"
+            echo "| Sans CDS (\`-Xshare:off\`) | ${without[0]} | ${without[1]} |"
+            echo ''
+            echo "Premier démarrage du stack (base vide, migrations Flyway comprises) : ${main:-?} s."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Base — collation ICU française
         run: |

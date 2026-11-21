@@ -45,6 +45,12 @@ COPY --from=build /build/target/*.jar app.jar
 #   - jdk.management  : métriques système de l'actuator ;
 #   - jdk.zipfs       : système de fichiers zip, utilisé par certaines
 #                       bibliothèques pour lire leurs ressources.
+#
+# `--generate-cds-archive` recrée l'archive CDS par défaut (lib/server/*.jsa),
+# que l'image JRE de Temurin fournit et qu'un jlink ne produit pas de lui-même :
+# les classes du JDK y sont déjà analysées et prêtes à être mappées en mémoire,
+# ce qui raccourcit le démarrage. `-Xshare:on` échoue si elle manque : le build
+# s'arrête plutôt que de livrer une image sans elle.
 RUN set -eux; \
     mkdir unpacked; \
     cd unpacked; \
@@ -57,8 +63,10 @@ RUN set -eux; \
         --include-locales=en,fr \
         --strip-debug --no-man-pages --no-header-files \
         --compress=zip-6 \
+        --generate-cds-archive \
         --output /jre/runtime; \
-    /jre/runtime/bin/java --list-modules
+    /jre/runtime/bin/java --list-modules; \
+    /jre/runtime/bin/java -Xshare:on -version
 
 # --- Étape 3 : exécution --------------------------------------------------
 # Alpine nu : ni shell supplémentaire, ni gestionnaire de paquets superflu. La
