@@ -87,3 +87,4 @@ Ce dossier centralise la documentation technique du projet qui ne trouve pas nat
 | 2026-11-17 | [Programmation par fréquence : la modale « Répéter » et les séries au calendrier](./changelog/2026-11-17-frequence-front.md) | _voir PR_ |
 | 2026-11-18 | [Workflow de déploiement de la production](./changelog/2026-11-18-workflow-deploiement-prod.md) | _voir PR_ |
 | 2026-11-18 | [Durcissement pour l'exposition publique de la prod, limites mémoire de la préprod](./changelog/2026-11-18-durcissement-exposition-publique.md) | _voir PR_ |
+| 2026-11-21 | [Préprod déplacée sur `preprod.agorapilot.fr`](./changelog/2026-11-21-preprod-agorapilot-fr.md) | _voir PR_ |

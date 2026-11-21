@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://preprod.chariotte-manager.fr",
+    "target": "https://preprod.agorapilot.fr",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "warn"

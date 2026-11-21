@@ -20,9 +20,9 @@ Constatés sur la préproduction le 2026-11-10. Il faut **les trois**, et chacun
 
 | Où | Quoi | Erreur s'il manque |
 |---|---|---|
-| Paramètres de l'app → Général → **Domaines de l'app** | `preprod.chariotte-manager.fr` (une seule fois) | `1349048` « Le domaine de cette URL n'est pas inscrit… » |
-| Même page, en bas → **Ajouter une plateforme → Site web** | URL du site `https://preprod.chariotte-manager.fr/` | même erreur `1349048` |
-| Cas d'utilisation → Personnaliser → **Facebook Login → Paramètres** → URI de redirection OAuth valides | `https://preprod.chariotte-manager.fr/api/channels/facebook/callback` | même erreur `1349048`, même domaine et Site web en place |
+| Paramètres de l'app → Général → **Domaines de l'app** | `preprod.agorapilot.fr` (une seule fois) | `1349048` « Le domaine de cette URL n'est pas inscrit… » |
+| Même page, en bas → **Ajouter une plateforme → Site web** | URL du site `https://preprod.agorapilot.fr/` | même erreur `1349048` |
+| Cas d'utilisation → Personnaliser → **Facebook Login → Paramètres** → URI de redirection OAuth valides | `https://preprod.agorapilot.fr/api/channels/facebook/callback` | même erreur `1349048`, même domaine et Site web en place |
 
 Le message de Facebook parle de **domaine** dans les trois cas : ne pas
 s'arrêter au premier réglage s'il ne suffit pas.
@@ -59,7 +59,7 @@ App → Paramètres → Général (« Paramètres de base ») :
 
 - relever l'**identifiant** et la **clé secrète** de l'app ;
 - **domaines de l'app** : le domaine de l'environnement (`<PREPROD_HOST>`, par
-  exemple `preprod.chariotte-manager.fr`), sans `https://` ni barre oblique, et
+  exemple `preprod.agorapilot.fr`), sans `https://` ni barre oblique, et
   **une seule fois** (un doublon peut empêcher l'enregistrement). **Obligatoire** :
   sans lui, Facebook refuse la connexion avant même d'afficher la boîte de
   dialogue (code `1349048`) ;
