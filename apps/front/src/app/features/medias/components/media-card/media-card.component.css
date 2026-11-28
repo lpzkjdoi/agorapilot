@@ -117,3 +117,12 @@
 .media-actions .danger:hover:not(:disabled) {
   background-color: #FEF2F2;
 }
+
+/* Écran tactile : des boutons à la taille du doigt, sur toute la ligne. */
+@media (pointer: coarse) {
+  .media-actions button {
+    flex: 1;
+    min-height: 2.5rem;
+    font-size: 13px;
+  }
+}

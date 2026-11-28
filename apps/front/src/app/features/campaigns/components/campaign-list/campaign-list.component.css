@@ -133,3 +133,14 @@
   text-align: center;
   color: var(--color-ui-text-secondary);
 }
+
+@media (max-width: 640px) {
+  .campaign-list {
+    padding: 1rem;
+  }
+
+  .campaign-list-create {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}

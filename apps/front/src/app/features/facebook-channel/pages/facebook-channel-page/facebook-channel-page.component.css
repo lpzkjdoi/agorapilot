@@ -48,9 +48,13 @@
 
 .channel-details {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.5rem 1.5rem;
   font-size: 14px;
+}
+
+.channel-details dd {
+  overflow-wrap: anywhere;
 }
 
 .channel-details dt {
@@ -109,4 +113,29 @@
 .channel-actions button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Téléphone : chaque intitulé au-dessus de sa valeur ; boutons empilés. */
+@media (max-width: 640px) {
+  .channel-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .channel-details dt {
+    margin-top: 0.75rem;
+    font-size: 12px;
+  }
+
+  .channel-details dt:first-child {
+    margin-top: 0;
+  }
+
+  .channel-actions {
+    flex-direction: column;
+  }
+
+  .channel-actions button {
+    min-height: 2.75rem;
+  }
 }

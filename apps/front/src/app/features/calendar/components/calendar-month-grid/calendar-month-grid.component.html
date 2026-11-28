@@ -34,7 +34,7 @@
         }
 
         @if (occurrences.length > maxVisible) {
-          <p class="month-more">+{{ occurrences.length - maxVisible }} autres</p>
+          <p class="month-more">+{{ occurrences.length - maxVisible }}<span class="month-more-label"> autres</span></p>
         }
 
         @if (day.date === selectedDay() && panel(); as template) {

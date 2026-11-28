@@ -37,3 +37,13 @@
   font-size: 14px;
   color: var(--color-ui-text-secondary);
 }
+
+.posts-panel-header {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.posts-panel-see-all {
+  flex: none;
+  white-space: nowrap;
+}

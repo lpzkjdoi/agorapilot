@@ -76,3 +76,21 @@
   cursor: progress;
   opacity: 0.6;
 }
+
+/* Téléphone : les boutons passent sous le texte, sur toute la largeur, au lieu
+   d'écraser le message dans une colonne étroite. */
+@media (max-width: 640px) {
+  .suspension-banner {
+    flex-wrap: wrap;
+  }
+
+  .suspension-body {
+    flex-basis: calc(100% - 1rem - 0.75rem);
+  }
+
+  .suspension-lift,
+  .suspension-reconnect {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}

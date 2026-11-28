@@ -1,11 +1,15 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { Component } from '@angular/core';
 import { of } from 'rxjs';
 import { ALL_PERMISSIONS } from '../../../features/users/permissions';
 import { CurrentUser, Permission } from '../../auth/auth.model';
 import { AuthService } from '../../auth/auth.service';
 import { NavbarComponent } from './navbar.component';
+
+@Component({ template: '' })
+class EmptyPageComponent {}
 
 describe('NavbarComponent', () => {
   const user = signal<CurrentUser | null>(null);
@@ -19,7 +23,7 @@ describe('NavbarComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: { user, logout, can } }],
+      providers: [provideRouter([{ path: 'calendrier', component: EmptyPageComponent }]), { provide: AuthService, useValue: { user, logout, can } }],
     }).compileComponents();
   });
 
@@ -192,5 +196,64 @@ describe('NavbarComponent', () => {
 
     expect(icon?.getAttribute('width')).toBe('16px');
     expect(icon?.getAttribute('height')).toBe('16px');
+  });
+
+  describe('menu des écrans étroits', () => {
+    const toggle = (root: HTMLElement) => root.querySelector<HTMLButtonElement>('.navbar-toggle')!;
+
+    it('should render a closed menu button controlling the navigation', () => {
+      const fixture = TestBed.createComponent(NavbarComponent);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(toggle(root).getAttribute('aria-controls')).toBe('navbar-menu');
+      expect(root.querySelector('#navbar-menu')?.tagName.toLowerCase()).toBe('nav');
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('false');
+      expect(toggle(root).getAttribute('aria-label')).toBe('Ouvrir le menu');
+      expect(root.querySelector('.navbar')?.classList.contains('navbar-menu-open')).toBe(false);
+    });
+
+    it('should open then close the menu on each click', () => {
+      const fixture = TestBed.createComponent(NavbarComponent);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+
+      toggle(root).click();
+      fixture.detectChanges();
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('true');
+      expect(toggle(root).getAttribute('aria-label')).toBe('Fermer le menu');
+      expect(root.querySelector('.navbar')?.classList.contains('navbar-menu-open')).toBe(true);
+
+      toggle(root).click();
+      fixture.detectChanges();
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('false');
+      expect(root.querySelector('.navbar')?.classList.contains('navbar-menu-open')).toBe(false);
+    });
+
+    it('should close the menu with the Escape key', () => {
+      const fixture = TestBed.createComponent(NavbarComponent);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+
+      toggle(root).click();
+      fixture.detectChanges();
+      toggle(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('should close the menu once a page is reached', async () => {
+      const fixture = TestBed.createComponent(NavbarComponent);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+
+      toggle(root).click();
+      fixture.detectChanges();
+      await TestBed.inject(Router).navigateByUrl('/calendrier');
+      fixture.detectChanges();
+
+      expect(toggle(root).getAttribute('aria-expanded')).toBe('false');
+    });
   });
 });
