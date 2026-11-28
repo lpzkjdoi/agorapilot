@@ -61,3 +61,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Téléphone : une case fait ~45 px de large, le texte n'y tient pas. La
+   pastille devient une barre de couleur (canal, statut) ; l'heure et le
+   contenu restent lisibles dans le panneau du jour. */
+@media (max-width: 640px) {
+  .chip {
+    height: 0.375rem;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 0;
+  }
+
+  .chip > * {
+    display: none;
+  }
+
+  .chip-facebook {
+    background-color: #60A5FA;
+  }
+
+  .chip-intramuros {
+    background-color: #A78BFA;
+  }
+
+  .chip-failed {
+    background-color: var(--color-status-danger);
+  }
+
+  .chip-held {
+    background-color: var(--color-status-pending);
+  }
+}

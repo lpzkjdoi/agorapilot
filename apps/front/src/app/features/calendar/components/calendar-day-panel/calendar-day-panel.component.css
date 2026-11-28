@@ -112,3 +112,31 @@
   margin-right: 0.375rem;
   color: #B91C1C;
 }
+
+/* Téléphone : la bulle ne tient pas à côté d'une case de 45 px ; elle devient
+   un panneau ancré en bas de l'écran, sur un fond assombri. */
+@media (max-width: 640px) {
+  :host,
+  :host(.day-panel-up),
+  :host(.day-panel-end) {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 60;
+    width: auto;
+  }
+
+  .day-panel-backdrop {
+    background-color: rgba(17, 24, 39, 0.4);
+  }
+
+  .day-panel {
+    max-height: 75dvh;
+    padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .day-panel-edit {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.875rem;
+  }
+}

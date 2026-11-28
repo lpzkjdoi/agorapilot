@@ -132,6 +132,8 @@ describe('CalendarMonthGridComponent', () => {
 
     expect(cell(12).querySelectorAll('app-calendar-occurrence-chip')).toHaveLength(3);
     expect(cell(12).querySelector('.month-more')?.textContent).toContain('+2 autres');
+    // Le mot « autres » est isolé pour que les cases étroites du téléphone n'affichent que « +2 ».
+    expect(cell(12).querySelector('.month-more .month-more-label')?.textContent?.trim()).toBe('autres');
   });
 
   it('should only let modifiable occurrences be dragged', () => {

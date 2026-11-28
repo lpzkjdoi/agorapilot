@@ -80,6 +80,14 @@ describe('UsersPageComponent', () => {
     expect(row(compiled, 'admin').textContent).toContain('Administrateur');
   });
 
+  it('should label each cell with its column, for the card layout of phones', () => {
+    const { compiled } = render();
+
+    const labels = Array.from(compiled.querySelectorAll('tbody tr')[0].querySelectorAll('td[data-label]'))
+                        .map((cell) => cell.getAttribute('data-label'));
+    expect(labels).toEqual(['Statut', 'Droits', 'Dernière connexion']);
+  });
+
   it('should offer no action on the signed-in account', () => {
     const { compiled } = render();
 

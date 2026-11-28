@@ -91,3 +91,20 @@
   background-color: #FEF2F2;
   color: #B91C1C;
 }
+
+/* Téléphone : le bouton de création passe sous le titre, sur toute la largeur. */
+@media (max-width: 640px) {
+  .publications-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .publications-create {
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .publications-grid {
+    --grid-gap: 1rem;
+  }
+}

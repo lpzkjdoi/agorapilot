@@ -31,7 +31,7 @@
                 <span class="users-self">vous</span>
               }
             </td>
-            <td>
+            <td data-label="Statut">
               <span class="users-status users-status-{{ account.status.toLowerCase() }}">
                 {{ statusLabels[account.status] }}
               </span>
@@ -39,8 +39,8 @@
                 <span class="users-locked">Verrouillé jusqu’à {{ account.lockedUntil | date:'HH:mm':'':'fr-FR' }}</span>
               }
             </td>
-            <td>{{ profileOf(account) }}</td>
-            <td>
+            <td data-label="Droits">{{ profileOf(account) }}</td>
+            <td data-label="Dernière connexion">
               {{ account.lastLoginAt ? (account.lastLoginAt | date:'d MMM y, HH:mm':'':'fr-FR') : 'Jamais' }}
             </td>
             <td class="users-actions">

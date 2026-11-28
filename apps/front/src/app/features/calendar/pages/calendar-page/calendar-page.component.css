@@ -94,3 +94,32 @@
 .calendar-error {
   color: var(--color-status-danger);
 }
+
+/* Téléphone : navigation du mois sous le titre ; légende resserrée. */
+@media (max-width: 640px) {
+  .calendar-page {
+    gap: 1rem;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-nav button {
+    height: 2.75rem;
+  }
+
+  .calendar-nav-arrow {
+    width: 2.75rem;
+  }
+
+  .calendar-nav-today {
+    flex: 1;
+  }
+
+  .calendar-legend {
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+  }
+}

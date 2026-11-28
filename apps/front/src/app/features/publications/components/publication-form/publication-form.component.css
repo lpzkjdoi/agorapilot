@@ -106,3 +106,16 @@
 .publication-form-submit:hover:not(:disabled) {
   background-color: #1B327A;
 }
+
+/* Téléphone : même disposition que les autres modales (cf. `.modal-actions`). */
+@media (max-width: 640px) {
+  .publication-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .publication-form-cancel,
+  .publication-form-submit {
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+}

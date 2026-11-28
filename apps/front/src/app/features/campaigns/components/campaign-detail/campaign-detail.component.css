@@ -1,8 +1,9 @@
+/* Marge intérieure resserrée sur téléphone (1rem), 1.5rem dès 600px. */
 .campaign-detail {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
   border: 1px solid var(--color-ui-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-ui-card);
@@ -94,6 +95,7 @@
 
 .campaign-detail-section-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;

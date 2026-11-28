@@ -80,3 +80,12 @@
   cursor: progress;
   opacity: 0.6;
 }
+
+/* Téléphone : les actions sont empilées (cf. `.modal-actions`) ; l'annulation,
+   tout en bas, garde son écart par une marge haute. */
+@media (max-width: 640px) {
+  .modal-actions .edit-cancel {
+    margin-right: 0;
+    margin-top: 0.5rem;
+  }
+}

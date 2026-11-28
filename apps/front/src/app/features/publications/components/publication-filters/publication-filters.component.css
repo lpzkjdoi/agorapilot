@@ -11,7 +11,7 @@
 
 .filters-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
 }
 
@@ -38,6 +38,7 @@
 }
 
 .filters-select {
+  min-width: 0;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-ui-border);
   border-radius: var(--radius-sm);
@@ -105,4 +106,28 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Téléphone : recherche puis les deux listes, l'une sous l'autre. */
+@media (max-width: 640px) {
+  .filters {
+    padding: 1rem;
+  }
+
+  .filters-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .filters-search {
+    border-bottom: 1px solid var(--color-ui-border);
+  }
+
+  .filters-select {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .filters-stats {
+    gap: 0.5rem 1.25rem;
+  }
 }
