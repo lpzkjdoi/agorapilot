@@ -657,3 +657,75 @@ button {
   border: 0;
   border-top: 1px solid var(--color-ui-border);
 }
+
+/* ── Écrans étroits (téléphone) ──────────────────────────────────────────
+   Points de rupture du projet : 640px (téléphone), 1024px (tablette),
+   1280px (navbar en menu burger). La maquette ne prévoit pas de mobile :
+   on garde ses codes en empilant ce qui est côte à côte. */
+
+/* Sur écran tactile, iOS zoome sur tout champ en dessous de 16px au focus :
+   on force 16px plutôt que de bloquer le zoom (`maximum-scale`), qui
+   empêcherait aussi l'agrandissement volontaire. */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-panel {
+    gap: 0.875rem;
+    max-height: calc(100dvh - 2rem);
+    padding: 1.25rem 1rem;
+  }
+
+  .modal-close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /* Action principale en haut, chaque bouton sur toute la largeur, au pouce. */
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+  }
+
+  /* Sans ça, un champ date ou heure garde sa largeur native et déborde de sa
+     colonne de grille. */
+  input[type='date'],
+  input[type='time'] {
+    min-width: 0;
+  }
+
+  .solid-button,
+  .icon-button {
+    min-height: 2.75rem;
+  }
+
+  .icon-button {
+    width: 2.75rem;
+  }
+
+  .campaign-action {
+    min-height: 2.5rem;
+  }
+
+  /* Les onglets défilent horizontalement plutôt que de passer à la ligne. */
+  .campaign-detail-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .campaign-detail-tab {
+    flex: none;
+  }
+}

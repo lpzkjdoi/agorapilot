@@ -126,6 +126,102 @@
   cursor: pointer;
 }
 
-.navbar-logout:hover {
+.navbar-logout:hover,
+.navbar-toggle:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.navbar-toggle:focus-visible,
+.navbar-nav-button:focus-visible,
+.navbar-logout:focus-visible {
+  outline: 2px solid #93C5FD;
+  outline-offset: 2px;
+}
+
+/* Portable (1280–1535 px) : les sept entrées et le compte tiennent sur une
+   ligne en resserrant les marges, sans les icônes, pseudo tronqué. */
+@media (max-width: 1535px) {
+  .navbar {
+    gap: 1rem;
+  }
+
+  .navbar-nav-button {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .navbar-nav-button svg {
+    display: none;
+  }
+
+  .navbar-username {
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Écran étroit (tablette, téléphone) : la navigation et le compte passent
+   dans un menu déroulé sous le bandeau, ouvert par le bouton burger. */
+@media (max-width: 1279px) {
+  .navbar {
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+    height: auto;
+    min-height: 4rem;
+    padding: 0 1rem;
+  }
+
+  .navbar-logo {
+    min-height: 4rem;
+    margin-right: auto;
+  }
+
+  .navbar-toggle {
+    display: flex;
+    order: 2;
+  }
+
+  .navbar-nav,
+  .navbar-account {
+    display: none;
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .navbar-menu-open .navbar-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .navbar-menu-open .navbar-nav-button {
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar-menu-open .navbar-nav-button svg {
+    display: block;
+  }
+
+  .navbar-menu-open .navbar-account {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
 }
